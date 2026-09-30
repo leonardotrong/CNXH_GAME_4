@@ -25,6 +25,10 @@ export interface HexBoardProps {
   targets?: Readonly<Record<number, CellId | null>> | null;
   /** Kết quả lượt: tô nổi ô đổi chủ / phòng thủ. */
   outcome?: TurnOutcome | null;
+  /** Ô vừa bị bom nổ (đã thành ô trống). */
+  blasted?: readonly CellId[];
+  /** Nhóm đang cầm bom: ô của nhóm nhấp nháy đỏ. */
+  bombTeam?: number | null;
   onCellClick?: (cellId: CellId) => void;
   className?: string;
   /** Nhãn cho trình đọc màn hình. */
@@ -69,6 +73,8 @@ export function HexBoard({
   chosen = null,
   targets,
   outcome,
+  blasted,
+  bombTeam = null,
   onCellClick,
   className = '',
   label = 'Bàn cờ',
@@ -76,6 +82,7 @@ export function HexBoard({
   const shielded = new Set(shields.map((s) => s.teamId));
   const selectableSet = selectable ? new Set(selectable) : null;
   const results = new Map((outcome?.cells ?? []).map((c) => [c.cellId, c.result]));
+  const blastedSet = new Set(blasted ?? []);
 
   const attackersByCell = new Map<CellId, number[]>();
   for (const [team, cell] of Object.entries(targets ?? {})) {
@@ -106,6 +113,9 @@ export function HexBoard({
         if (cell.id === chosen) classes.push('hex--chosen');
         const result = results.get(cell.id);
         if (result) classes.push(`hex--${result}`);
+        if (owner !== null && owner === bombTeam) classes.push('hex--bomb');
+        const isBlasted = blastedSet.has(cell.id);
+        if (isBlasted) classes.push('hex--blasted');
         const vote = counts?.[cell.id] ?? 0;
         const attackers = attackersByCell.get(cell.id) ?? [];
         return (
@@ -140,6 +150,11 @@ export function HexBoard({
                   {vote}
                 </text>
               </g>
+            )}
+            {isBlasted && (
+              <text className="hex__blast" x={cx} y={cy} dominantBaseline="central" textAnchor="middle">
+                💥
+              </text>
             )}
             {attackers.map((team, i) => {
               const [dx, dy] = badgeOffset(i, attackers.length);

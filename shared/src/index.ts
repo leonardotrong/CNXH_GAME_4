@@ -12,3 +12,4 @@ export * from './resolveTurn';
 export * from './selectRound';
 export * from './standings';
 export * from './boardMatch';
+export * from './bomb';

@@ -61,7 +61,7 @@ describe('Bàn Cờ qua Socket.IO', () => {
     await new Promise<void>((resolve) => io.close(() => resolve()));
   });
 
-  it('SELECT không lộ mục tiêu; lật khi đóng; lượt được giải quyết; hết lượt → kết thúc', async () => {
+  it('SELECT không lộ mục tiêu; lật khi đóng; lượt được giải quyết; hết lượt → Quả Bom', async () => {
     const admin = client();
     await call(admin, 'admin:login', { password: 'pw' });
     const { code } = (await call(admin, 'admin:createRoom')) as unknown as { code: string };
@@ -127,11 +127,11 @@ describe('Bàn Cờ qua Socket.IO', () => {
       }
     }
 
-    // Hết REVEAL → lượt 2 tự bắt đầu. "Kết thúc sau lượt này" → không ai chơi, timer tự chạy hết lượt → SUMMARY.
+    // Hết REVEAL → lượt 2 tự bắt đầu. "Kết thúc sau lượt này" → không ai chơi, timer tự chạy hết lượt → BOMB_INTRO.
     const turn2 = await waitFor<GameView>(host, 'game:state', (v) => v.phase === 'BOARD_SELECT' && v.board?.turn === 2);
     expect(turn2.board!.targets).toBeNull();
     expect(turn2.board!.outcome).toBeNull();
-    const summary = waitFor<GameView>(host, 'game:state', (v) => v.phase === 'SUMMARY');
+    const summary = waitFor<GameView>(host, 'game:state', (v) => v.phase === 'BOMB_INTRO');
     expect((await call(admin, 'admin:endBoardAfterTurn', { value: true })).ok).toBe(true);
     const end = await summary;
     expect(end.board!.turn).toBe(2);

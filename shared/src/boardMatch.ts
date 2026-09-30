@@ -3,6 +3,7 @@
  * Server chỉ điều phối pha và timer: SELECT → QUESTION → REVEAL → lượt kế / kết thúc.
  */
 import type { BoardState, CellId, ShieldGrant } from './board';
+import type { PublicBombView } from './bomb';
 import { initialBoard } from './board';
 import { TEAM_IDS, type TeamId } from './lobby';
 import type { Phase } from './phases';
@@ -114,4 +115,6 @@ export interface GameView {
   /** Hạn của pha hiện tại (giờ server), để hiện đếm ngược. */
   phaseEndsAt: number | null;
   board: PublicBoardView | null;
+  /** Quả Bom (từ BOMB_INTRO). KHÔNG có ngòi — chỉ biết bom đang cháy hay dừng. */
+  bomb: PublicBombView | null;
 }

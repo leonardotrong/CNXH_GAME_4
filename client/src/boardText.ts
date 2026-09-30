@@ -1,12 +1,27 @@
-import { CONSTITUTION_CELL, type CellOutcome, type Phase, type ShieldGrant } from '@cnxh/shared';
+import { CONSTITUTION_CELL, type CellOutcome, type Explosion, type Phase, type ShieldGrant } from '@cnxh/shared';
 import { teamName } from './teams';
 
 export const PHASE_LABELS: Partial<Record<Phase, string>> = {
   BOARD_SELECT: 'Chọn ô mục tiêu',
   BOARD_QUESTION: 'Trả lời câu hỏi',
   BOARD_REVEAL: 'Kết quả lượt',
-  SUMMARY: 'Kết thúc Bàn Cờ',
+  BOMB_INTRO: 'Quả Bom Tham Nhũng',
+  BOMB_QUESTION: 'Nhóm cầm bom trả lời',
+  BOMB_REVEAL: 'Đáp án',
+  BOMB_PASS: 'Chuyền bom',
+  BOMB_EXPLODE: 'BÙM!',
+  SUMMARY: 'Kết thúc trận',
 };
+
+export function isBombPhase(phase: Phase): boolean {
+  return phase.startsWith('BOMB_');
+}
+
+export function describeExplosion(e: Explosion): string {
+  if (e.cells.length === 0) return `Bom nổ ở ${teamName(e.teamId)} — nhóm không còn ô nào để mất`;
+  const constitution = e.cells.includes(CONSTITUTION_CELL) ? ' (có ô Hiến pháp)' : '';
+  return `Bom nổ ở ${teamName(e.teamId)}: mất ${e.cells.length} ô${constitution}`;
+}
 
 export function formatSeconds(ms: number): string {
   return `${(ms / 1000).toLocaleString('vi-VN', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} s`;

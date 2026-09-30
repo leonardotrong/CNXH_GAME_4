@@ -68,17 +68,18 @@ export function createAppServer(options: AppServerOptions = {}): { httpServer: H
 
   const questions = options.questions ?? loadQuestionBank();
 
-  /** Gửi phiếu (câu hỏi + chọn ô) của từng nhóm cho riêng thành viên nhóm đó (không bao giờ broadcast chung). */
+  /** Gửi phiếu (câu hỏi, chọn ô, chọn nhóm nhận bom) của từng nhóm cho riêng thành viên nhóm đó (không bao giờ broadcast chung). */
   const emitTeamViews = (room: Room, onlyTeam?: number) => {
-    const views = new Map<number, [ReturnType<Room['teamQuestion']>, ReturnType<Room['teamSelect']>]>();
+    const views = new Map<number, [ReturnType<Room['teamQuestion']>, ReturnType<Room['teamSelect']>, ReturnType<Room['teamPass']>]>();
     for (const s of io.sockets.sockets.values()) {
       if (s.data.roomCode !== room.code || !s.data.playerId) continue;
       const teamId = room.teamOf(s.data.playerId);
       if (teamId === null || (onlyTeam !== undefined && teamId !== onlyTeam)) continue;
-      if (!views.has(teamId)) views.set(teamId, [room.teamQuestion(teamId), room.teamSelect(teamId)]);
-      const [question, select] = views.get(teamId)!;
+      if (!views.has(teamId)) views.set(teamId, [room.teamQuestion(teamId), room.teamSelect(teamId), room.teamPass(teamId)]);
+      const [question, select, pass] = views.get(teamId)!;
       s.emit('question:team', question);
       s.emit('select:team', select);
+      s.emit('pass:team', pass);
     }
   };
   const emitQuestion = (room: Room) => io.to(channel(room.code)).emit('question:state', room.publicQuestion());
@@ -91,7 +92,7 @@ export function createAppServer(options: AppServerOptions = {}): { httpServer: H
   /** Trạng thái phòng thay đổi (vào/ra/đổi nhóm/đổi đội trưởng): số online và đội trưởng ảnh hưởng tới nút CHỐT. */
   const broadcast = (room: Room) => {
     io.to(channel(room.code)).emit('room:state', room.snapshot());
-    if (room.question || room.select) emitTeamViews(room);
+    if (room.question || room.select || room.pass) emitTeamViews(room);
   };
 
   // Timer câu hỏi — chạy hoàn toàn trên server.
@@ -133,7 +134,47 @@ export function createAppServer(options: AppServerOptions = {}): { httpServer: H
     if (room.phase !== 'BOARD_REVEAL' || room.match?.turn !== turn) return;
     room.advanceTurn();
     if (room.select?.status === 'open') runSelect(room);
+    else clearQuestionTimer(room); // BOMB_INTRO: chờ admin
     emitAll(room);
+  };
+
+  // ─── Quả Bom: mỗi pha một timer; `bombStep` bỏ qua timer của pha cũ ──────
+  // Ngòi chỉ nằm trong Room: timer của BOMB_QUESTION đặt tại room.bombDeadline() = min(hạn câu, hạn ngòi);
+  // không có gì về ngòi được gửi đi — client chỉ thấy sự kiện nổ khi nó xảy ra.
+  const bombFail = (room: Room, res: { ok: boolean; error?: string }) => {
+    if (!res.ok) console.error(`[server] Phòng ${room.code}: lỗi Quả Bom (${res.error})`);
+  };
+  /** Việc cần làm khi pha bom hiện tại hết hạn. */
+  const bombTimeout = (room: Room): (() => { ok: boolean; error?: string }) | null => {
+    switch (room.phase) {
+      case 'BOMB_QUESTION':
+        return () => room.endBombQuestion();
+      case 'BOMB_REVEAL':
+        return () => room.afterBombReveal(questions);
+      case 'BOMB_PASS':
+        return () => room.endPass(questions);
+      case 'BOMB_EXPLODE':
+        return () => room.afterExplode(questions);
+      default:
+        return null;
+    }
+  };
+  /** Sau mỗi thay đổi pha bom: phát trạng thái rồi đặt timer cho pha mới. */
+  const bombChanged = (room: Room) => {
+    emitAll(room);
+    const action = bombTimeout(room);
+    if (!action) return clearQuestionTimer(room);
+    const step = room.bombStep;
+    const at = room.phase === 'BOMB_QUESTION' ? room.bombDeadline()! : room.publicGame().phaseEndsAt!;
+    const arm = () =>
+      schedule(room, at - Date.now(), () => {
+        if (room.bombStep !== step) return;
+        // setTimeout có thể chạy sớm ~1 ms: chưa tới hạn ngòi thì chờ tiếp, kẻo đóng câu thay vì nổ.
+        if (Date.now() < at) return arm();
+        bombFail(room, action());
+        bombChanged(room);
+      });
+    arm();
   };
 
   /** Câu thử (ngoài trận). */
@@ -167,6 +208,7 @@ export function createAppServer(options: AppServerOptions = {}): { httpServer: H
       if (teamId !== null) {
         socket.emit('question:team', room.teamQuestion(teamId));
         socket.emit('select:team', room.teamSelect(teamId));
+        socket.emit('pass:team', room.teamPass(teamId));
       }
     };
     /** Bao lệnh admin: kiểm tra đăng nhập + phòng đang theo dõi; ack lỗi nếu thiếu. */
@@ -230,8 +272,21 @@ export function createAppServer(options: AppServerOptions = {}): { httpServer: H
         emitGame(room);
         return emitTeamViews(room, res.teamId);
       }
+      if (res.kind === 'pass') {
+        if (room.passAllLocked()) {
+          bombFail(room, room.endPass(questions));
+          return bombChanged(room);
+        }
+        emitGame(room);
+        return emitTeamViews(room, res.teamId);
+      }
       if (room.allLocked()) {
         const { roundId } = room.question!;
+        if (room.phase === 'BOMB_QUESTION') {
+          // Hết ngòi đúng lúc chốt → nổ (Room tự quyết).
+          bombFail(room, room.endBombQuestion());
+          return bombChanged(room);
+        }
         return room.phase === 'BOARD_QUESTION' ? endBoardQuestion(room, roundId) : finishQuestion(room, roundId);
       }
       emitQuestion(room);
@@ -301,6 +356,12 @@ export function createAppServer(options: AppServerOptions = {}): { httpServer: H
         emitAll(room);
         return done(ack, { ok: true });
       }
+      if (room.phase === 'BOMB_QUESTION') {
+        const res = room.replaceBombQuestion(questions);
+        if (!res.ok) return done(ack, res);
+        bombChanged(room);
+        return done(ack, { ok: true });
+      }
       if (room.phase !== 'LOBBY' && room.phase !== 'SUMMARY') return done(ack, { ok: false, error: 'WRONG_PHASE' });
       clearQuestionTimer(room);
       room.clearQuestion();
@@ -316,6 +377,15 @@ export function createAppServer(options: AppServerOptions = {}): { httpServer: H
       if (!res.ok) return done(ack, res);
       runSelect(room);
       emitAll(room);
+      done(ack, { ok: true });
+    });
+
+    socket.on('admin:startBomb', (req, ack) => {
+      const room = adminRoom(ack);
+      if (!room) return;
+      const res = room.startBombs(questions, req?.totalBombs);
+      if (!res.ok) return done(ack, res);
+      bombChanged(room);
       done(ack, { ok: true });
     });
 

@@ -1,5 +1,6 @@
 import type { GameView, PublicQuestionView } from '@cnxh/shared';
-import { PHASE_LABELS, describeCell, describeShield } from './boardText';
+import { PHASE_LABELS, describeCell, describeExplosion, describeShield, isBombPhase } from './boardText';
+import { HostBomb } from './HostBomb';
 import { useCountdown } from './clock';
 import { HexBoard } from './HexBoard';
 import { OPTION_LABELS, QuestionPanel } from './QuestionPanel';
@@ -20,10 +21,12 @@ export function HostGame({
   const left = useCountdown(game.phaseEndsAt);
   const { phase } = game;
 
+  if (isBombPhase(phase) && game.bomb) return <HostBomb game={game} question={question} activeTeamIds={activeTeamIds} />;
+
   const head = (
     <header className="host-game__head">
       <span>
-        {phase === 'SUMMARY' ? 'Bàn Cờ Quyền Lực' : `Lượt ${board.turn}/${board.totalTurns}`}
+        {phase === 'SUMMARY' ? 'Bàn Cờ Quyền Lực & Quả Bom Tham Nhũng' : `Lượt ${board.turn}/${board.totalTurns}`}
         {board.endAfterThisTurn && phase !== 'SUMMARY' && ' · lượt cuối'}
       </span>
       <span className="host-game__phase">{PHASE_LABELS[phase]}</span>
@@ -110,6 +113,11 @@ export function HostGame({
         </div>
         <aside className="host-game__side">
           <HexBoard owners={board.owners} />
+          {game.bomb && game.bomb.explosions.length > 0 && (
+            <ul className="bomb-log">
+              {game.bomb.explosions.map((e) => <li key={e.bombNumber}>Quả {e.bombNumber}: {describeExplosion(e)}</li>)}
+            </ul>
+          )}
         </aside>
       </section>
     );

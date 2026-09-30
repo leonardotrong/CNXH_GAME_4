@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { DEFAULT_BOARD_TURNS, MAX_BOARD_TURNS, type GameView } from '@cnxh/shared';
-import { PHASE_LABELS, describeCell } from './boardText';
+import { DEFAULT_BOARD_TURNS, DEFAULT_BOMB_COUNT, MAX_BOARD_TURNS, MAX_BOMB_COUNT, type GameView } from '@cnxh/shared';
+import { PHASE_LABELS, describeCell, describeExplosion, isBombPhase } from './boardText';
+import { teamName } from './teams';
 import { useCountdown } from './clock';
 import { HexBoard } from './HexBoard';
 import { socket } from './socket';
@@ -11,7 +12,9 @@ export function AdminBoard({ game, onNotice }: { game: GameView | null; onNotice
   const [turns, setTurns] = useState(DEFAULT_BOARD_TURNS);
   const board = game?.board ?? null;
   const inPlay = !!board && !!game && game.phase.startsWith('BOARD_');
-  const left = useCountdown(inPlay ? game!.phaseEndsAt : null);
+  const bombPhase = !!game?.bomb && isBombPhase(game.phase);
+  const [bombs, setBombs] = useState(DEFAULT_BOMB_COUNT);
+  const left = useCountdown(inPlay || bombPhase ? game!.phaseEndsAt : null);
   // Ô "Số lượt" theo N thật khi đang chơi.
   const actualTurns = inPlay ? board!.totalTurns : null;
   useEffect(() => {
@@ -22,8 +25,29 @@ export function AdminBoard({ game, onNotice }: { game: GameView | null; onNotice
 
   return (
     <section className="admin-board">
-      <h2>Bàn Cờ Quyền Lực</h2>
-      {!inPlay ? (
+      <h2>{bombPhase ? 'Quả Bom Tham Nhũng' : 'Bàn Cờ Quyền Lực'}</h2>
+      {game?.phase === 'BOMB_INTRO' ? (
+        <div className="admin-actions">
+          <label className="admin-inline">
+            Số bom
+            <input type="number" min={1} max={MAX_BOMB_COUNT} value={bombs} onChange={(e) => setBombs(Number(e.target.value))} />
+          </label>
+          <button
+            className="primary-btn"
+            onClick={() => socket.emit('admin:startBomb', { totalBombs: bombs }, report('Không bắt đầu được Quả Bom'))}
+          >
+            Bắt đầu Quả Bom
+          </button>
+          <span>Nhóm cầm bom đầu tiên: <b>{teamName(game.bomb!.holder)}</b></span>
+        </div>
+      ) : bombPhase ? (
+        <p className="admin-board__status">
+          Quả <b>{game!.bomb!.bombNumber}/{game!.bomb!.totalBombs}</b> · {PHASE_LABELS[game!.phase]} · đang cầm:{' '}
+          <b>{teamName(game!.bomb!.holder)}</b> · bom {game!.bomb!.burning ? 'đang cháy' : 'tạm dừng'}
+          {game!.phaseEndsAt !== null && ` · pha còn ${left} s`}
+          {/* Admin cũng không biết ngòi: server không gửi. */}
+        </p>
+      ) : !inPlay ? (
         <div className="admin-actions">
           <label className="admin-inline">
             Số lượt
@@ -66,13 +90,27 @@ export function AdminBoard({ game, onNotice }: { game: GameView | null; onNotice
       )}
       {board && (
         <div className="admin-board__view">
-          <HexBoard owners={board.owners} shields={board.shields} targets={board.targets} outcome={board.outcome} className="hex-board--admin" />
+          <HexBoard
+            owners={board.owners}
+            shields={board.shields}
+            targets={board.targets}
+            outcome={board.outcome}
+            bombTeam={game?.bomb && game.phase.startsWith('BOMB_') && game.phase !== 'BOMB_EXPLODE' ? game.bomb.holder : null}
+            className="hex-board--admin"
+          />
           <div>
             <Standings standings={board.standings} shields={board.shields} lockedTeamIds={game!.phase === 'BOARD_SELECT' ? board.select?.locked : undefined} />
             {board.outcome && (
               <ul className="admin-board__log">
                 {board.outcome.cells.map((o) => <li key={o.cellId}>{describeCell(o)}</li>)}
                 {board.outcome.ignored.map((x) => <li key={`i${x.teamId}`}>Nhóm {x.teamId}: mục tiêu không hợp lệ ({x.reason})</li>)}
+              </ul>
+            )}
+            {game?.bomb && game.bomb.explosions.length > 0 && (
+              <ul className="admin-board__log">
+                {game.bomb.explosions.map((e) => (
+                  <li key={e.bombNumber}>Quả {e.bombNumber}: {describeExplosion(e)} (ô {e.cells.join(', ') || '—'})</li>
+                ))}
               </ul>
             )}
           </div>

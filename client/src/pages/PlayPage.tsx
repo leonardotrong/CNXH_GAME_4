@@ -3,7 +3,7 @@ import { MAX_NAME_LENGTH, TEAM_IDS, isRoomCode } from '@cnxh/shared';
 import { ConnectionBadge } from '../ConnectionBadge';
 import { PlayBoard } from '../PlayBoard';
 import { PlayQuestion } from '../PlayQuestion';
-import { socket, useGame, useQuestion, useRoomState, useTeamSelect, useTeamVotes } from '../socket';
+import { socket, useGame, useQuestion, useRoomState, useTeamPass, useTeamSelect, useTeamVotes } from '../socket';
 import { TEAM_COLORS, teamName } from '../teams';
 
 const STORAGE_KEY = 'cnxh.player';
@@ -34,6 +34,7 @@ export function PlayPage() {
   const teamVotes = useTeamVotes();
   const game = useGame();
   const teamSelect = useTeamSelect();
+  const teamPass = useTeamPass();
   const roomFromUrl = new URLSearchParams(window.location.search).get('room') ?? '';
   const [saved, setSaved] = useState<Saved | null>(() => {
     const s = loadSaved();
@@ -99,6 +100,7 @@ export function PlayPage() {
             question={question}
             teamVotes={teamVotes}
             teamSelect={teamSelect}
+            teamPass={teamPass}
             playerId={me.id}
             teamId={me.teamId}
           />

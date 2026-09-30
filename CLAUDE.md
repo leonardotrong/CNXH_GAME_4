@@ -51,8 +51,8 @@ Cloud: hook `SessionStart` (`.claude/settings.json` → `scripts/claude-session-
 - [x] 0 — Khung dự án
 - [x] 1 — Phòng chơi
 - [x] 2 — Câu hỏi & biểu quyết
-- [x] 3 — Bàn Cờ Quyền Lực (hết N lượt tạm chuyển sang SUMMARY; Giai đoạn 4 sẽ chèn Quả Bom vào giữa)
-- [ ] 4 — Quả Bom Tham Nhũng
+- [x] 3 — Bàn Cờ Quyền Lực
+- [x] 4 — Quả Bom Tham Nhũng (hết Bàn Cờ → BOMB_INTRO, admin bấm bắt đầu; ngòi chỉ nằm trong `Room` ở server)
 - [ ] 5 — Admin & chế độ dự phòng
 - [ ] 6 — Giao diện & âm thanh
 - [ ] 7 — Test tải & deploy

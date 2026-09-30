@@ -127,10 +127,13 @@ describe('Room — Bàn Cờ Quyền Lực', () => {
     expect(room.match!.board.owners[c(3, -2)]).toBe(2);
     expect(room.match!.board.owners[c(0, 2)]).toBe(4);
 
-    // Hết N lượt → kết thúc Bàn Cờ (Giai đoạn 4 sẽ chuyển sang Quả Bom).
+    // Hết N lượt → kết thúc Bàn Cờ, sang giới thiệu Quả Bom (khiên bị xóa).
     must(room.advanceTurn());
     game = room.publicGame();
-    expect(game.phase).toBe('SUMMARY');
+    expect(game.phase).toBe('BOMB_INTRO');
+    expect(game.phaseEndsAt).toBeNull();
+    expect(game.board!.shields).toEqual([]);
+    expect(game.bomb).toMatchObject({ bombNumber: 1, holder: 1, burning: false });
     expect(game.board!.standings.slice(0, 3).map((s) => [s.teamId, s.score])).toEqual([[1, 3], [2, 2], [4, 2]]);
     expect(room.advanceTurn()).toEqual({ ok: false, error: 'WRONG_PHASE' });
   });
@@ -165,7 +168,7 @@ describe('Room — Bàn Cờ Quyền Lực', () => {
     must(room.endSelect(BANK));
     must(room.endBoardQuestion());
     must(room.advanceTurn());
-    expect(room.phase).toBe('SUMMARY');
+    expect(room.phase).toBe('BOMB_INTRO');
   });
 
   it('bắt đầu lại từ SUMMARY: bàn cờ mới', () => {
@@ -175,8 +178,11 @@ describe('Room — Bàn Cờ Quyền Lực', () => {
     voteAndLock('An', answer());
     must(room.endBoardQuestion());
     must(room.advanceTurn());
-    expect(room.phase).toBe('SUMMARY');
+    expect(room.phase).toBe('BOMB_INTRO');
+    expect(room.startBoard(BANK, 1)).toEqual({ ok: false, error: 'WRONG_PHASE' });
+    room.phase = 'SUMMARY'; // (đường tới SUMMARY qua Quả Bom được test ở bomb.test.ts)
     must(room.startBoard(BANK, 1));
+    expect(room.publicGame().bomb).toBeNull();
     expect(room.match!.board.owners[c(1, -3)]).toBeNull();
     expect(room.match!.stats[1]).toEqual({ correct: 0, correctLockMs: 0 });
   });

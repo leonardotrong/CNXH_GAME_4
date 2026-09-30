@@ -243,3 +243,24 @@ body {
 .admin-board__view { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0.8rem; margin-top: 0.6rem; font-size: 1.2rem; }
 .hex-board--admin { max-width: 26rem; }
 .admin-board__log { font-size: 0.8rem; padding-left: 1.1rem; }
+
+/* ─── Quả Bom Tham Nhũng ───────────────────────────────────────────────── */
+/* Nhịp tích tắc CỐ ĐỊNH — không phụ thuộc thời gian còn lại của ngòi (server không gửi). */
+.hex--bomb .hex__shape { stroke: #c53030; stroke-width: 1.6; animation: bomb-pulse 1s steps(2, jump-none) infinite; }
+@keyframes bomb-pulse { 50% { stroke: #fff; } }
+.hex--blasted .hex__shape { fill: #3b3b3b; animation: hex-flash 0.5s ease-in-out 6; }
+.hex__blast { font-size: 9px; pointer-events: none; }
+.bomb-badge { display: inline-flex; align-items: center; gap: 0.4em; color: #fff; border-radius: 999px; padding: 0.15em 0.7em; font-weight: 800; }
+.bomb-badge__icon { display: inline-block; }
+.bomb-badge.is-burning .bomb-badge__icon { animation: bomb-tick 1s steps(2, jump-none) infinite; }
+@keyframes bomb-tick { 50% { transform: rotate(-12deg) scale(1.12); } }
+.bomb-fuse { display: inline-block; width: 3em; height: 0.35em; border-radius: 999px; background: repeating-linear-gradient(90deg, #b7791f 0 0.4em, #744210 0.4em 0.8em); }
+.bomb-badge.is-burning .bomb-fuse { animation: fuse-crawl 0.8s linear infinite; background-size: 0.8em 100%; }
+@keyframes fuse-crawl { to { background-position: 0.8em 0; } }
+.bomb-status { margin: 0; font-weight: 700; }
+.bomb-pass { font-size: 0.9em; font-weight: 800; }
+.bomb-rules { font-size: 0.8em; line-height: 1.35; margin: 0; padding-left: 1.2em; }
+.bomb-explode { font-size: 2.2em; font-weight: 900; color: #c53030; text-align: center; animation: boom 0.6s ease-out; }
+@keyframes boom { from { transform: scale(0.3); opacity: 0; } }
+.bomb-targets { display: flex; flex-direction: column; gap: 0.5rem; }
+.bomb-log { margin: 0; padding-left: 1.2em; font-size: 0.65em; }

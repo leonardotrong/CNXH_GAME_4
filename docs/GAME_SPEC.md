@@ -105,23 +105,32 @@ Với mỗi ô bị ít nhất một nhóm nhắm tới:
 ## 4. Quả Bom Tham Nhũng
 
 ### 4.1 Tổng quan
-- Chơi trên chính bàn cờ sau khi Bàn Cờ kết thúc. Mặc định 3 quả bom, lần lượt từng quả.
+- Chơi trên chính bàn cờ sau khi Bàn Cờ kết thúc. Mặc định 3 quả bom (admin chọn 1–5 khi bắt đầu), lần lượt từng quả.
+- Hết lượt Bàn Cờ cuối → pha **BOMB_INTRO**: host hiện luật Quả Bom, bảng điểm và nhóm cầm bom đầu tiên; admin bấm "Bắt đầu Quả Bom" thì mới chơi. Khiên của Bàn Cờ bị xóa.
 - Mỗi lúc chỉ nhóm đang cầm bom trả lời. Điện thoại các nhóm khác hiện câu hỏi ở chế độ chỉ xem.
+- Câu bom trả lời xong được tính vào thống kê tiêu chí phụ ở 3.6 (số câu đúng, thời gian chốt) như câu Bàn Cờ.
 
 ### 4.2 Ngòi nổ (bí mật)
 - Mỗi quả có ngòi ngẫu nhiên 30–60 giây (cấu hình được), CHỈ trừ dần trong pha QUESTION của nhóm cầm bom. Tạm dừng trong REVEAL và PASS.
 - Giá trị ngòi và thời gian còn lại chỉ tồn tại trên server. Client chỉ biết trạng thái "đang cháy" hoặc "tạm dừng". Nhịp tích tắc ở client cố định hoặc ngẫu nhiên, KHÔNG phụ thuộc thời gian còn lại.
-- Hết ngòi → nổ ngay lập tức, kể cả giữa câu hỏi (câu hỏi bị hủy).
+- Hết ngòi → nổ ngay lập tức, kể cả giữa câu hỏi (câu hỏi bị hủy: không công bố đáp án, không tính thống kê).
+- Câu hỏi đóng (chốt hoặc hết giờ) đúng vào mili-giây ngòi hết → tính là nổ.
+- Admin bỏ qua câu lỗi trong lúc bom cháy → thay câu khác, ngòi cháy liên tục.
 
 ### 4.3 Một vòng chuyền
-1. **QUESTION (12 giây)**: nhóm cầm bom nhận một câu kho `bomb`, biểu quyết như 2.2.
-2. Đúng → **PASS (10 giây)**: nhóm biểu quyết chọn nhóm nhận bom. Nhóm hợp lệ: mọi nhóm khác, TRỪ nhóm vừa chuyền bom cho mình. Hết giờ không chốt → server chọn ngẫu nhiên một nhóm hợp lệ. Host vẽ mũi tên bom bay sang nhóm nhận.
-3. Sai hoặc hết giờ → câu hỏi mới ngay lập tức, bom vẫn cháy.
-4. **Nổ**: nhóm đang cầm bom mất 2 ô chọn ngẫu nhiên trong các ô của nhóm (ô trở thành ô trống). Còn ≤ 2 ô thì mất hết. Hiệu ứng nổ lớn trên host + âm thanh.
+1. **QUESTION (12 giây)**: nhóm cầm bom nhận một câu kho `bomb`, biểu quyết như 2.2. Ngòi cháy.
+2. **REVEAL (8 giây)**: đáp án + giải thích như mọi câu (2.3). Ngòi tạm dừng.
+3. Đúng → **PASS (10 giây)**: nhóm biểu quyết chọn nhóm nhận bom. Ngòi tạm dừng.
+   - Nhóm hợp lệ: các nhóm khác CÓ THÀNH VIÊN, TRỪ nhóm vừa chuyền bom cho mình. Nếu ngoài nhóm vừa chuyền không còn nhóm nào (vd. chỉ 2 nhóm) thì được chuyền lại cho nhóm đó. Chỉ có một nhóm chơi → bỏ PASS, nhóm đó trả lời tiếp.
+   - Hết giờ không chốt → tự chốt theo phiếu như 2.2; không có phiếu nào → server chọn ngẫu nhiên một nhóm hợp lệ.
+   - Host vẽ mũi tên bom bay sang nhóm nhận.
+4. Sai hoặc hết giờ → sau REVEAL là câu hỏi mới ngay (không qua PASS), bom vẫn ở nhóm đó.
+5. **Nổ** (pha EXPLODE, khoảng 6 giây): nhóm đang cầm bom mất 2 ô chọn ngẫu nhiên trong các ô của nhóm (ô trở thành ô trống; ô Hiến pháp cũng có thể mất). Còn ≤ 2 ô thì mất hết. Hiệu ứng nổ lớn trên host + âm thanh.
 
 ### 4.4 Ai cầm bom đầu tiên
 - Quả 1: nhóm đang dẫn đầu (theo 3.6).
 - Quả 2 và 3: nhóm dẫn đầu hiện tại, trừ nhóm vừa bị nổ; nếu nhóm dẫn đầu vừa bị nổ thì chọn nhóm xếp ngay sau.
+- Chỉ xét nhóm có thành viên. Đồng hạng → nhóm số nhỏ hơn.
 
 ### 4.5 Kết thúc
 - Sau quả bom cuối → SUMMARY. Xếp hạng theo điểm ở 3.6.
@@ -150,7 +159,7 @@ Với mỗi ô bị ít nhất một nhóm nhắm tới:
 
 ## 6. Yêu cầu kỹ thuật
 - Server: Node.js + TypeScript + Express + Socket.IO. Máy trạng thái rõ ràng:
-  `LOBBY → RULES → (BOARD_SELECT → BOARD_QUESTION → BOARD_REVEAL) × N → (BOMB_QUESTION ↔ BOMB_REVEAL → BOMB_PASS … → BOMB_EXPLODE) × số bom → SUMMARY`.
+  `LOBBY → RULES → (BOARD_SELECT → BOARD_QUESTION → BOARD_REVEAL) × N → BOMB_INTRO → (BOMB_QUESTION ↔ BOMB_REVEAL → BOMB_PASS … → BOMB_EXPLODE) × số bom → SUMMARY`.
 - Mọi timer chạy trên server. Có tạm dừng/tiếp tục toàn cục.
 - Logic game là hàm thuần trong `shared/`, có unit test (Vitest): ô kề, mục tiêu hợp lệ, biểu quyết nhóm, giải quyết lượt, khiên, bom, xếp hạng.
 - Test bắt buộc: không payload nào gửi tới client chứa ngòi bom hoặc đáp án đúng khi câu còn mở.
@@ -172,3 +181,9 @@ Với mỗi ô bị ít nhất một nhóm nhắm tới:
 - Tranh ô mà các ứng viên sớm nhất trùng mili-giây → ô giữ nguyên: không có cách công bằng để phân định (nhất là khi cùng bị tự chốt lúc hết giờ); khuyến khích đội trưởng chủ động CHỐT.
 - Nhóm không có thành viên lúc bắt đầu Bàn Cờ không nhận ô xuất phát: tránh "ô ma" không bao giờ phòng thủ được bị nhóm bên cạnh chiếm miễn phí.
 - Khiên bảo hộ đếm tổng số ô mất (không trừ ô chiếm được): luật đơn giản, dễ giải thích trên lớp.
+- Thêm pha BOMB_INTRO do admin bắt đầu: lớp cần nghe luật Quả Bom trước khi chơi.
+- Câu bom sai vẫn có REVEAL (ngòi dừng): giữ nguyên tắc "sau mỗi câu là lúc học" của 2.3.
+- Hết giờ PASS: có phiếu thì theo đa số (nhất quán với 2.2), không phiếu mới chọn ngẫu nhiên.
+- Chỉ chuyền bom cho nhóm có thành viên; được chuyền ngược khi không còn lựa chọn nào khác, để trận không kẹt khi lớp ít nhóm.
+- Câu bị hủy do nổ không công bố đáp án, không tính thống kê. Câu bom trả lời xong tính vào tiêu chí phụ ("cả trận").
+- Ngòi và thời gian còn lại chỉ nằm trong bộ nhớ server; client (kể cả admin) chỉ biết bom đang cháy hay dừng. Có test so sánh hai phòng khác nhau duy nhất ở ngòi: mọi payload trước khi nổ phải giống hệt nhau.

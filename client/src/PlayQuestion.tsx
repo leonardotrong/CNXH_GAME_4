@@ -16,21 +16,24 @@ export function PlayQuestion({
   view,
   team,
   playerId,
+  readOnly = false,
 }: {
   view: PublicQuestionView;
   team: TeamQuestionView | null;
   playerId: string;
+  /** Nhóm không trả lời câu này (Quả Bom: chỉ nhóm cầm bom trả lời) — chỉ xem. */
+  readOnly?: boolean;
 }) {
   const left = useCountdown(view.status === 'open' ? view.endsAt : null);
   const [error, setError] = useState('');
   const current = team?.roundId === view.roundId ? team : null;
   const myVote = current?.votes[playerId];
   const isCaptain = current?.captainId === playerId;
-  const open = view.status === 'open' && !current?.locked;
+  const open = !readOnly && view.status === 'open' && !current?.locked;
 
   // Rung nhẹ khi câu mới bắt đầu.
   useEffect(() => {
-    if (view.status === 'open') navigator.vibrate?.(200);
+    if (view.status === 'open' && !readOnly) navigator.vibrate?.(200);
     setError('');
   }, [view.roundId]);
 
@@ -77,7 +80,9 @@ export function PlayQuestion({
       )}
       {error && <p className="form-error" role="alert">{error}</p>}
 
-      {reveal && (
+      {readOnly && view.status === 'open' && <p className="play-question__status">Chỉ xem — nhóm khác đang trả lời.</p>}
+      {reveal && readOnly && <p className="play-question__result">{reveal.explanation}</p>}
+      {reveal && !readOnly && (
         <div className={`play-question__result ${myResult?.correct ? 'is-correct' : 'is-wrong'}`}>
           <strong>{myResult?.correct ? 'Nhóm trả lời ĐÚNG!' : 'Nhóm trả lời chưa đúng'}</strong>
           <p>{reveal.explanation}</p>

@@ -1,4 +1,5 @@
 import type { GameView } from './boardMatch';
+import type { TeamPassView } from './bomb';
 import type { RoomState, TeamId } from './lobby';
 import type { PublicQuestionView, TeamQuestionView } from './questionRound';
 import type { RoundError } from './voteRound';
@@ -51,6 +52,8 @@ export interface ServerToClientEvents {
   'game:state': (view: GameView) => void;
   /** Phiếu chọn ô của nhóm mình + ô hợp lệ — chỉ gửi cho thành viên nhóm đó. */
   'select:team': (view: TeamSelectView | null) => void;
+  /** Phiếu chọn nhóm nhận bom — chỉ gửi cho thành viên nhóm đang cầm bom (null với nhóm khác). */
+  'pass:team': (view: TeamPassView | null) => void;
 }
 
 /** Sự kiện client → server. */
@@ -61,7 +64,7 @@ export interface ClientToServerEvents {
 
   'player:join': (req: JoinRequest, ack: (res: Ack<{ playerId: string; teamId: TeamId }>) => void) => void;
   'player:changeTeam': (req: { teamId: TeamId }, ack: (res: Ack) => void) => void;
-  /** Bỏ phiếu cho vòng đang mở (câu hỏi: chỉ số phương án; SELECT: id ô). */
+  /** Bỏ phiếu cho vòng đang mở (câu hỏi: chỉ số phương án; SELECT: id ô; PASS: số nhóm nhận bom). */
   'player:vote': (req: { roundId: number; option: number }, ack: (res: Ack) => void) => void;
   /** Lệnh CHỐT của đội trưởng. */
   'player:lock': (req: { roundId: number }, ack: (res: Ack) => void) => void;
@@ -79,7 +82,9 @@ export interface ClientToServerEvents {
   'admin:setBoardTurns': (req: { totalTurns: number }, ack: (res: Ack<{ totalTurns: number }>) => void) => void;
   /** "Kết thúc sau lượt này" (bật/tắt). */
   'admin:endBoardAfterTurn': (req: { value: boolean }, ack: (res: Ack) => void) => void;
-  /** Bỏ qua câu lỗi: câu thử → hủy; câu Bàn Cờ → thay bằng câu khác, giữ nguyên mục tiêu. */
+  /** Bắt đầu Quả Bom Tham Nhũng (từ BOMB_INTRO), số bom 1–5. */
+  'admin:startBomb': (req: { totalBombs?: number }, ack: (res: Ack) => void) => void;
+  /** Bỏ qua câu lỗi: câu thử → hủy; câu Bàn Cờ → thay câu khác, giữ nguyên mục tiêu; câu bom → thay câu khác, ngòi cháy tiếp. */
   'admin:skipQuestion': (ack: (res: Ack) => void) => void;
   'admin:movePlayer': (req: { playerId: string; teamId: TeamId }, ack: (res: Ack) => void) => void;
 }

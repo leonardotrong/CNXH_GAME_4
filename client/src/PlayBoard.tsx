@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import type { CellId, GameView, PublicQuestionView, TeamQuestionView, TeamSelectView } from '@cnxh/shared';
-import { PHASE_LABELS, describeCell, shieldName } from './boardText';
+import type { CellId, GameView, PublicQuestionView, TeamPassView, TeamQuestionView, TeamSelectView } from '@cnxh/shared';
+import { PHASE_LABELS, describeCell, isBombPhase, shieldName } from './boardText';
+import { PlayBomb } from './PlayBomb';
 import { useCountdown } from './clock';
 import { HexBoard } from './HexBoard';
 import { PlayQuestion, VOTE_ERRORS } from './PlayQuestion';
@@ -13,6 +14,7 @@ export function PlayBoard({
   question,
   teamVotes,
   teamSelect,
+  teamPass,
   playerId,
   teamId,
 }: {
@@ -20,16 +22,21 @@ export function PlayBoard({
   question: PublicQuestionView | null;
   teamVotes: TeamQuestionView | null;
   teamSelect: TeamSelectView | null;
+  teamPass: TeamPassView | null;
   playerId: string;
   teamId: number;
 }) {
   const board = game.board!;
   const { phase } = game;
 
+  if (isBombPhase(phase) && game.bomb) {
+    return <PlayBomb game={game} question={question} teamVotes={teamVotes} teamPass={teamPass} playerId={playerId} teamId={teamId} />;
+  }
+
   return (
     <section className="play-board">
       <p className="play-board__turn">
-        {phase === 'SUMMARY' ? 'Bàn Cờ đã kết thúc' : `Lượt ${board.turn}/${board.totalTurns} · ${PHASE_LABELS[phase] ?? ''}`}
+        {phase === 'SUMMARY' ? 'Trận đã kết thúc' : `Lượt ${board.turn}/${board.totalTurns} · ${PHASE_LABELS[phase] ?? ''}`}
       </p>
       {phase === 'BOARD_SELECT' && (
         <PlaySelect game={game} teamSelect={teamSelect} playerId={playerId} teamId={teamId} />

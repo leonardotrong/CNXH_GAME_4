@@ -6,6 +6,7 @@ import type {
   PublicQuestionView,
   RoomState,
   ServerToClientEvents,
+  TeamPassView,
   TeamQuestionView,
   TeamSelectView,
 } from '@cnxh/shared';
@@ -94,6 +95,18 @@ export function useTeamSelect(): TeamSelectView | null {
     socket.on('select:team', setView);
     return () => {
       socket.off('select:team', setView);
+    };
+  }, []);
+  return view;
+}
+
+/** Phiếu chọn nhóm nhận bom của nhóm mình (chỉ nhóm đang cầm bom nhận được giá trị khác null). */
+export function useTeamPass(): TeamPassView | null {
+  const [view, setView] = useState<TeamPassView | null>(null);
+  useEffect(() => {
+    socket.on('pass:team', setView);
+    return () => {
+      socket.off('pass:team', setView);
     };
   }, []);
   return view;
