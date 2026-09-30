@@ -43,6 +43,8 @@ Chủ đề kiến thức: nhà nước, nhà nước XHCN, đặc điểm nhà 
 
 Ghi chú kỹ thuật: `shared/` xuất thẳng mã TypeScript (`@cnxh/shared` → `shared/src/index.ts`), không có bước build riêng; server luôn chạy qua `tsx` (cả production). Kiểu sự kiện Socket.IO nằm trong `shared/src/events.ts`.
 
+Cloud: hook `SessionStart` (`.claude/settings.json` → `scripts/claude-session-start.sh`) tự `npm ci` khi chạy trên Claude Code on the web; ở máy local thì bỏ qua. GitHub Actions (`.github/workflows/ci.yml`) chạy typecheck + test + build cho mỗi push/PR.
+
 ## Trạng thái (cập nhật khi xong mỗi giai đoạn)
 - [x] 0 — Khung dự án
 - [ ] 1 — Phòng chơi
