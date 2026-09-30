@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { MAX_NAME_LENGTH, TEAM_IDS, isRoomCode } from '@cnxh/shared';
 import { ConnectionBadge } from '../ConnectionBadge';
+import { PlayBoard } from '../PlayBoard';
 import { PlayQuestion } from '../PlayQuestion';
-import { socket, useQuestion, useRoomState, useTeamVotes } from '../socket';
+import { socket, useGame, useQuestion, useRoomState, useTeamSelect, useTeamVotes } from '../socket';
 import { TEAM_COLORS, teamName } from '../teams';
 
 const STORAGE_KEY = 'cnxh.player';
@@ -31,6 +32,8 @@ export function PlayPage() {
   const state = useRoomState();
   const question = useQuestion();
   const teamVotes = useTeamVotes();
+  const game = useGame();
+  const teamSelect = useTeamSelect();
   const roomFromUrl = new URLSearchParams(window.location.search).get('room') ?? '';
   const [saved, setSaved] = useState<Saved | null>(() => {
     const s = loadSaved();
@@ -84,17 +87,27 @@ export function PlayPage() {
   const me = saved && state ? state.teams.flatMap((t) => t.players.map((p) => ({ ...p, teamId: t.id }))).find((p) => p.id === saved.playerId) : undefined;
 
   if (saved && me && state) {
+    const inGame = !!game?.board && game.phase !== 'LOBBY' && !(game.phase === 'SUMMARY' && question);
     return (
       <main className="page page--play">
         <ConnectionBadge />
         <h1 style={{ color: TEAM_COLORS[me.teamId] }}>{teamName(me.teamId)}</h1>
         <p className="play-name">{me.name}{me.isCaptain && ' ★ Đội trưởng'}</p>
-        {question && question.teamIds.includes(me.teamId) ? (
+        {inGame ? (
+          <PlayBoard
+            game={game!}
+            question={question}
+            teamVotes={teamVotes}
+            teamSelect={teamSelect}
+            playerId={me.id}
+            teamId={me.teamId}
+          />
+        ) : question && question.teamIds.includes(me.teamId) ? (
           <PlayQuestion view={question} team={teamVotes} playerId={me.id} />
         ) : (
           <p>Phòng {state.code} — chờ người dẫn bắt đầu…</p>
         )}
-        {state.lobbyOpen && !question && (
+        {state.lobbyOpen && !question && (game?.phase ?? 'LOBBY') === 'LOBBY' && (
           <div className="team-grid">
             {TEAM_IDS.map((id) => (
               <button

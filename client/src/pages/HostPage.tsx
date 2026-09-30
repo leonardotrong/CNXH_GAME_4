@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import { ConnectionBadge } from '../ConnectionBadge';
+import { HostGame } from '../HostGame';
 import { QuestionPanel } from '../QuestionPanel';
-import { socket, useConnectionStatus, useQuestion, useRoomState } from '../socket';
+import { socket, useConnectionStatus, useGame, useQuestion, useRoomState } from '../socket';
 import { TEAM_COLORS, teamName } from '../teams';
 
 export function HostPage() {
   const status = useConnectionStatus();
   const state = useRoomState();
   const question = useQuestion();
+  const game = useGame();
   const [publicUrl, setPublicUrl] = useState<string | null>(null);
   const [qrSvg, setQrSvg] = useState('');
 
@@ -36,11 +38,23 @@ export function HostPage() {
     QRCode.toString(joinUrl, { type: 'svg', margin: 1, width: 400 }).then(setQrSvg);
   }, [joinUrl]);
 
+  const activeTeamIds = state?.teams.filter((t) => t.players.length > 0).map((t) => t.id) ?? [];
+
+  // Trong trận: màn Bàn Cờ. Câu thử (chỉ mở được ở LOBBY/SUMMARY) vẫn hiện như Giai đoạn 2.
+  if (state && game?.board && game.phase !== 'LOBBY' && !(game.phase === 'SUMMARY' && question)) {
+    return (
+      <main className="page page--host page--game">
+        <ConnectionBadge />
+        <HostGame game={game} question={question} activeTeamIds={activeTeamIds} />
+      </main>
+    );
+  }
+
   return (
     <main className="page page--host">
       <ConnectionBadge />
       {question ? (
-        <QuestionPanel view={question} activeTeamIds={state?.teams.filter((t) => t.players.length > 0).map((t) => t.id)} />
+        <QuestionPanel view={question} activeTeamIds={activeTeamIds} />
       ) : !state ? (
         <h1>{status === 'connected' ? 'Đang chờ người dẫn tạo phòng…' : 'Bàn Cờ Quyền Lực — Màn chiếu'}</h1>
       ) : (

@@ -1,6 +1,9 @@
+import type { GameView } from './boardMatch';
 import type { RoomState, TeamId } from './lobby';
-import type { PublicQuestionView, RoundError, TeamQuestionView } from './questionRound';
+import type { PublicQuestionView, TeamQuestionView } from './questionRound';
+import type { RoundError } from './voteRound';
 import type { QuestionPool } from './questions';
+import type { TeamSelectView } from './selectRound';
 
 /** Vai trò của một kết nối, tương ứng với route trên client. */
 export type ClientRole = 'host' | 'play' | 'admin';
@@ -20,6 +23,7 @@ export type ErrorCode =
   | 'NO_QUESTION'
   | 'QUESTION_ACTIVE'
   | 'NO_QUESTIONS_IN_POOL'
+  | 'WRONG_PHASE'
   | RoundError;
 
 export type Ack<T = object> = ({ ok: true } & T) | { ok: false; error: ErrorCode };
@@ -43,6 +47,10 @@ export interface ServerToClientEvents {
   'question:state': (view: PublicQuestionView | null) => void;
   /** Phiếu của nhóm mình — chỉ gửi cho thành viên nhóm đó. */
   'question:team': (view: TeamQuestionView | null) => void;
+  /** Pha hiện tại + bàn cờ (công khai; mục tiêu chỉ có sau khi SELECT đóng). */
+  'game:state': (view: GameView) => void;
+  /** Phiếu chọn ô của nhóm mình + ô hợp lệ — chỉ gửi cho thành viên nhóm đó. */
+  'select:team': (view: TeamSelectView | null) => void;
 }
 
 /** Sự kiện client → server. */
@@ -53,6 +61,7 @@ export interface ClientToServerEvents {
 
   'player:join': (req: JoinRequest, ack: (res: Ack<{ playerId: string; teamId: TeamId }>) => void) => void;
   'player:changeTeam': (req: { teamId: TeamId }, ack: (res: Ack) => void) => void;
+  /** Bỏ phiếu cho vòng đang mở (câu hỏi: chỉ số phương án; SELECT: id ô). */
   'player:vote': (req: { roundId: number; option: number }, ack: (res: Ack) => void) => void;
   /** Lệnh CHỐT của đội trưởng. */
   'player:lock': (req: { roundId: number }, ack: (res: Ack) => void) => void;
@@ -64,7 +73,13 @@ export interface ClientToServerEvents {
   'admin:setCaptain': (req: { playerId: string }, ack: (res: Ack) => void) => void;
   /** "Câu thử": hỏi một câu cho cả 7 nhóm. */
   'admin:startQuestion': (req: { pool: QuestionPool }, ack: (res: Ack<{ roundId: number }>) => void) => void;
-  /** Bỏ qua câu lỗi: hủy câu, không công bố kết quả. */
+  /** Bắt đầu Bàn Cờ Quyền Lực (từ LOBBY hoặc SUMMARY). */
+  'admin:startBoard': (req: { totalTurns?: number }, ack: (res: Ack) => void) => void;
+  /** Chỉnh số lượt N khi đang chơi (không nhỏ hơn lượt hiện tại). */
+  'admin:setBoardTurns': (req: { totalTurns: number }, ack: (res: Ack<{ totalTurns: number }>) => void) => void;
+  /** "Kết thúc sau lượt này" (bật/tắt). */
+  'admin:endBoardAfterTurn': (req: { value: boolean }, ack: (res: Ack) => void) => void;
+  /** Bỏ qua câu lỗi: câu thử → hủy; câu Bàn Cờ → thay bằng câu khác, giữ nguyên mục tiêu. */
   'admin:skipQuestion': (ack: (res: Ack) => void) => void;
   'admin:movePlayer': (req: { playerId: string; teamId: TeamId }, ack: (res: Ack) => void) => void;
 }

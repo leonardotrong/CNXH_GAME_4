@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { PresentedQuestion } from './questions';
+import { allTeamsLocked, type TeamContext } from './voteRound';
 import {
-  allTeamsLocked,
   castVote,
   closeRound,
   lockTeam,
@@ -10,7 +10,6 @@ import {
   teamQuestionView,
   type QuestionRound,
   type RoundResult,
-  type TeamContext,
 } from './questionRound';
 
 const question: PresentedQuestion = {

@@ -1,8 +1,9 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { TEAM_IDS } from '@cnxh/shared';
+import { AdminBoard } from '../AdminBoard';
 import { ConnectionBadge } from '../ConnectionBadge';
 import { QuestionPanel } from '../QuestionPanel';
-import { socket, useQuestion, useRoomState } from '../socket';
+import { socket, useGame, useQuestion, useRoomState } from '../socket';
 import { TEAM_COLORS, teamName } from '../teams';
 
 const PW_KEY = 'cnxh.adminPassword';
@@ -10,6 +11,7 @@ const PW_KEY = 'cnxh.adminPassword';
 export function AdminPage() {
   const state = useRoomState();
   const question = useQuestion();
+  const game = useGame();
   const [notice, setNotice] = useState('');
   const [password, setPassword] = useState('');
   const [authed, setAuthed] = useState(false);
@@ -47,6 +49,9 @@ export function AdminPage() {
     login(password);
   };
 
+  /** Câu thử chỉ mở được ngoài trận (LOBBY/SUMMARY). */
+  const testAllowed = !game || game.phase === 'LOBBY' || game.phase === 'SUMMARY';
+
   if (!authed) {
     return (
       <main className="page page--admin">
@@ -80,10 +85,11 @@ export function AdminPage() {
           >
             {state.lobbyOpen ? 'Đóng cổng vào phòng' : 'Mở lại cổng vào phòng'}
           </button>
+          <AdminBoard game={game} onNotice={setNotice} />
           <div className="admin-actions">
             <button
               className="primary-btn"
-              disabled={question?.status === 'open'}
+              disabled={question?.status === 'open' || !testAllowed}
               onClick={() =>
                 socket.emit('admin:startQuestion', { pool: 'board' }, (res) =>
                   setNotice(res.ok ? '' : `Không mở được câu hỏi (${res.error}).`),
@@ -94,7 +100,7 @@ export function AdminPage() {
             </button>
             <button
               className="primary-btn"
-              disabled={question?.status === 'open'}
+              disabled={question?.status === 'open' || !testAllowed}
               onClick={() =>
                 socket.emit('admin:startQuestion', { pool: 'bomb' }, (res) =>
                   setNotice(res.ok ? '' : `Không mở được câu hỏi (${res.error}).`),
@@ -105,10 +111,10 @@ export function AdminPage() {
             </button>
             <button
               className="primary-btn primary-btn--danger"
-              disabled={!question}
-              onClick={() => socket.emit('admin:skipQuestion', () => {})}
+              disabled={!question || (!testAllowed && question.status !== 'open')}
+              onClick={() => socket.emit('admin:skipQuestion', (res) => setNotice(res.ok ? '' : `Không bỏ qua được (${res.error}).`))}
             >
-              Bỏ qua câu
+              {testAllowed ? 'Bỏ qua câu' : 'Bỏ qua câu lỗi (đổi câu khác)'}
             </button>
           </div>
           {notice && <p className="form-error">{notice}</p>}

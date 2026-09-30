@@ -4,7 +4,7 @@ import { useCountdown } from './clock';
 import { OPTION_LABELS } from './QuestionPanel';
 import { socket } from './socket';
 
-const ERRORS: Record<string, string> = {
+export const VOTE_ERRORS: Record<string, string> = {
   NOT_ENOUGH_VOTES: 'Cần quá nửa thành viên online bỏ phiếu mới chốt được.',
   NOT_CAPTAIN: 'Chỉ đội trưởng được chốt.',
   LOCKED: 'Nhóm đã chốt.',
@@ -35,9 +35,9 @@ export function PlayQuestion({
   }, [view.roundId]);
 
   const vote = (option: number) =>
-    socket.emit('player:vote', { roundId: view.roundId, option }, (res) => setError(res.ok ? '' : ERRORS[res.error] ?? ''));
+    socket.emit('player:vote', { roundId: view.roundId, option }, (res) => setError(res.ok ? '' : VOTE_ERRORS[res.error] ?? ''));
   const lock = () =>
-    socket.emit('player:lock', { roundId: view.roundId }, (res) => setError(res.ok ? '' : ERRORS[res.error] ?? ''));
+    socket.emit('player:lock', { roundId: view.roundId }, (res) => setError(res.ok ? '' : VOTE_ERRORS[res.error] ?? ''));
 
   const reveal = view.reveal;
   const myResult = reveal?.results.find((r) => r.teamId === current?.teamId);

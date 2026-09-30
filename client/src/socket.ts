@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react';
 import { io, type Socket } from 'socket.io-client';
 import type {
   ClientToServerEvents,
+  GameView,
   PublicQuestionView,
   RoomState,
   ServerToClientEvents,
   TeamQuestionView,
+  TeamSelectView,
 } from '@cnxh/shared';
 
 export type GameSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
@@ -68,6 +70,30 @@ export function useTeamVotes(): TeamQuestionView | null {
     socket.on('question:team', setView);
     return () => {
       socket.off('question:team', setView);
+    };
+  }, []);
+  return view;
+}
+
+/** Pha hiện tại + bàn cờ công khai. */
+export function useGame(): GameView | null {
+  const [view, setView] = useState<GameView | null>(null);
+  useEffect(() => {
+    socket.on('game:state', setView);
+    return () => {
+      socket.off('game:state', setView);
+    };
+  }, []);
+  return view;
+}
+
+/** Phiếu chọn ô của nhóm mình (chỉ /play nhận). */
+export function useTeamSelect(): TeamSelectView | null {
+  const [view, setView] = useState<TeamSelectView | null>(null);
+  useEffect(() => {
+    socket.on('select:team', setView);
+    return () => {
+      socket.off('select:team', setView);
     };
   }, []);
   return view;

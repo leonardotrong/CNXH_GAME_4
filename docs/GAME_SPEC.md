@@ -52,9 +52,10 @@
 ### 3.1 Bàn cờ
 - Lưới lục giác, tọa độ axial `(q, r)`, bán kính 3 → **37 ô**. Hướng đỉnh nhọn (pointy-top).
 - Ô trung tâm `(0,0)` = **ô Hiến pháp** (màu vàng kim, biểu tượng cuốn Hiến pháp).
-- Vòng ngoài cùng (khoảng cách 3) có 18 ô, đánh số 0–17 theo một chiều cố định, bắt đầu từ góc `(0,-3)`.
+- Vòng ngoài cùng (khoảng cách 3) có 18 ô, đánh số 0–17 theo một chiều cố định, bắt đầu từ góc `(0,-3)`: theo chiều kim đồng hồ trên màn hình (`(0,-3) → (3,-3) → (3,0) → (0,3) → (-3,3) → (-3,0) → (0,-3)`).
 - Ô xuất phát (mỗi nhóm sở hữu sẵn 1 ô): các ô số `0, 3, 5, 8, 10, 13, 15` của vòng ngoài lần lượt cho Nhóm 1–7 (khoảng cách 3-2-3-2-3-2-3).
 - 29 ô còn lại là ô trống.
+- Nhóm chưa có thành viên lúc bắt đầu Bàn Cờ không nhận ô xuất phát (ô đó là ô trống). Nếu sau đó có người vào nhóm, nhóm chơi theo luật "nhóm không còn ô nào".
 - Ô kề: 6 hướng axial `(+1,0) (-1,0) (0,+1) (0,-1) (+1,-1) (-1,+1)`.
 - Màu nhóm (gợi ý): N1 `#E53935`, N2 `#FB8C00`, N3 `#43A047`, N4 `#00ACC1`, N5 `#1E88E5`, N6 `#8E24AA`, N7 `#6D4C41`. Ô trống xám nhạt. Mỗi ô có ghi số nhóm để không phụ thuộc hoàn toàn vào màu.
 
@@ -62,6 +63,8 @@
 1. **SELECT (15 giây)** — mỗi nhóm biểu quyết chọn MỘT ô mục tiêu trên bản đồ thu nhỏ ở điện thoại (ô hợp lệ sáng lên).
    - Ô hợp lệ: không thuộc nhóm mình, kề ít nhất một ô của nhóm mình, và không thuộc nhóm đang có khiên. Có thể là ô trống, ô nhóm khác, hoặc ô Hiến pháp.
    - Nhóm không còn ô nào: được chọn bất kỳ ô nào ở vòng ngoài cùng (trừ ô của nhóm có khiên).
+   - Nhóm không có ô hợp lệ nào thì bỏ lượt chọn (vẫn trả lời câu hỏi và vẫn phòng thủ ô của mình).
+   - SELECT đóng sớm khi mọi nhóm có người và có ô hợp lệ đều đã chốt (như câu hỏi, mục 2.2).
    - Host chỉ hiện mục tiêu của các nhóm SAU khi SELECT kết thúc (lật cùng lúc cho kịch tính).
 2. **QUESTION (20 giây)** — một câu kho `board`, cả 7 nhóm cùng trả lời.
 3. **REVEAL (~10 giây)** — giải quyết (3.3), hiệu ứng đổi chủ ô, đáp án + giải thích, và chênh lệch mili-giây khi có tranh chấp.
@@ -72,11 +75,13 @@ Với mỗi ô bị ít nhất một nhóm nhắm tới:
 - Ứng viên = các nhóm nhắm ô đó VÀ trả lời đúng.
 - Nếu ô có chủ và chủ trả lời đúng: chủ là ứng viên phòng thủ (dù chủ đang nhắm ô khác).
 - Người thắng = ứng viên có thời điểm chốt sớm nhất.
+  - Nhiều ứng viên cùng sớm nhất (trùng mili-giây — thường gặp khi các nhóm cùng được server tự chốt lúc hết giờ) → không phân định được, ô giữ nguyên.
   - Người thắng là chủ → ô giữ nguyên ("phòng thủ thành công").
   - Người thắng là nhóm tấn công → ô đổi chủ.
 - Không có ứng viên → ô giữ nguyên.
 - Mỗi nhóm chỉ nhắm 1 ô mỗi lượt nên các ô giải quyết độc lập. Một nhóm có thể vừa mất ô A vừa chiếm ô B trong cùng lượt.
 - Không kiểm tra liên thông: lãnh thổ bị chia cắt vẫn giữ nguyên.
+- Tính hợp lệ của mục tiêu xét trên trạng thái đầu lượt: nhóm A mất ô X (ô duy nhất kề mục tiêu Y) trong lượt này vẫn chiếm được Y. Mục tiêu không hợp lệ (không kề, ô của mình, ngoài bàn cờ) bị bỏ qua.
 
 ### 3.4 Ô Hiến pháp
 - Chiếm như ô thường (phải kề lãnh thổ).
@@ -86,12 +91,15 @@ Với mỗi ô bị ít nhất một nhóm nhắm tới:
 
 ### 3.5 Chống "hội đồng"
 - Nhóm mất từ 2 ô trở lên trong cùng một lượt nhận **Khiên bảo hộ** cho lượt kế tiếp (tác dụng như Khiên Hiến pháp).
+  - Đếm tổng số ô bị chiếm mất, kể cả khi cùng lượt nhóm chiếm được ô khác; nhóm mất hết ô vẫn nhận khiên.
+  - Một nhóm có thể nhận cả hai khiên cùng lúc (vừa chiếm ô Hiến pháp vừa mất ≥ 2 ô); tác dụng không cộng dồn, vẫn chỉ một lượt.
+- Khiên không cản nhóm có khiên đi tấn công.
 - Ô của nhóm có khiên có viền phát sáng trên host và không sáng lên là mục tiêu trên điện thoại nhóm khác.
 
 ### 3.6 Kết thúc và tính điểm
 - Kết thúc sau N lượt (mặc định 14). Admin chỉnh được N và có nút "Kết thúc sau lượt này".
 - Điểm = số ô sở hữu (ô Hiến pháp tính 3).
-- Tiêu chí phụ khi hòa: (1) tổng số câu đúng cả trận, (2) tổng thời gian chốt của các câu đúng (ít hơn xếp trên).
+- Tiêu chí phụ khi hòa: (1) tổng số câu đúng cả trận, (2) tổng thời gian chốt của các câu đúng (ít hơn xếp trên). Thời gian chốt của một câu = từ lúc câu mở tới lúc server ghi nhận chốt (câu đúng do tự chốt khi hết giờ tính bằng cả thời lượng câu). Bằng nhau cả ba tiêu chí → đồng hạng.
 - Bàn cờ và điểm được giữ nguyên để chơi tiếp Quả Bom.
 
 ## 4. Quả Bom Tham Nhũng
@@ -161,3 +169,6 @@ Với mỗi ô bị ít nhất một nhóm nhắm tới:
 - Ngòi bom 30–60 giây (thay cho 60–120 giây trong ý tưởng ban đầu) vì chỉ đếm thời gian trả lời; mỗi quả khoảng 2–3 phút thực.
 - Bàn cờ lục giác bán kính 3 (37 ô) với 7 ô xuất phát cách đều gần nhất có thể trên vòng ngoài.
 - Câu hỏi đóng sớm khi mọi nhóm có người đã chốt: bớt thời gian chờ; không ảnh hưởng công bằng vì thứ tự vẫn tính theo thời điểm chốt.
+- Tranh ô mà các ứng viên sớm nhất trùng mili-giây → ô giữ nguyên: không có cách công bằng để phân định (nhất là khi cùng bị tự chốt lúc hết giờ); khuyến khích đội trưởng chủ động CHỐT.
+- Nhóm không có thành viên lúc bắt đầu Bàn Cờ không nhận ô xuất phát: tránh "ô ma" không bao giờ phòng thủ được bị nhóm bên cạnh chiếm miễn phí.
+- Khiên bảo hộ đếm tổng số ô mất (không trừ ô chiếm được): luật đơn giản, dễ giải thích trên lớp.

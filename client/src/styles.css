@@ -151,3 +151,95 @@ body {
 .play-question__result.is-correct { background: #e6f6ec; }
 .play-question__result.is-wrong { background: #fdecec; }
 .play-question__result p { margin: 0.3rem 0 0; }
+
+/* ─── Bàn cờ lục giác (SVG dùng chung) ─────────────────────────────────── */
+.hex-board { display: block; width: 100%; height: auto; max-height: 100%; user-select: none; -webkit-tap-highlight-color: transparent; }
+.hex__shape { stroke: #f6f4ef; stroke-width: 0.9; transition: fill 0.6s ease; }
+.hex__owner { fill: #fff; font-size: 6.5px; font-weight: 800; paint-order: stroke; stroke: rgb(0 0 0 / 0.35); stroke-width: 0.6px; pointer-events: none; }
+.hex-icon { pointer-events: none; }
+.hex__votes circle { fill: #1a1a1a; }
+.hex__votes text { fill: #fff; font-size: 3.6px; font-weight: 800; pointer-events: none; }
+.hex__target circle { stroke: #fff; stroke-width: 0.7; }
+.hex__target text { fill: #fff; font-size: 3.4px; font-weight: 800; pointer-events: none; }
+/* Khiên: viền phát sáng */
+.hex--shielded .hex__shape { stroke: #ffe082; stroke-width: 1.6; filter: drop-shadow(0 0 1.6px #ffd54f); animation: shield-glow 1.6s ease-in-out infinite; }
+@keyframes shield-glow { 50% { filter: drop-shadow(0 0 3px #ffca28); } }
+/* Chế độ chọn ô */
+.hex--disabled { opacity: 0.35; }
+.hex--selectable { cursor: pointer; }
+.hex--selectable .hex__shape { stroke: #1a1a1a; stroke-width: 1.1; stroke-dasharray: 2 1.2; }
+.hex--mine .hex__shape { stroke: #1f8fbf; stroke-width: 2; stroke-dasharray: none; }
+.hex--chosen .hex__shape { stroke: #1a1a1a; stroke-width: 2.4; stroke-dasharray: none; }
+/* Kết quả lượt */
+.hex--captured .hex__shape { stroke: #fff; stroke-width: 2; animation: hex-flash 0.9s ease-in-out 3; }
+.hex--defended .hex__shape { stroke: #1a1a1a; stroke-width: 1.6; }
+@keyframes hex-flash { 50% { opacity: 0.45; } }
+
+/* ─── Màn chiếu trong trận ─────────────────────────────────────────────── */
+.page--game { padding: 1.2vw 2vw; gap: 0.6rem; }
+.page--game > .badge { position: fixed; bottom: 0.4rem; right: 0.6rem; font-size: 0.4em; z-index: 2; }
+.host-game { width: 100%; display: grid; grid-template-columns: 65fr 35fr; grid-template-rows: auto 1fr; gap: 0.6em 2vw; height: calc(100vh - 2.4vw); text-align: left; }
+.host-game--question { grid-template-columns: 60fr 40fr; }
+.host-game__head { grid-column: 1 / -1; display: flex; align-items: center; gap: 1em; font-weight: 800; }
+.host-game__phase { flex: 1; color: #555; }
+.host-game__timer { font-size: 1.8em; font-variant-numeric: tabular-nums; min-width: 2.5ch; text-align: right; }
+.host-game__timer.is-urgent { color: #c53030; }
+.host-game__main, .host-game__side { min-height: 0; display: flex; flex-direction: column; gap: 0.5em; }
+.host-game__main { align-items: center; justify-content: center; }
+.host-game__main > .hex-board { height: 100%; width: auto; max-width: 100%; }
+.host-game__main > .standings { align-self: stretch; }
+.host-game--question .host-game__main { justify-content: flex-start; }
+.host-game__side { overflow: hidden; }
+.host-game__hint { margin: 0; font-size: 0.75em; color: #555; }
+.host-answer { background: #e6f6ec; border-left: 8px solid #2f855a; border-radius: 8px; padding: 0.3em 0.6em; font-size: 0.7em; }
+.host-answer p { margin: 0.2em 0; }
+.host-answer__explanation { font-size: 0.85em; }
+.host-outcome { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.25em; font-size: 0.62em; }
+.host-outcome__item { background: #fff; border-left: 8px solid; border-radius: 6px; padding: 0.2em 0.5em; }
+.host-outcome__item.is-captured { font-weight: 700; }
+.host-outcome__item.is-failed { opacity: 0.7; }
+
+/* Bảng xếp hạng */
+.standings { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.25em; font-size: 0.7em; }
+.standings li { display: grid; grid-template-columns: 1.4em 1.6em 1fr auto auto; align-items: center; gap: 0.5em; background: #fff; border-left: 8px solid; border-radius: 8px; padding: 0.15em 0.5em; }
+.standings li.is-me { outline: 3px solid #1a1a1a; }
+.standings__rank { font-weight: 800; color: #555; }
+.standings__swatch { color: #fff; font-weight: 800; text-align: center; border-radius: 4px; }
+.standings__name { font-weight: 700; }
+.standings__shield { color: #b7791f; }
+.standings__locked { color: #2f855a; }
+.standings__score { font-size: 1.4em; font-weight: 800; font-variant-numeric: tabular-nums; }
+.standings__meta { font-size: 0.75em; color: #666; }
+
+/* Bục vinh danh */
+.podium { list-style: none; margin: 0; padding: 0; display: flex; align-items: flex-end; justify-content: center; gap: 0.6em; width: 100%; }
+.podium__step { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; color: #fff; border-radius: 12px 12px 0 0; padding: 0.4em 0.8em; min-width: 7em; font-weight: 800; }
+.podium__step--1 { order: 2; min-height: 7em; }
+.podium__step--2 { order: 1; min-height: 5.5em; }
+.podium__step--3 { order: 3; min-height: 4.5em; }
+.podium__rank { font-size: 0.7em; }
+.podium__score { font-size: 0.8em; }
+
+/* ─── Điện thoại trong trận ────────────────────────────────────────────── */
+.play-board { width: 100%; display: flex; flex-direction: column; gap: 0.7rem; }
+.play-board__turn { margin: 0; font-weight: 700; color: #555; }
+.play-board__target { margin: 0; font-weight: 600; }
+.play-board__outcome { border-radius: 12px; padding: 0.6rem 0.8rem; background: #fff; text-align: left; }
+.play-board__outcome.is-correct { background: #e6f6ec; }
+.play-board__outcome.is-wrong { background: #fdecec; }
+.play-board__outcome ul { margin: 0.3rem 0 0; padding-left: 1.1rem; }
+.play-select { display: flex; flex-direction: column; gap: 0.6rem; }
+.play-select__note { margin: 0; }
+.play-select__shield { margin: 0; background: #fff8e1; border-radius: 10px; padding: 0.4rem 0.6rem; font-weight: 600; }
+.hex-board--mini { width: 100%; max-width: 26rem; margin: 0 auto; }
+.play-board .standings { font-size: 1rem; }
+
+/* ─── Admin ────────────────────────────────────────────────────────────── */
+.admin-board { background: #fff; border-radius: 10px; padding: 0.8rem; text-align: left; }
+.admin-board h2 { margin: 0 0 0.5rem; font-size: 1.2rem; }
+.admin-board__status { margin: 0 0 0.5rem; }
+.admin-inline { display: flex; align-items: center; gap: 0.4rem; font-weight: 600; }
+.admin-inline input { width: 5rem; min-height: 44px; font-size: 1.1rem; padding: 0 0.4rem; }
+.admin-board__view { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0.8rem; margin-top: 0.6rem; font-size: 1.2rem; }
+.hex-board--admin { max-width: 26rem; }
+.admin-board__log { font-size: 0.8rem; padding-left: 1.1rem; }
