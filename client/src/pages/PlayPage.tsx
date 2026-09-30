@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { MAX_NAME_LENGTH, TEAM_IDS, isRoomCode } from '@cnxh/shared';
 import { ConnectionBadge } from '../ConnectionBadge';
-import { socket, useRoomState } from '../socket';
+import { PlayQuestion } from '../PlayQuestion';
+import { socket, useQuestion, useRoomState, useTeamVotes } from '../socket';
 import { TEAM_COLORS, teamName } from '../teams';
 
 const STORAGE_KEY = 'cnxh.player';
@@ -28,6 +29,8 @@ const ERRORS: Record<string, string> = {
 
 export function PlayPage() {
   const state = useRoomState();
+  const question = useQuestion();
+  const teamVotes = useTeamVotes();
   const roomFromUrl = new URLSearchParams(window.location.search).get('room') ?? '';
   const [saved, setSaved] = useState<Saved | null>(() => {
     const s = loadSaved();
@@ -86,8 +89,12 @@ export function PlayPage() {
         <ConnectionBadge />
         <h1 style={{ color: TEAM_COLORS[me.teamId] }}>{teamName(me.teamId)}</h1>
         <p className="play-name">{me.name}{me.isCaptain && ' ★ Đội trưởng'}</p>
-        <p>Phòng {state.code} — chờ người dẫn bắt đầu…</p>
-        {state.lobbyOpen && (
+        {question && question.teamIds.includes(me.teamId) ? (
+          <PlayQuestion view={question} team={teamVotes} playerId={me.id} />
+        ) : (
+          <p>Phòng {state.code} — chờ người dẫn bắt đầu…</p>
+        )}
+        {state.lobbyOpen && !question && (
           <div className="team-grid">
             {TEAM_IDS.map((id) => (
               <button

@@ -1,13 +1,31 @@
 import { randomUUID } from 'node:crypto';
 import {
+  QUESTION_DURATION_MS,
   ROOM_CODE_LENGTH,
   TEAM_IDS,
+  allTeamsLocked,
+  castVote,
+  closeRound,
   effectiveCaptain,
+  lockTeam,
+  openRound,
+  pickQuestion,
+  presentQuestion,
+  publicQuestionView,
+  teamQuestionView,
   isTeamId,
   normalizeName,
   resolveDesignatedCaptain,
   type CaptainCandidate,
   type ErrorCode,
+  type PublicQuestionView,
+  type Question,
+  type QuestionPool,
+  type QuestionRound,
+  type Rng,
+  type RoundResult as SharedRoundResult,
+  type TeamContext,
+  type TeamQuestionView,
   type RoomState,
   type TeamId,
 } from '@cnxh/shared';
@@ -29,6 +47,11 @@ export class Room {
   private readonly captains = new Map<TeamId, string | null>();
   private seq = 0;
   lobbyOpen = true;
+  /** Câu hỏi đang mở hoặc đang hiện đáp án. */
+  question: QuestionRound | null = null;
+  private roundSeq = 0;
+  /** questionId → các nhóm đã gặp câu đó trong trận. */
+  private readonly seenBy = new Map<string, Set<TeamId>>();
 
   constructor(
     readonly code: string,
@@ -120,6 +143,94 @@ export class Room {
 
   setLobbyOpen(open: boolean): void {
     this.lobbyOpen = open;
+  }
+
+  teamOf(playerId: string): TeamId | null {
+    return this.players.get(playerId)?.teamId ?? null;
+  }
+
+  teamContext(teamId: TeamId): TeamContext {
+    const members = this.members(teamId);
+    return {
+      memberIds: members.map((p) => p.id),
+      onlineIds: members.filter((p) => p.online).map((p) => p.id),
+      captainId: this.captainOf(teamId),
+    };
+  }
+
+  private contexts(): Record<TeamId, TeamContext> {
+    return Object.fromEntries(TEAM_IDS.map((id) => [id, this.teamContext(id)]));
+  }
+
+  // ─── Câu hỏi (GAME_SPEC 2.2–2.4) ───────────────────────────────────────────
+
+  startQuestion(
+    bank: readonly Question[],
+    pool: QuestionPool,
+    opts: { durationMs?: number; teamIds?: readonly TeamId[]; rng?: Rng } = {},
+  ): RoomResult<{ round: QuestionRound }> {
+    if (this.question?.status === 'open') return { ok: false, error: 'QUESTION_ACTIVE' };
+    const teamIds = opts.teamIds ?? TEAM_IDS;
+    const q = pickQuestion(bank, pool, this.seenBy, teamIds, opts.rng);
+    if (!q) return { ok: false, error: 'NO_QUESTIONS_IN_POOL' };
+    const seen = this.seenBy.get(q.id) ?? new Set<TeamId>();
+    teamIds.forEach((t) => seen.add(t));
+    this.seenBy.set(q.id, seen);
+    this.question = openRound({
+      roundId: ++this.roundSeq,
+      question: presentQuestion(q, opts.rng),
+      teamIds,
+      now: this.now(),
+      durationMs: opts.durationMs ?? QUESTION_DURATION_MS[pool],
+    });
+    return { ok: true, round: this.question };
+  }
+
+  private applyRound(res: SharedRoundResult, teamId: TeamId): RoomResult<{ teamId: TeamId }> {
+    if (!res.ok) return res;
+    this.question = res.round;
+    return { ok: true, teamId };
+  }
+
+  private playerRound(playerId: string, roundId: unknown): RoomResult<{ round: QuestionRound; teamId: TeamId }> {
+    const teamId = this.teamOf(playerId);
+    if (teamId === null) return { ok: false, error: 'PLAYER_NOT_FOUND' };
+    if (!this.question || this.question.roundId !== roundId) return { ok: false, error: 'NO_QUESTION' };
+    return { ok: true, round: this.question, teamId };
+  }
+
+  vote(playerId: string, roundId: unknown, option: unknown): RoomResult<{ teamId: TeamId }> {
+    const r = this.playerRound(playerId, roundId);
+    if (!r.ok) return r;
+    if (typeof option !== 'number') return { ok: false, error: 'BAD_OPTION' };
+    return this.applyRound(castVote(r.round, r.teamId, playerId, option, this.now()), r.teamId);
+  }
+
+  lock(playerId: string, roundId: unknown): RoomResult<{ teamId: TeamId }> {
+    const r = this.playerRound(playerId, roundId);
+    if (!r.ok) return r;
+    return this.applyRound(lockTeam(r.round, r.teamId, playerId, this.teamContext(r.teamId), this.now()), r.teamId);
+  }
+
+  allLocked(): boolean {
+    return this.question?.status === 'open' && allTeamsLocked(this.question, this.contexts());
+  }
+
+  /** Đóng câu hỏi (hết giờ hoặc mọi nhóm đã chốt): tự chốt nhóm còn lại. */
+  closeQuestion(): void {
+    if (this.question?.status === 'open') this.question = closeRound(this.question, this.contexts(), this.now());
+  }
+
+  clearQuestion(): void {
+    this.question = null;
+  }
+
+  publicQuestion(): PublicQuestionView | null {
+    return this.question ? publicQuestionView(this.question) : null;
+  }
+
+  teamQuestion(teamId: TeamId): TeamQuestionView | null {
+    return this.question ? teamQuestionView(this.question, teamId, this.teamContext(teamId)) : null;
   }
 
   /** Đội trưởng đang có quyền CHỐT của nhóm (dùng cho các giai đoạn sau). */

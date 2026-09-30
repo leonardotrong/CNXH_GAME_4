@@ -1,13 +1,16 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { TEAM_IDS } from '@cnxh/shared';
 import { ConnectionBadge } from '../ConnectionBadge';
-import { socket, useRoomState } from '../socket';
+import { QuestionPanel } from '../QuestionPanel';
+import { socket, useQuestion, useRoomState } from '../socket';
 import { TEAM_COLORS, teamName } from '../teams';
 
 const PW_KEY = 'cnxh.adminPassword';
 
 export function AdminPage() {
   const state = useRoomState();
+  const question = useQuestion();
+  const [notice, setNotice] = useState('');
   const [password, setPassword] = useState('');
   const [authed, setAuthed] = useState(false);
   const [error, setError] = useState('');
@@ -77,6 +80,43 @@ export function AdminPage() {
           >
             {state.lobbyOpen ? 'Đóng cổng vào phòng' : 'Mở lại cổng vào phòng'}
           </button>
+          <div className="admin-actions">
+            <button
+              className="primary-btn"
+              disabled={question?.status === 'open'}
+              onClick={() =>
+                socket.emit('admin:startQuestion', { pool: 'board' }, (res) =>
+                  setNotice(res.ok ? '' : `Không mở được câu hỏi (${res.error}).`),
+                )
+              }
+            >
+              Câu thử
+            </button>
+            <button
+              className="primary-btn"
+              disabled={question?.status === 'open'}
+              onClick={() =>
+                socket.emit('admin:startQuestion', { pool: 'bomb' }, (res) =>
+                  setNotice(res.ok ? '' : `Không mở được câu hỏi (${res.error}).`),
+                )
+              }
+            >
+              Câu thử (kho bom)
+            </button>
+            <button
+              className="primary-btn primary-btn--danger"
+              disabled={!question}
+              onClick={() => socket.emit('admin:skipQuestion', () => {})}
+            >
+              Bỏ qua câu
+            </button>
+          </div>
+          {notice && <p className="form-error">{notice}</p>}
+          {question && (
+            <div className="admin-question">
+              <QuestionPanel view={question} activeTeamIds={state?.teams.filter((t) => t.players.length > 0).map((t) => t.id)} />
+            </div>
+          )}
           <div className="admin-teams">
             {state.teams.map((t) => (
               <section key={t.id} style={{ borderColor: TEAM_COLORS[t.id] }}>

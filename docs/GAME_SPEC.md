@@ -30,6 +30,7 @@
 - Khi chốt: lựa chọn của nhóm = phương án nhiều phiếu nhất. Hòa → theo phiếu của đội trưởng; nếu đội trưởng chưa bỏ phiếu → phương án đạt số phiếu đó sớm nhất.
 - Hết giờ mà chưa chốt: server tự chốt theo quy tắc trên (không cần quá nửa), thời điểm chốt = thời điểm hết giờ. Không có phiếu nào → nhóm không có lựa chọn (câu hỏi tính là sai, chọn ô tính là bỏ lượt).
 - Thời điểm chốt do SERVER ghi nhận (mili-giây) là căn cứ duy nhất để so nhóm nào nhanh hơn.
+- Nhóm đã chốt thì thành viên không đổi phiếu nữa. Khi mọi nhóm có người đều đã chốt, câu hỏi đóng ngay (không chờ hết giờ).
 - Ý nghĩa bài học: thiểu số phục tùng đa số, bàn bạc dân chủ rồi quyết định tập trung → nguyên tắc tập trung dân chủ.
 
 ### 2.3 Câu hỏi
@@ -159,3 +160,4 @@ Với mỗi ô bị ít nhất một nhóm nhắm tới:
 - Nút CHỐT cần quá nửa thành viên online đã bỏ phiếu: tránh đội trưởng chốt sớm một mình.
 - Ngòi bom 30–60 giây (thay cho 60–120 giây trong ý tưởng ban đầu) vì chỉ đếm thời gian trả lời; mỗi quả khoảng 2–3 phút thực.
 - Bàn cờ lục giác bán kính 3 (37 ô) với 7 ô xuất phát cách đều gần nhất có thể trên vòng ngoài.
+- Câu hỏi đóng sớm khi mọi nhóm có người đã chốt: bớt thời gian chờ; không ảnh hưởng công bằng vì thứ tự vẫn tính theo thời điểm chốt.

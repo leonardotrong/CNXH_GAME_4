@@ -1,4 +1,6 @@
 import type { RoomState, TeamId } from './lobby';
+import type { PublicQuestionView, RoundError, TeamQuestionView } from './questionRound';
+import type { QuestionPool } from './questions';
 
 /** Vai trò của một kết nối, tương ứng với route trên client. */
 export type ClientRole = 'host' | 'play' | 'admin';
@@ -14,7 +16,11 @@ export type ErrorCode =
   | 'ROOM_NOT_FOUND'
   | 'LOBBY_CLOSED'
   | 'PLAYER_NOT_FOUND'
-  | 'NO_ROOM';
+  | 'NO_ROOM'
+  | 'NO_QUESTION'
+  | 'QUESTION_ACTIVE'
+  | 'NO_QUESTIONS_IN_POOL'
+  | RoundError;
 
 export type Ack<T = object> = ({ ok: true } & T) | { ok: false; error: ErrorCode };
 
@@ -33,6 +39,10 @@ export interface ServerToClientEvents {
   'room:state': (state: RoomState) => void;
   /** Gửi tới các host đang chờ khi admin tạo phòng mới. */
   'room:created': (payload: { code: string }) => void;
+  /** Câu hỏi hiện tại (null = không có). Khi còn mở: không có đáp án/giải thích/lựa chọn của nhóm. */
+  'question:state': (view: PublicQuestionView | null) => void;
+  /** Phiếu của nhóm mình — chỉ gửi cho thành viên nhóm đó. */
+  'question:team': (view: TeamQuestionView | null) => void;
 }
 
 /** Sự kiện client → server. */
@@ -43,11 +53,18 @@ export interface ClientToServerEvents {
 
   'player:join': (req: JoinRequest, ack: (res: Ack<{ playerId: string; teamId: TeamId }>) => void) => void;
   'player:changeTeam': (req: { teamId: TeamId }, ack: (res: Ack) => void) => void;
+  'player:vote': (req: { roundId: number; option: number }, ack: (res: Ack) => void) => void;
+  /** Lệnh CHỐT của đội trưởng. */
+  'player:lock': (req: { roundId: number }, ack: (res: Ack) => void) => void;
 
   'admin:login': (req: { password: string }, ack: (res: Ack) => void) => void;
   'admin:createRoom': (ack: (res: Ack<{ code: string }>) => void) => void;
   'admin:watch': (req: { roomCode?: string }, ack: (res: Ack<{ code: string }>) => void) => void;
   'admin:setLobbyOpen': (req: { open: boolean }, ack: (res: Ack) => void) => void;
   'admin:setCaptain': (req: { playerId: string }, ack: (res: Ack) => void) => void;
+  /** "Câu thử": hỏi một câu cho cả 7 nhóm. */
+  'admin:startQuestion': (req: { pool: QuestionPool }, ack: (res: Ack<{ roundId: number }>) => void) => void;
+  /** Bỏ qua câu lỗi: hủy câu, không công bố kết quả. */
+  'admin:skipQuestion': (ack: (res: Ack) => void) => void;
   'admin:movePlayer': (req: { playerId: string; teamId: TeamId }, ack: (res: Ack) => void) => void;
 }

@@ -107,3 +107,47 @@ body {
 .admin-teams ul { list-style: none; margin: 0; padding: 0; }
 .admin-teams li { display: flex; align-items: center; gap: 0.4rem; padding: 0.2rem 0; }
 .admin-teams li > span { flex: 1; }
+
+.chip { display: inline-block; padding: 0.2em 0.7em; border-radius: 999px; color: #fff; font-weight: 600; }
+
+/* Câu hỏi (host/admin) */
+.question { width: 100%; max-width: 90rem; text-align: left; }
+.question__head { display: flex; justify-content: space-between; align-items: center; font-weight: 700; }
+.question__timer { font-size: 2em; font-variant-numeric: tabular-nums; min-width: 2.5ch; text-align: right; }
+.question__timer.is-urgent { color: #c53030; }
+.question__prompt { font-size: 1.5em; margin: 0.4em 0; }
+.question__options { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5em; }
+.question__options li { background: #fff; border: 3px solid #ccc; border-radius: 12px; padding: 0.4em 0.7em; }
+.question__options li b { margin-right: 0.4em; }
+.question__options li.is-correct { border-color: #2f855a; background: #e6f6ec; }
+.question__options li.is-wrong { opacity: 0.5; }
+.question__explanation { font-size: 0.9em; background: #fff8e1; border-left: 6px solid #b7791f; padding: 0.5em 0.8em; }
+.question__results { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.25em; font-size: 0.8em; }
+.question__results li { display: grid; grid-template-columns: 7em 2em 2em 1fr; align-items: center; gap: 0.5em; border-left: 8px solid; background: #fff; padding: 0.2em 0.6em; }
+.question__ms { font-variant-numeric: tabular-nums; }
+.question__locked { display: flex; flex-wrap: wrap; gap: 0.4em; margin-top: 0.6em; font-size: 0.7em; }
+.admin-question { font-size: 0.9rem; background: #fff; border-radius: 10px; padding: 0.8rem; }
+.admin-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.primary-btn:disabled, .lock-btn:disabled, .option-btn:disabled { cursor: not-allowed; }
+.primary-btn:disabled { opacity: 0.4; }
+.primary-btn--danger { background: #c53030; }
+
+/* Câu hỏi (điện thoại) */
+.play-question { width: 100%; display: flex; flex-direction: column; gap: 0.7rem; text-align: left; }
+.play-question__timer { align-self: center; font-size: 2rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.play-question__prompt { font-size: 1.2rem; margin: 0; }
+.play-question__options { display: flex; flex-direction: column; gap: 0.5rem; }
+.option-btn { display: flex; align-items: center; gap: 0.6rem; min-height: 56px; padding: 0.5rem 0.8rem; border: 3px solid #bbb; border-radius: 12px; background: #fff; font-size: 1.05rem; text-align: left; color: inherit; }
+.option-btn span:nth-child(2) { flex: 1; }
+.option-btn__count { min-width: 2ch; font-weight: 800; text-align: right; }
+.option-btn.is-mine { border-color: #1f8fbf; background: #e3f3fb; }
+.option-btn.is-chosen { outline: 4px solid #1a1a1a; }
+.option-btn.is-correct { border-color: #2f855a; background: #e6f6ec; }
+.option-btn.is-wrong:not(.is-mine) { opacity: 0.55; }
+.play-question__status { margin: 0; text-align: center; font-weight: 600; }
+.lock-btn { min-height: 64px; border: 0; border-radius: 14px; background: #c53030; color: #fff; font-size: 1.5rem; font-weight: 800; letter-spacing: 0.1em; }
+.lock-btn:disabled { background: #aaa; }
+.play-question__result { border-radius: 12px; padding: 0.6rem 0.8rem; }
+.play-question__result.is-correct { background: #e6f6ec; }
+.play-question__result.is-wrong { background: #fdecec; }
+.play-question__result p { margin: 0.3rem 0 0; }

@@ -50,7 +50,7 @@ Cloud: hook `SessionStart` (`.claude/settings.json` → `scripts/claude-session-
 ## Trạng thái (cập nhật khi xong mỗi giai đoạn)
 - [x] 0 — Khung dự án
 - [x] 1 — Phòng chơi
-- [ ] 2 — Câu hỏi & biểu quyết
+- [x] 2 — Câu hỏi & biểu quyết
 - [ ] 3 — Bàn Cờ Quyền Lực
 - [ ] 4 — Quả Bom Tham Nhũng
 - [ ] 5 — Admin & chế độ dự phòng

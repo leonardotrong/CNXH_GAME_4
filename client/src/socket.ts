@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react';
 import { io, type Socket } from 'socket.io-client';
-import type { ClientToServerEvents, RoomState, ServerToClientEvents } from '@cnxh/shared';
+import type {
+  ClientToServerEvents,
+  PublicQuestionView,
+  RoomState,
+  ServerToClientEvents,
+  TeamQuestionView,
+} from '@cnxh/shared';
 
 export type GameSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 export type ConnectionStatus = 'connecting' | 'connected' | 'disconnected';
@@ -41,4 +47,28 @@ export function useRoomState(): RoomState | null {
     };
   }, []);
   return state;
+}
+
+/** Câu hỏi hiện tại (dữ liệu công khai). */
+export function useQuestion(): PublicQuestionView | null {
+  const [view, setView] = useState<PublicQuestionView | null>(null);
+  useEffect(() => {
+    socket.on('question:state', setView);
+    return () => {
+      socket.off('question:state', setView);
+    };
+  }, []);
+  return view;
+}
+
+/** Phiếu của nhóm mình (chỉ /play nhận). */
+export function useTeamVotes(): TeamQuestionView | null {
+  const [view, setView] = useState<TeamQuestionView | null>(null);
+  useEffect(() => {
+    socket.on('question:team', setView);
+    return () => {
+      socket.off('question:team', setView);
+    };
+  }, []);
+  return view;
 }

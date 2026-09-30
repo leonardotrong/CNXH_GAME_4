@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import { ConnectionBadge } from '../ConnectionBadge';
-import { socket, useConnectionStatus, useRoomState } from '../socket';
+import { QuestionPanel } from '../QuestionPanel';
+import { socket, useConnectionStatus, useQuestion, useRoomState } from '../socket';
 import { TEAM_COLORS, teamName } from '../teams';
 
 export function HostPage() {
   const status = useConnectionStatus();
   const state = useRoomState();
+  const question = useQuestion();
   const [publicUrl, setPublicUrl] = useState<string | null>(null);
   const [qrSvg, setQrSvg] = useState('');
 
@@ -37,7 +39,9 @@ export function HostPage() {
   return (
     <main className="page page--host">
       <ConnectionBadge />
-      {!state ? (
+      {question ? (
+        <QuestionPanel view={question} activeTeamIds={state?.teams.filter((t) => t.players.length > 0).map((t) => t.id)} />
+      ) : !state ? (
         <h1>{status === 'connected' ? 'Đang chờ người dẫn tạo phòng…' : 'Bàn Cờ Quyền Lực — Màn chiếu'}</h1>
       ) : (
         <>
