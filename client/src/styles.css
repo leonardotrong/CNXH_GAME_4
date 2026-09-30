@@ -70,3 +70,40 @@ body {
   text-decoration: none;
   box-shadow: 0 1px 3px rgb(0 0 0 / 0.15);
 }
+
+.is-offline { opacity: 0.45; }
+
+/* Host: lobby */
+.host-join { display: flex; align-items: center; gap: 4vw; }
+.host-join__qr { width: min(28vw, 45vh); background: #fff; padding: 0.5rem; border-radius: 12px; }
+.host-join__qr svg { display: block; width: 100%; height: auto; }
+.host-join p { margin: 0.2em 0; }
+.host-join__url { font-weight: 700; word-break: break-all; }
+.host-join__code { font-size: 3.5em; font-weight: 800; letter-spacing: 0.15em; }
+.host-join__closed { color: #c53030; font-weight: 700; }
+.host-teams { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.6rem; width: 100%; }
+.host-team { border: 3px solid; border-radius: 10px; background: #fff; overflow: hidden; text-align: left; min-height: 12rem; }
+.host-team h2 { margin: 0; padding: 0.3em 0.5em; color: #fff; font-size: 0.8em; }
+.host-team h2 span { font-weight: 400; }
+.host-team ul { margin: 0; padding: 0.4em 0.6em; list-style: none; font-size: 0.6em; }
+
+/* Play */
+.page--play { max-width: 28rem; margin: 0 auto; }
+.join-form { display: flex; flex-direction: column; gap: 1rem; width: 100%; text-align: left; }
+.join-form label { display: flex; flex-direction: column; gap: 0.3rem; font-weight: 600; }
+.join-form input { min-height: 56px; font-size: 1.25rem; padding: 0 0.75rem; border: 2px solid #999; border-radius: 10px; }
+.team-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.6rem; width: 100%; }
+.team-btn, .primary-btn { min-height: 56px; border: 0; border-radius: 12px; color: #fff; font-size: 1.15rem; font-weight: 700; cursor: pointer; }
+.primary-btn { background: #1a1a1a; padding: 0 1.5rem; }
+.form-error { color: #c53030; font-weight: 600; margin: 0; }
+.play-name { font-size: 1.4rem; font-weight: 700; margin: 0; }
+.play-members { list-style: none; padding: 0; margin: 0; }
+
+/* Admin */
+.page--admin { align-items: stretch; max-width: 60rem; margin: 0 auto; }
+.admin-teams { display: grid; grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr)); gap: 0.8rem; text-align: left; }
+.admin-teams section { border: 2px solid; border-radius: 10px; background: #fff; padding: 0.5rem 0.8rem; }
+.admin-teams h2 { margin: 0 0 0.4rem; font-size: 1.1rem; }
+.admin-teams ul { list-style: none; margin: 0; padding: 0; }
+.admin-teams li { display: flex; align-items: center; gap: 0.4rem; padding: 0.2rem 0; }
+.admin-teams li > span { flex: 1; }

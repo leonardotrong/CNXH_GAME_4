@@ -41,13 +41,15 @@ Chủ đề kiến thức: nhà nước, nhà nước XHCN, đặc điểm nhà 
 - `npm start` — chạy server production (`NODE_ENV=production`, cổng `PORT`, mặc định 3000), phục vụ luôn `client/dist`
 - `npm run simulate` — giả lập 63 người chơi (Giai đoạn 7, chưa có)
 
+Biến môi trường: `ADMIN_PASSWORD` (bắt buộc để vào `/admin`, vd. `ADMIN_PASSWORD=admin npm run dev`), `PUBLIC_URL` (địa chỉ công khai/LAN dùng để tạo QR trên `/host`; mặc định là origin của trang host — khi dev nên đặt thành địa chỉ "Network" của Vite để điện thoại quét được).
+
 Ghi chú kỹ thuật: `shared/` xuất thẳng mã TypeScript (`@cnxh/shared` → `shared/src/index.ts`), không có bước build riêng; server luôn chạy qua `tsx` (cả production). Kiểu sự kiện Socket.IO nằm trong `shared/src/events.ts`.
 
 Cloud: hook `SessionStart` (`.claude/settings.json` → `scripts/claude-session-start.sh`) tự `npm ci` khi chạy trên Claude Code on the web; ở máy local thì bỏ qua. GitHub Actions (`.github/workflows/ci.yml`) chạy typecheck + test + build cho mỗi push/PR.
 
 ## Trạng thái (cập nhật khi xong mỗi giai đoạn)
 - [x] 0 — Khung dự án
-- [ ] 1 — Phòng chơi
+- [x] 1 — Phòng chơi
 - [ ] 2 — Câu hỏi & biểu quyết
 - [ ] 3 — Bàn Cờ Quyền Lực
 - [ ] 4 — Quả Bom Tham Nhũng
