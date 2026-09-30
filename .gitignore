@@ -1,0 +1,7 @@
+node_modules/
+dist/
+*.log
+.env
+.DS_Store
+# trạng thái trận lưu khi chạy (Giai đoạn sau)
+server/data/

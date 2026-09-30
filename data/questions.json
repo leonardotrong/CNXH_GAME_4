@@ -1,0 +1,263 @@
+{
+  "version": 1,
+  "note": "Bộ câu hỏi mẫu. Cần bổ sung để đạt: board >= 20, bomb >= 35. Tự kiểm tra đáp án với giáo trình trước buổi học.",
+  "questions": [
+    {
+      "id": "b01", "pool": "board", "topic": "nguon-goc", "type": "mcq",
+      "prompt": "Theo V.I. Lênin, nhà nước là sản phẩm và biểu hiện của điều gì?",
+      "options": ["Những mâu thuẫn giai cấp không thể điều hòa được", "Sự phát triển của khoa học kỹ thuật", "Khế ước tự nguyện giữa các cá nhân", "Nhu cầu quản lý gia đình"],
+      "answerIndex": 0,
+      "explanation": "Lênin chỉ ra: nhà nước xuất hiện ở đâu và khi nào mà mâu thuẫn giai cấp không thể điều hòa được.",
+      "source": "Lênin, Nhà nước và cách mạng"
+    },
+    {
+      "id": "b02", "pool": "board", "topic": "nguon-goc", "type": "mcq",
+      "prompt": "Hình thái xã hội nào dưới đây chưa có nhà nước?",
+      "options": ["Chiếm hữu nô lệ", "Phong kiến", "Công xã nguyên thủy", "Tư bản chủ nghĩa"],
+      "answerIndex": 2,
+      "explanation": "Công xã nguyên thủy chưa có giai cấp nên chưa có nhà nước.",
+      "source": "Giáo trình CNXHKH"
+    },
+    {
+      "id": "b03", "pool": "board", "topic": "ban-chat", "type": "mcq",
+      "prompt": "V.I. Lênin gọi nhà nước xã hội chủ nghĩa là gì?",
+      "options": ["Nhà nước vĩnh cửu", "Nhà nước siêu giai cấp", "\"Nửa nhà nước\"", "Nhà nước phi chính trị"],
+      "answerIndex": 2,
+      "explanation": "Nhà nước XHCN là nhà nước kiểu mới, \"nửa nhà nước\", sẽ dần tự tiêu vong.",
+      "source": "Giáo trình CNXHKH"
+    },
+    {
+      "id": "b04", "pool": "board", "topic": "ban-chat", "type": "mcq",
+      "prompt": "Về chính trị, nhà nước XHCN mang bản chất của giai cấp nào?",
+      "options": ["Giai cấp nông dân", "Giai cấp công nhân", "Tầng lớp trí thức", "Tầng lớp doanh nhân"],
+      "answerIndex": 1,
+      "explanation": "Nhà nước XHCN mang bản chất giai cấp công nhân, đại biểu cho lợi ích của nhân dân lao động.",
+      "source": "Giáo trình CNXHKH"
+    },
+    {
+      "id": "b05", "pool": "board", "topic": "ban-chat", "type": "mcq",
+      "prompt": "Cơ sở kinh tế của nhà nước XHCN là gì?",
+      "options": ["Chế độ tư hữu về tư liệu sản xuất", "Kinh tế tự cung tự cấp", "Chế độ sở hữu xã hội về tư liệu sản xuất chủ yếu", "Kinh tế thị trường tự do hoàn toàn"],
+      "answerIndex": 2,
+      "explanation": "Về kinh tế, nhà nước XHCN dựa trên chế độ sở hữu xã hội về tư liệu sản xuất chủ yếu.",
+      "source": "Giáo trình CNXHKH"
+    },
+    {
+      "id": "b06", "pool": "board", "topic": "chuc-nang", "type": "mcq",
+      "prompt": "Căn cứ vào tính chất quyền lực, nhà nước XHCN có những chức năng nào?",
+      "options": ["Đối nội và đối ngoại", "Giai cấp (trấn áp) và xã hội (tổ chức, xây dựng)", "Chính trị, kinh tế, văn hóa, xã hội", "Lập pháp, hành pháp, tư pháp"],
+      "answerIndex": 1,
+      "explanation": "Theo phạm vi: đối nội, đối ngoại; theo lĩnh vực: chính trị, kinh tế, văn hóa, xã hội; theo tính chất quyền lực: giai cấp và xã hội.",
+      "source": "Giáo trình CNXHKH"
+    },
+    {
+      "id": "b07", "pool": "board", "topic": "chuc-nang", "type": "mcq",
+      "prompt": "Chức năng nào là chủ yếu của nhà nước XHCN?",
+      "options": ["Trấn áp giai cấp bóc lột", "Tổ chức, xây dựng xã hội mới", "Đối ngoại", "Thu thuế"],
+      "answerIndex": 1,
+      "explanation": "Chức năng tổ chức, xây dựng là chức năng chủ yếu của nhà nước XHCN.",
+      "source": "Giáo trình CNXHKH"
+    },
+    {
+      "id": "b08", "pool": "board", "topic": "bo-may", "type": "mcq",
+      "prompt": "Theo Hiến pháp 2013, cơ quan quyền lực nhà nước cao nhất là?",
+      "options": ["Chính phủ", "Quốc hội", "Chủ tịch nước", "Tòa án nhân dân tối cao"],
+      "answerIndex": 1,
+      "explanation": "Quốc hội là cơ quan đại biểu cao nhất của Nhân dân, cơ quan quyền lực nhà nước cao nhất.",
+      "source": "Hiến pháp 2013, Điều 69"
+    },
+    {
+      "id": "b09", "pool": "board", "topic": "bo-may", "type": "mcq",
+      "prompt": "Cơ quan nào là cơ quan hành chính nhà nước cao nhất, thực hiện quyền hành pháp?",
+      "options": ["Quốc hội", "Viện kiểm sát nhân dân tối cao", "Chính phủ", "Ủy ban Thường vụ Quốc hội"],
+      "answerIndex": 2,
+      "explanation": "Chính phủ là cơ quan hành chính nhà nước cao nhất, thực hiện quyền hành pháp.",
+      "source": "Hiến pháp 2013, Điều 94"
+    },
+    {
+      "id": "b10", "pool": "board", "topic": "bo-may", "type": "mcq",
+      "prompt": "Cơ quan nào thực hành quyền công tố, kiểm sát hoạt động tư pháp?",
+      "options": ["Tòa án nhân dân", "Viện kiểm sát nhân dân", "Bộ Công an", "Thanh tra Chính phủ"],
+      "answerIndex": 1,
+      "explanation": "Viện kiểm sát nhân dân thực hành quyền công tố, kiểm sát hoạt động tư pháp.",
+      "source": "Hiến pháp 2013, Điều 107"
+    },
+    {
+      "id": "b11", "pool": "board", "topic": "bo-may", "type": "mcq",
+      "prompt": "Cơ quan nào là cơ quan xét xử, thực hiện quyền tư pháp?",
+      "options": ["Tòa án nhân dân", "Quốc hội", "Chính phủ", "Mặt trận Tổ quốc Việt Nam"],
+      "answerIndex": 0,
+      "explanation": "Tòa án nhân dân là cơ quan xét xử, thực hiện quyền tư pháp.",
+      "source": "Hiến pháp 2013, Điều 102"
+    },
+    {
+      "id": "b12", "pool": "board", "topic": "dac-diem", "type": "mcq",
+      "prompt": "Điều nào của Hiến pháp 2013 khẳng định vai trò lãnh đạo của Đảng Cộng sản Việt Nam?",
+      "options": ["Điều 1", "Điều 2", "Điều 4", "Điều 8"],
+      "answerIndex": 2,
+      "explanation": "Điều 4 Hiến pháp 2013 quy định vai trò lãnh đạo của Đảng Cộng sản Việt Nam.",
+      "source": "Hiến pháp 2013, Điều 4"
+    },
+    {
+      "id": "b13", "pool": "board", "topic": "dac-diem", "type": "mcq",
+      "prompt": "Bộ máy nhà nước Việt Nam tổ chức và hoạt động theo nguyên tắc nào?",
+      "options": ["Tam quyền phân lập", "Tập trung dân chủ", "Phân quyền tuyệt đối cho địa phương", "Đa nguyên chính trị"],
+      "answerIndex": 1,
+      "explanation": "Nhà nước tổ chức và hoạt động theo Hiến pháp và pháp luật, thực hiện nguyên tắc tập trung dân chủ.",
+      "source": "Hiến pháp 2013, Điều 8"
+    },
+    {
+      "id": "b14", "pool": "board", "topic": "dac-diem", "type": "mcq",
+      "prompt": "Theo Hiến pháp 2013, quyền lực nhà nước ở Việt Nam là…",
+      "options": ["Phân chia độc lập giữa ba nhánh", "Thống nhất, có phân công, phối hợp, kiểm soát giữa các cơ quan", "Tập trung toàn bộ vào Chính phủ", "Thuộc về các cơ quan tư pháp"],
+      "answerIndex": 1,
+      "explanation": "Quyền lực nhà nước thống nhất, có phân công, phối hợp, kiểm soát trong thực hiện quyền lập pháp, hành pháp, tư pháp.",
+      "source": "Hiến pháp 2013, Điều 2"
+    },
+    {
+      "id": "b15", "pool": "board", "topic": "dac-diem", "type": "mcq",
+      "prompt": "Quyền lực nhà nước thuộc về Nhân dân, nền tảng là liên minh giữa…",
+      "options": ["Công nhân – nông dân – đội ngũ trí thức", "Công nhân – doanh nhân – trí thức", "Nông dân – quân đội – trí thức", "Công nhân – nông dân – tiểu thương"],
+      "answerIndex": 0,
+      "explanation": "Nền tảng là liên minh giữa giai cấp công nhân với giai cấp nông dân và đội ngũ trí thức.",
+      "source": "Hiến pháp 2013, Điều 2"
+    },
+    {
+      "id": "b16", "pool": "board", "topic": "tinh-huong", "type": "mcq",
+      "prompt": "Ai trực tiếp bầu ra đại biểu Quốc hội?",
+      "options": ["Chính phủ", "Nhân dân (cử tri)", "Tòa án nhân dân", "Ủy ban nhân dân"],
+      "answerIndex": 1,
+      "explanation": "Nhân dân thực hiện quyền lực nhà nước qua dân chủ trực tiếp và dân chủ đại diện; công dân đủ 18 tuổi có quyền bầu cử.",
+      "source": "Hiến pháp 2013, Điều 6 và Điều 27"
+    },
+    {
+      "id": "b17", "pool": "board", "topic": "tinh-huong", "type": "mcq",
+      "prompt": "Cần ban hành một đạo luật mới. Cơ quan nào có thẩm quyền thông qua?",
+      "options": ["Chính phủ", "Quốc hội", "Tòa án nhân dân tối cao", "Chủ tịch nước"],
+      "answerIndex": 1,
+      "explanation": "Quốc hội thực hiện quyền lập hiến, lập pháp.",
+      "source": "Hiến pháp 2013, Điều 69"
+    },
+    {
+      "id": "b18", "pool": "board", "topic": "tinh-huong", "type": "mcq",
+      "prompt": "Một vụ án cần được xét xử theo pháp luật. Cơ quan nào thực hiện?",
+      "options": ["Tòa án nhân dân", "Viện kiểm sát nhân dân", "Ủy ban nhân dân", "Quốc hội"],
+      "answerIndex": 0,
+      "explanation": "Tòa án nhân dân là cơ quan xét xử; Viện kiểm sát thực hành quyền công tố, không xét xử.",
+      "source": "Hiến pháp 2013, Điều 102 và Điều 107"
+    },
+
+    {
+      "id": "x01", "pool": "bomb", "topic": "nguon-goc", "type": "tf",
+      "prompt": "Công xã nguyên thủy đã có nhà nước.",
+      "options": ["Đúng", "Sai"], "answerIndex": 1,
+      "explanation": "Công xã nguyên thủy chưa có giai cấp nên chưa có nhà nước.",
+      "source": "Giáo trình CNXHKH"
+    },
+    {
+      "id": "x02", "pool": "bomb", "topic": "nguon-goc", "type": "tf",
+      "prompt": "Nhà nước là sản phẩm của mâu thuẫn giai cấp không thể điều hòa được.",
+      "options": ["Đúng", "Sai"], "answerIndex": 0,
+      "explanation": "Đây là luận điểm của Lênin về nguồn gốc nhà nước.",
+      "source": "Lênin, Nhà nước và cách mạng"
+    },
+    {
+      "id": "x03", "pool": "bomb", "topic": "ban-chat", "type": "tf",
+      "prompt": "Nhà nước XHCN sẽ tồn tại vĩnh viễn.",
+      "options": ["Đúng", "Sai"], "answerIndex": 1,
+      "explanation": "Nhà nước XHCN là \"nửa nhà nước\", sẽ dần tự tiêu vong.",
+      "source": "Giáo trình CNXHKH"
+    },
+    {
+      "id": "x04", "pool": "bomb", "topic": "ban-chat", "type": "tf",
+      "prompt": "Nhà nước XHCN mang bản chất giai cấp công nhân.",
+      "options": ["Đúng", "Sai"], "answerIndex": 0,
+      "explanation": "Về chính trị, nhà nước XHCN mang bản chất giai cấp công nhân.",
+      "source": "Giáo trình CNXHKH"
+    },
+    {
+      "id": "x05", "pool": "bomb", "topic": "chuc-nang", "type": "tf",
+      "prompt": "Tổ chức, xây dựng là chức năng chủ yếu của nhà nước XHCN.",
+      "options": ["Đúng", "Sai"], "answerIndex": 0,
+      "explanation": "Chức năng tổ chức, xây dựng giữ vai trò chủ yếu.",
+      "source": "Giáo trình CNXHKH"
+    },
+    {
+      "id": "x06", "pool": "bomb", "topic": "bo-may", "type": "tf",
+      "prompt": "Quốc hội thực hiện quyền lập hiến, lập pháp.",
+      "options": ["Đúng", "Sai"], "answerIndex": 0,
+      "explanation": "Quốc hội thực hiện quyền lập hiến, lập pháp.",
+      "source": "Hiến pháp 2013, Điều 69"
+    },
+    {
+      "id": "x07", "pool": "bomb", "topic": "bo-may", "type": "tf",
+      "prompt": "Chính phủ là cơ quan thực hiện quyền tư pháp.",
+      "options": ["Đúng", "Sai"], "answerIndex": 1,
+      "explanation": "Chính phủ thực hiện quyền hành pháp; Tòa án thực hiện quyền tư pháp.",
+      "source": "Hiến pháp 2013, Điều 94 và Điều 102"
+    },
+    {
+      "id": "x08", "pool": "bomb", "topic": "bo-may", "type": "tf",
+      "prompt": "Viện kiểm sát nhân dân là cơ quan xét xử.",
+      "options": ["Đúng", "Sai"], "answerIndex": 1,
+      "explanation": "Viện kiểm sát thực hành quyền công tố, kiểm sát hoạt động tư pháp; Tòa án mới xét xử.",
+      "source": "Hiến pháp 2013, Điều 107"
+    },
+    {
+      "id": "x09", "pool": "bomb", "topic": "bo-may", "type": "tf",
+      "prompt": "Thẩm phán, Hội thẩm xét xử độc lập và chỉ tuân theo pháp luật.",
+      "options": ["Đúng", "Sai"], "answerIndex": 0,
+      "explanation": "Đây là nguyên tắc xét xử được Hiến pháp quy định.",
+      "source": "Hiến pháp 2013, Điều 103"
+    },
+    {
+      "id": "x10", "pool": "bomb", "topic": "dac-diem", "type": "tf",
+      "prompt": "Pháp luật giữ vị trí tối thượng trong nhà nước pháp quyền.",
+      "options": ["Đúng", "Sai"], "answerIndex": 0,
+      "explanation": "Nhà nước tổ chức, hoạt động trên cơ sở Hiến pháp và pháp luật; pháp luật giữ vị trí tối thượng.",
+      "source": "Giáo trình CNXHKH"
+    },
+    {
+      "id": "x11", "pool": "bomb", "topic": "dac-diem", "type": "tf",
+      "prompt": "Cơ quan nhà nước được làm mọi việc mà pháp luật không cấm.",
+      "options": ["Đúng", "Sai"], "answerIndex": 1,
+      "explanation": "Cơ quan nhà nước chỉ được làm những gì pháp luật cho phép; công dân được làm những gì pháp luật không cấm.",
+      "source": "Nguyên tắc nhà nước pháp quyền"
+    },
+    {
+      "id": "x12", "pool": "bomb", "topic": "dac-diem", "type": "tf",
+      "prompt": "Nhân dân chỉ thực hiện quyền lực nhà nước bằng dân chủ trực tiếp.",
+      "options": ["Đúng", "Sai"], "answerIndex": 1,
+      "explanation": "Nhân dân thực hiện quyền lực bằng cả dân chủ trực tiếp và dân chủ đại diện.",
+      "source": "Hiến pháp 2013, Điều 6"
+    },
+    {
+      "id": "x13", "pool": "bomb", "topic": "dac-diem", "type": "tf",
+      "prompt": "Quyền lực nhà nước Việt Nam tổ chức theo mô hình tam quyền phân lập.",
+      "options": ["Đúng", "Sai"], "answerIndex": 1,
+      "explanation": "Quyền lực nhà nước là thống nhất, có phân công, phối hợp, kiểm soát giữa các cơ quan.",
+      "source": "Hiến pháp 2013, Điều 2"
+    },
+    {
+      "id": "x14", "pool": "bomb", "topic": "dac-diem", "type": "tf",
+      "prompt": "Nhà nước pháp quyền XHCN Việt Nam coi con người là trung tâm của sự phát triển.",
+      "options": ["Đúng", "Sai"], "answerIndex": 0,
+      "explanation": "Nhà nước tôn trọng quyền con người, coi con người là chủ thể, là trung tâm của sự phát triển.",
+      "source": "Giáo trình CNXHKH"
+    },
+    {
+      "id": "x15", "pool": "bomb", "topic": "dac-diem", "type": "tf",
+      "prompt": "Thiểu số phục tùng đa số là một yêu cầu của nguyên tắc tập trung dân chủ.",
+      "options": ["Đúng", "Sai"], "answerIndex": 0,
+      "explanation": "Tập trung dân chủ gồm bàn bạc dân chủ, thiểu số phục tùng đa số, cấp dưới phục tùng cấp trên.",
+      "source": "Giáo trình CNXHKH"
+    },
+    {
+      "id": "x16", "pool": "bomb", "topic": "tinh-huong", "type": "tf",
+      "prompt": "Công dân đủ 18 tuổi trở lên có quyền bầu cử.",
+      "options": ["Đúng", "Sai"], "answerIndex": 0,
+      "explanation": "Công dân đủ 18 tuổi có quyền bầu cử, đủ 21 tuổi có quyền ứng cử.",
+      "source": "Hiến pháp 2013, Điều 27"
+    }
+  ]
+}
