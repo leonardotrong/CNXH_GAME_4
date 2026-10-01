@@ -1,0 +1,20 @@
+# Render Blueprint — một Web Service duy nhất: server Node phục vụ cả Socket.IO lẫn bản build của client.
+# Dùng: Render Dashboard → New → Blueprint → chọn repo này. Xem docs/DEPLOY.md.
+services:
+  - type: web
+    name: cnxh-game
+    runtime: node
+    plan: free
+    region: singapore
+    # Cần devDependencies (TypeScript, Vite) để build client.
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: ADMIN_PASSWORD
+        sync: false
+      # Tùy chọn: địa chỉ công khai để in QR (mặc định là origin của trang /host).
+      - key: PUBLIC_URL
+        sync: false

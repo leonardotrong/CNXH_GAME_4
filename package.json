@@ -14,9 +14,10 @@
     "dev": "concurrently -k -n server,client -c blue,magenta \"npm run dev -w server\" \"npm run dev -w client\"",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc -p shared && tsc -p server && tsc -p client",
+    "typecheck": "tsc -p shared && tsc -p server && tsc -p client && tsc -p scripts",
     "build": "npm run typecheck && npm run build -w client",
-    "start": "npm run start -w server"
+    "start": "npm run start -w server",
+    "simulate": "tsx scripts/simulate.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.3",
