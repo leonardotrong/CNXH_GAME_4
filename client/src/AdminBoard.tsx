@@ -30,7 +30,7 @@ export function AdminBoard({ game, onNotice }: { game: GameView | null; onNotice
 
   return (
     <section className="admin-card admin-board">
-      <h2>{bombPhase ? '💣 Quả Bom Tham Nhũng' : 'Bàn Cờ Quyền Lực'}</h2>
+      <h2>{bombPhase ? 'Quả Bom Tham Nhũng' : 'Bàn Cờ Quyền Lực'}</h2>
       {game?.phase === 'BOMB_INTRO' ? (
         <div className="admin-actions">
           <label className="admin-inline">

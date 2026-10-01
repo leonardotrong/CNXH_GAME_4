@@ -1,14 +1,21 @@
-import { memo, useId } from 'react';
+import { memo } from 'react';
 import { CELLS, CONSTITUTION_CELL, type CellId, type ShieldGrant, type TurnOutcome } from '@cnxh/shared';
-import { TEAM_COLORS } from './teams';
+import { TEAM_COLORS, TEAM_SHADES } from './teams';
 
 /**
  * Bàn cờ lục giác vẽ bằng SVG (GAME_SPEC 3.1), dùng chung cho màn chiếu, bản đồ thu nhỏ trên điện thoại và admin.
  * Hướng đỉnh nhọn: tâm ô (q, r) = (√3·(q + r/2), 1.5·r) × SIZE.
- * Màu ô trống lấy từ biến CSS `--hex-empty` để hợp với nền tối (host, điện thoại) lẫn nền sáng (admin).
+ * Ô bo góc nổi khối (mặt trên + mặt bên tối hơn) kiểu board game; vẽ theo hàng từ trên xuống nên ô dưới che mặt bên ô trên.
+ * Màu ô trống lấy từ biến CSS `--hex-empty`, `--hex-empty-side`.
  */
 const SIZE = 10;
 const SQRT3 = Math.sqrt(3);
+const GOLD = '#FFC83D';
+const GOLD_DARK = '#D69A00';
+/** Độ dày mặt bên (ô nổi khối kiểu board game). */
+const DEPTH = 1.7;
+/** Hình nổ (ô vừa mất do bom), tâm (0,0). */
+const BURST = 'M0-5.2 1.3-1.8 4.8-2.6 2.5.2 4.3 3.4.7 2.2-1 5.2-1.6 1.8-5 2.6-2.5-.2-4.3-3.4-.7-2.2z';
 
 export interface HexBoardProps {
   owners: readonly (number | null)[];
@@ -61,7 +68,7 @@ function hexPath(cx: number, cy: number, size: number, round: number): string {
 const GEOMETRY = CELLS.map((cell) => {
   const cx = SIZE * SQRT3 * (cell.q + cell.r / 2);
   const cy = SIZE * 1.5 * cell.r;
-  return { cell, cx, cy, shape: hexPath(cx, cy, SIZE * 0.94, 1.8), inner: hexPath(cx, cy, SIZE * 0.74, 1.4) };
+  return { cell, cx, cy, shape: hexPath(cx, cy, SIZE * 0.91, 1.6) };
 });
 
 /** Vị trí huy hiệu mục tiêu thứ i trong n huy hiệu trên một ô. */
@@ -72,9 +79,9 @@ function badgeOffset(i: number, n: number): [number, number] {
 }
 
 /** Biểu tượng cuốn Hiến pháp (cuốn sách mở). */
-function ConstitutionIcon({ cx, cy }: { cx: number; cy: number }) {
+function ConstitutionIcon({ cx, cy, small = false }: { cx: number; cy: number; small?: boolean }) {
   return (
-    <g transform={`translate(${cx} ${cy})`} className="hex-icon" aria-hidden>
+    <g transform={`translate(${cx} ${cy})${small ? ' scale(0.75)' : ''}`} className="hex-icon" aria-hidden>
       <path d="M-4.2,-2.6 L-0.3,-1.9 L-0.3,3 L-4.2,2.3 Z" fill="#fffbe6" stroke="#6b4e00" strokeWidth="0.45" strokeLinejoin="round" />
       <path d="M4.2,-2.6 L0.3,-1.9 L0.3,3 L4.2,2.3 Z" fill="#fffbe6" stroke="#6b4e00" strokeWidth="0.45" strokeLinejoin="round" />
       <path d="M-3.3,-1.2 L-1.1,-0.8 M-3.3,0.1 L-1.1,0.5 M1.1,-0.8 L3.3,-1.2 M1.1,0.5 L3.3,0.1" stroke="#6b4e00" strokeWidth="0.35" />
@@ -99,7 +106,6 @@ export const HexBoard = memo(function HexBoard({
   className = '',
   label = 'Bàn cờ',
 }: HexBoardProps) {
-  const id = `hb${useId().replace(/[^\w-]/g, '')}`;
   const shielded = new Set(shields.map((s) => s.teamId));
   const selectableSet = selectable ? new Set(selectable) : null;
   const results = new Map((outcome?.cells ?? []).map((c) => [c.cellId, c.result]));
@@ -112,27 +118,16 @@ export const HexBoard = memo(function HexBoard({
   }
 
   const half = SIZE * SQRT3 * 3.5 + 2;
-  const halfH = SIZE * 5.5 + 2;
+  const halfH = SIZE * 5.5 + 2 + DEPTH / 2;
 
   return (
     <svg
       className={`hex-board ${selectableSet ? 'hex-board--selecting' : ''} ${className}`}
-      viewBox={`${-half} ${-halfH} ${half * 2} ${halfH * 2}`}
+      viewBox={`${-half} ${-halfH + DEPTH / 2} ${half * 2} ${halfH * 2}`}
       role="img"
       aria-label={label}
     >
-      <defs>
-        <linearGradient id={`${id}-shine`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#fff" stopOpacity="0.3" />
-          <stop offset="0.45" stopColor="#fff" stopOpacity="0" />
-          <stop offset="1" stopColor="#000" stopOpacity="0.2" />
-        </linearGradient>
-        <linearGradient id={`${id}-gold`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#ffd75e" />
-          <stop offset="1" stopColor="#e9a400" />
-        </linearGradient>
-      </defs>
-      {GEOMETRY.map(({ cell, cx, cy, shape, inner }) => {
+      {GEOMETRY.map(({ cell, cx, cy, shape }) => {
         const owner = owners[cell.id] ?? null;
         const isConstitution = cell.id === CONSTITUTION_CELL;
         const canPick = selectableSet?.has(cell.id) ?? false;
@@ -150,7 +145,8 @@ export const HexBoard = memo(function HexBoard({
         if (isBlasted) classes.push('hex--blasted');
         const vote = counts?.[cell.id] ?? 0;
         const attackers = attackersByCell.get(cell.id) ?? [];
-        const fill = owner !== null ? TEAM_COLORS[owner] : isConstitution ? `url(#${id}-gold)` : undefined;
+        const fill = owner !== null ? TEAM_COLORS[owner] : isConstitution ? GOLD : undefined;
+        const side = owner !== null ? TEAM_SHADES[owner] : isConstitution ? GOLD_DARK : undefined;
         return (
           <g
             key={cell.id}
@@ -159,16 +155,15 @@ export const HexBoard = memo(function HexBoard({
             role={canPick && onCellClick ? 'button' : undefined}
             aria-label={canPick ? `Chọn ô ${cell.q},${cell.r}` : undefined}
           >
+            <path className="hex__side" d={shape} transform={`translate(0 ${DEPTH})`} style={side ? { fill: side } : undefined} />
             <path className="hex__shape" d={shape} style={fill ? { fill } : undefined} />
-            <path className="hex__shine" d={shape} fill={`url(#${id}-shine)`} />
-            {isConstitution && <path className="hex__ring" d={inner} />}
-            {isConstitution && <ConstitutionIcon cx={cx} cy={owner !== null ? cy + 3.4 : cy} />}
+            {isConstitution && <ConstitutionIcon cx={cx} cy={owner !== null ? cy + 4 : cy} small={owner !== null} />}
             {owner !== null && (
               <text
                 className="hex__owner"
                 x={cx}
                 // Chừa chỗ phía trên cho huy hiệu mục tiêu.
-                y={isConstitution ? cy - 1.4 : attackers.length > 0 ? cy + 2 : cy}
+                y={isConstitution ? cy - 2.2 : attackers.length > 0 ? cy + 2 : cy}
                 dominantBaseline="central"
                 textAnchor="middle"
               >
@@ -188,11 +183,7 @@ export const HexBoard = memo(function HexBoard({
                 {cell.id}
               </text>
             )}
-            {isBlasted && (
-              <text className="hex__blast" x={cx} y={cy} dominantBaseline="central" textAnchor="middle">
-                💥
-              </text>
-            )}
+            {isBlasted && <path className="hex__blast" d={BURST} transform={`translate(${cx} ${cy})`} />}
             {attackers.map((team, i) => {
               const [dx, dy] = badgeOffset(i, attackers.length);
               return (

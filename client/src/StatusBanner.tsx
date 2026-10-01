@@ -1,4 +1,5 @@
 import type { GameView } from '@cnxh/shared';
+import { Icon } from './Icon';
 
 /** Băng-rôn "TẠM DỪNG" / "Chế độ dự phòng" trên host và điện thoại. */
 export function StatusBanner({ game, audience }: { game: GameView | null; audience: 'host' | 'play' }) {
@@ -7,12 +8,12 @@ export function StatusBanner({ game, audience }: { game: GameView | null; audien
     <>
       {game.pausedAt !== null && (
         <div className="status-banner status-banner--paused" role="status">
-          ⏸️ TẠM DỪNG
+          <Icon name="pause" /> TẠM DỪNG
         </div>
       )}
       {game.fallback && (
         <div className="status-banner status-banner--fallback" role="status">
-          🃏 {audience === 'host' ? 'Chế độ dự phòng — các nhóm giơ thẻ màu A/B/C/D' : 'Chế độ dự phòng — làm theo người dẫn'}
+          {audience === 'host' ? 'Chế độ dự phòng — các nhóm giơ thẻ màu A/B/C/D' : 'Chế độ dự phòng — làm theo người dẫn'}
         </div>
       )}
     </>

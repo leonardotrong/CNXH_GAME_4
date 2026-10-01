@@ -3,11 +3,14 @@ import type { GameView, PublicQuestionView, TeamPassView, TeamQuestionView } fro
 import { PHASE_LABELS, describeExplosion } from './boardText';
 import { BombIcon } from './BombIcon';
 import { CountdownRing } from './Countdown';
+import { Icon } from './Icon';
 import { HexBoard } from './HexBoard';
 import { BOMB_RULES, BombBadge, PassArrow } from './HostBomb';
 import { PlayQuestion, VOTE_ERRORS } from './PlayQuestion';
 import { socket } from './socket';
 import { Standings } from './Standings';
+import { TerritoryBar } from './TerritoryBar';
+import { Swatch } from './TeamTag';
 import { teamName, teamStyle } from './teams';
 import { VoteStatus } from './VoteControls';
 
@@ -44,11 +47,9 @@ export function PlayBomb({
   return (
     <section className="play-board">
       <p className="play-phase">
-        <span className="play-phase__badge play-phase__badge--bomb">
-          💣 Quả bom {bomb.bombNumber}/{bomb.totalBombs}
-        </span>
-        {PHASE_LABELS[phase] ?? ''}
+        Quả bom {bomb.bombNumber}/{bomb.totalBombs} · {PHASE_LABELS[phase] ?? ''}
       </p>
+      <TerritoryBar owners={board.owners} />
       {phase !== 'BOMB_EXPLODE' &&
         (holding ? (
           <div className={`bomb-alert ${bomb.burning ? 'is-burning' : ''}`}>
@@ -75,7 +76,7 @@ export function PlayBomb({
         <ol className="play-bomb-rules">
           {BOMB_RULES.map((r) => (
             <li key={r.text}>
-              <span aria-hidden>{r.icon}</span>
+              <Icon name={r.icon} className="play-rules__icon" />
               <span>{r.text}</span>
             </li>
           ))}
@@ -103,7 +104,7 @@ export function PlayBomb({
 
       {phase === 'BOMB_EXPLODE' && lastExplosion && (
         <div className={`play-explode ${lastExplosion.teamId === teamId ? 'is-mine' : ''}`} style={teamStyle(lastExplosion.teamId)}>
-          <p className="play-explode__boom">💥 BÙM!</p>
+          <p className="play-explode__boom">BÙM!</p>
           <strong>{lastExplosion.teamId === teamId ? `Nhóm bạn mất ${lastExplosion.cells.length} ô!` : describeExplosion(lastExplosion)}</strong>
         </div>
       )}
@@ -158,8 +159,11 @@ function PassVote({ game, teamPass, playerId }: { game: GameView; teamPass: Team
               onClick={() => vote(t)}
               style={teamStyle(t, { '--votes': `${share}%` } as CSSProperties)}
             >
-              <b className="option-btn__letter">{t}</b>
-              <span className="option-btn__text">💣 → {teamName(t)}</span>
+              <Swatch teamId={t} />
+              <span className="option-btn__text">
+                {teamName(t)}
+                {mine?.locked && mine.choice === t && <small className="option-btn__chosen">Nhóm đã chốt</small>}
+              </span>
               <span className="option-btn__count">{mine?.tally[t] ?? 0}</span>
             </button>
           );

@@ -1,4 +1,4 @@
-/* ─── Bàn cờ lục giác (SVG dùng chung) ───────────────────────────────────── */
+/* ─── Bàn cờ lục giác — ô bo góc nổi khối kiểu board game ─────────────────── */
 .hex-board {
   display: block;
   width: 100%;
@@ -16,51 +16,23 @@
 
 .hex__shape {
   fill: var(--hex-empty);
-  stroke: var(--hex-line);
-  stroke-width: 0.5;
-  transition:
-    fill 0.6s ease,
-    stroke 0.3s ease;
+  transition: fill 0.5s ease;
 }
 
-.hex--owned .hex__shape,
-.hex--gold .hex__shape {
-  stroke: rgb(255 255 255 / 0.3);
-  stroke-width: 0.45;
-}
-
-.hex__shine {
-  pointer-events: none;
-}
-
-.hex--empty .hex__shine {
-  opacity: 0.3;
-}
-
-.hex__ring {
-  fill: none;
-  stroke: #fff6cf;
-  stroke-width: 0.7;
-  pointer-events: none;
-}
-
-.hex--owned.hex--constitution .hex__ring {
-  stroke: var(--gold);
-  stroke-width: 1.2;
-}
-
-.hex--gold .hex__shape {
-  filter: drop-shadow(0 0 2.2px rgb(255 200 61 / 0.75));
+.hex__side {
+  fill: var(--hex-empty-side);
+  transition: fill 0.5s ease;
 }
 
 .hex__owner {
   fill: #fff;
   font-family: var(--font);
-  font-size: 6.6px;
-  font-weight: 800;
+  font-size: 6.8px;
+  font-weight: 900;
   paint-order: stroke;
-  stroke: rgb(0 0 0 / 0.3);
-  stroke-width: 0.7px;
+  stroke: rgb(0 0 0 / 0.28);
+  stroke-width: 0.9px;
+  stroke-linejoin: round;
   pointer-events: none;
 }
 
@@ -70,37 +42,37 @@
 
 .hex__votes circle {
   fill: var(--gold);
-  stroke: rgb(0 0 0 / 0.35);
-  stroke-width: 0.4;
+  stroke: #fff;
+  stroke-width: 0.6;
 }
 
 .hex__votes text {
   fill: var(--gold-ink);
   font-family: var(--font);
-  font-size: 3.6px;
-  font-weight: 800;
+  font-size: 3.8px;
+  font-weight: 900;
   pointer-events: none;
 }
 
 .hex__target circle {
   stroke: #fff;
-  stroke-width: 0.6;
+  stroke-width: 0.9;
 }
 
 .hex__target text {
   fill: #fff;
   font-family: var(--font);
   font-size: 3.4px;
-  font-weight: 800;
+  font-weight: 900;
   pointer-events: none;
 }
 
 .hex__id {
   fill: #fff;
   font-family: var(--font);
-  font-size: 2.6px;
-  font-weight: 700;
-  opacity: 0.75;
+  font-size: 2.7px;
+  font-weight: 800;
+  opacity: 0.85;
   pointer-events: none;
 }
 
@@ -108,23 +80,15 @@
   fill: var(--muted);
 }
 
-/* Khiên: viền vàng phát sáng */
+/* Khiên: viền vàng */
 .hex--shielded .hex__shape {
-  stroke: #ffe082;
-  stroke-width: 1.3;
-  filter: drop-shadow(0 0 1.5px #ffd54f);
-  animation: shield-glow 1.6s ease-in-out infinite;
+  stroke: var(--gold);
+  stroke-width: 1.4;
 }
 
-@keyframes shield-glow {
-  50% {
-    filter: drop-shadow(0 0 3px #ffca28);
-  }
-}
-
-/* Chế độ chọn ô (điện thoại, admin chỉnh tay) */
+/* Chọn ô (điện thoại, admin chỉnh tay): ô chọn được có viền xanh nhấp nháy tại chỗ (không di chuyển, dễ bấm) */
 .hex--disabled {
-  opacity: 0.32;
+  opacity: 0.4;
 }
 
 .hex--selectable {
@@ -132,113 +96,89 @@
 }
 
 .hex--selectable .hex__shape {
-  stroke: #fff;
-  stroke-width: 0.9;
-  stroke-dasharray: 2 1.2;
+  stroke: var(--blue);
+  stroke-width: 1.3;
   animation: hex-breathe 1.6s ease-in-out infinite;
 }
 
 .hex--selectable.hex--empty .hex__shape {
-  fill: rgb(255 255 255 / 0.24);
+  fill: #cfe5ff;
 }
 
-html[data-route='admin'] .hex--selectable.hex--empty .hex__shape {
-  fill: #cdd4e6;
+.hex--selectable.hex--empty .hex__side {
+  fill: #8db8e8;
 }
 
 @keyframes hex-breathe {
   50% {
-    stroke-opacity: 0.35;
+    stroke-opacity: 0.3;
   }
 }
 
-.hex--mine .hex__shape {
-  stroke: var(--gold);
-  stroke-width: 1.9;
-  stroke-dasharray: none;
+.hex--mine .hex__shape,
+.hex--chosen .hex__shape,
+.hex--focused .hex__shape {
   animation: none;
-  filter: drop-shadow(0 0 2px rgb(255 200 61 / 0.9));
+}
+
+.hex--mine .hex__shape {
+  stroke: var(--gold-dark);
+  stroke-width: 2;
+  stroke-dasharray: none;
 }
 
 .hex--mine.hex--empty .hex__shape {
-  fill: rgb(255 200 61 / 0.4);
+  fill: #fff1c2;
 }
 
 .hex--chosen .hex__shape {
-  stroke: #fff;
-  stroke-width: 2.3;
+  stroke: var(--text);
+  stroke-width: 2.2;
   stroke-dasharray: none;
-  animation: none;
-  filter: drop-shadow(0 0 2.5px rgb(255 255 255 / 0.9));
 }
 
 .hex--focused .hex__shape {
-  stroke: var(--ink);
-  stroke-width: 2.4;
+  stroke: var(--text);
+  stroke-width: 2.2;
   stroke-dasharray: none;
-  animation: none;
-}
-
-html[data-route='admin'] .hex--selectable .hex__shape {
-  stroke: var(--ink-2);
-}
-
-html[data-route='admin'] .hex--focused .hex__shape {
-  stroke: var(--ink);
-  filter: drop-shadow(0 0 2px rgb(20 26 58 / 0.6));
 }
 
 /* Kết quả lượt */
 .hex--captured {
-  animation: hex-pop 0.7s var(--ease-spring) both;
+  animation: hex-pop 0.6s var(--ease) both;
 }
 
 .hex--captured .hex__shape {
   stroke: #fff;
-  stroke-width: 1.8;
-  animation: hex-flash 0.9s ease-in-out 3;
+  stroke-width: 1.6;
 }
 
 .hex--defended .hex__shape {
   stroke: var(--gold);
-  stroke-width: 1.6;
-  animation: hex-defend 0.5s ease-in-out 3;
+  stroke-width: 1.8;
 }
 
 .hex--tie .hex__shape {
-  stroke: #a3acd0;
-  stroke-width: 1.5;
+  stroke: var(--muted);
+  stroke-width: 1.4;
   stroke-dasharray: 1.5 1;
 }
 
 @keyframes hex-pop {
   0% {
-    transform: scale(0.4);
+    transform: scale(0.5) translateY(-4px);
   }
   60% {
-    transform: scale(1.18);
+    transform: scale(1.12) translateY(-1px);
   }
   100% {
     transform: scale(1);
   }
 }
 
-@keyframes hex-flash {
-  50% {
-    opacity: 0.45;
-  }
-}
-
-@keyframes hex-defend {
-  50% {
-    stroke: #fff;
-    stroke-width: 2.6;
-  }
-}
-
 /* Quả Bom: nhịp nhấp nháy CỐ ĐỊNH — không phụ thuộc thời gian còn lại của ngòi. */
 .hex--bomb .hex__shape {
-  stroke: #ff4d4f;
+  stroke: var(--red);
   stroke-width: 1.6;
   animation: bomb-pulse 1s steps(2, jump-none) infinite;
 }
@@ -250,26 +190,31 @@ html[data-route='admin'] .hex--focused .hex__shape {
 }
 
 .hex--blasted {
-  animation: hex-shake 0.4s ease-in-out 4;
+  animation: hex-shake 0.4s ease-in-out 3;
 }
 
 .hex--blasted .hex__shape {
-  fill: #2b2b35;
-  stroke: #ff7043;
-  stroke-width: 1.2;
-  animation: hex-flash 0.5s ease-in-out 6;
+  fill: #4a4f5e;
+  stroke: #ff7a1a;
+  stroke-width: 1;
+}
+
+.hex--blasted .hex__side {
+  fill: #2c303b;
 }
 
 .hex__blast {
-  font-size: 9px;
+  fill: #ff9100;
+  stroke: #ffd54f;
+  stroke-width: 0.5;
   pointer-events: none;
 }
 
 @keyframes hex-shake {
   25% {
-    transform: translate(-1.2px, 0.6px) rotate(-4deg);
+    transform: translate(-1px, 0.5px) rotate(-3deg);
   }
   75% {
-    transform: translate(1.2px, -0.6px) rotate(4deg);
+    transform: translate(1px, -0.5px) rotate(3deg);
   }
 }

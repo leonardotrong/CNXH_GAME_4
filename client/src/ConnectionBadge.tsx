@@ -6,12 +6,13 @@ const LABELS: Record<ConnectionStatus, string> = {
   disconnected: 'Mất kết nối',
 };
 
+/** Chấm trạng thái kết nối; chữ chỉ nổi bật khi có sự cố. */
 export function ConnectionBadge() {
   const status = useConnectionStatus();
   return (
     <span className={`conn conn--${status}`} role="status">
       <i aria-hidden />
-      {LABELS[status]}
+      <span className="conn__label">{LABELS[status]}</span>
     </span>
   );
 }

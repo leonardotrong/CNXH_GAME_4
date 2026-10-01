@@ -3,6 +3,7 @@ import QRCode from 'qrcode';
 import { ConnectionBadge } from '../ConnectionBadge';
 import { HostGame } from '../HostGame';
 import { HostRules } from '../HostRules';
+import { Icon } from '../Icon';
 import { Logo } from '../Logo';
 import { SoundToggle } from '../SoundToggle';
 import { StatusBanner } from '../StatusBanner';
@@ -80,9 +81,7 @@ export function HostPage() {
       ) : !state ? (
         <section className="host-waiting">
           <Logo className="host-waiting__logo" />
-          <h1 className="host-title">
-            Bàn Cờ Quyền Lực <span>&amp; Quả Bom Tham Nhũng</span>
-          </h1>
+          <h1 className="host-title">Bàn Cờ Quyền Lực</h1>
           <p className="host-waiting__note">
             {status === 'connected' ? 'Đang chờ người dẫn tạo phòng' : 'Đang kết nối tới máy chủ'}
             <span className="dots" aria-hidden>
@@ -94,26 +93,20 @@ export function HostPage() {
         </section>
       ) : (
         <div className="host-lobby">
+          <header className="host-lobby__brand">
+            <Logo className="host-lobby__logo" />
+            <span>Bàn Cờ Quyền Lực &amp; Quả Bom Tham Nhũng</span>
+          </header>
           <section className="host-join">
             <div className="host-join__qr" dangerouslySetInnerHTML={{ __html: qrSvg }} />
             <div className="host-join__info">
-              <div className="host-join__brand">
-                <Logo className="host-join__logo" />
-                <h1 className="host-title">
-                  Bàn Cờ Quyền Lực <span>&amp; Quả Bom Tham Nhũng</span>
-                </h1>
-              </div>
               <p className="host-join__label">Quét mã QR hoặc vào</p>
               <p className="host-join__url">{shortUrl}</p>
               <p className="host-join__label">Mã phòng</p>
-              <p className="host-join__code" aria-label={`Mã phòng ${state.code}`}>
-                {state.code.split('').map((d, i) => (
-                  <span key={i}>{d}</span>
-                ))}
-              </p>
+              <p className="host-join__code">{state.code}</p>
               <p className="host-join__count">
-                <b>{players}</b> người đã vào phòng
-                {!state.lobbyOpen && <span className="host-join__closed">Đã đóng cổng vào phòng</span>}
+                <Icon name="users" /> {players} người đã vào
+                {!state.lobbyOpen && <span className="host-join__closed">· đã đóng cổng vào phòng</span>}
               </p>
             </div>
           </section>
@@ -127,16 +120,16 @@ export function HostPage() {
                 <ul>
                   {t.players.map((p) => (
                     <li key={p.id} className={p.online ? '' : 'is-offline'}>
+                      {p.name}
                       {p.isCaptain && (
                         <span className="captain-star" title="Đội trưởng">
+                          {' '}
                           ★
                         </span>
                       )}
-                      {p.name}
                     </li>
                   ))}
                 </ul>
-                {t.players.length === 0 && <p className="host-team__empty">Chưa có ai</p>}
               </div>
             ))}
           </section>

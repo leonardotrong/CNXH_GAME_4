@@ -1,16 +1,16 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { CONSTITUTION_CELL, formatSeconds, type CellOutcome, type ShieldGrant, type TurnOutcome } from '@cnxh/shared';
 import { shieldName } from './boardText';
+import { Icon, type IconName } from './Icon';
 import { TeamTag } from './TeamTag';
-import { teamStyle } from './teams';
 
 /** Biểu tượng theo kết quả của một ô bị nhắm. */
-export const OUTCOME_ICONS: Record<CellOutcome['result'], string> = {
-  captured: '⚔️',
-  defended: '🛡️',
-  tie: '⚖️',
-  shielded: '🛡️',
-  failed: '✖',
+const OUTCOME_ICONS: Record<CellOutcome['result'], IconName> = {
+  captured: 'flag',
+  defended: 'shield',
+  tie: 'equal',
+  shielded: 'shield',
+  failed: 'x',
 };
 
 function CellName({ o }: { o: CellOutcome }) {
@@ -118,20 +118,16 @@ export function OutcomeList({ outcome }: { outcome: TurnOutcome | null }) {
       {outcome.cells
         .filter((o) => o.result !== 'failed' && (grabs.length < 2 || !isPlainGrab(o)))
         .map((o) => (
-          <li key={o.cellId} className={`outcome is-${o.result}`} style={teamStyle(o.winner ?? o.attackers[0]!)}>
-            <span className="outcome__icon" aria-hidden>
-              {OUTCOME_ICONS[o.result]}
-            </span>
+          <li key={o.cellId} className={`outcome is-${o.result}`}>
+            <Icon name={OUTCOME_ICONS[o.result]} className="outcome__icon" />
             <span>
               <OutcomeText o={o} />
             </span>
           </li>
         ))}
       {grabs.length >= 2 && (
-        <li className="outcome is-captured is-grabs">
-          <span className="outcome__icon" aria-hidden>
-            🚩
-          </span>
+        <li className="outcome is-captured">
+          <Icon name="flag" className="outcome__icon" />
           <span>
             {tags(grabs.map((o) => o.winner!).sort((a, b) => a - b))} chiếm ô trống
           </span>
@@ -139,9 +135,7 @@ export function OutcomeList({ outcome }: { outcome: TurnOutcome | null }) {
       )}
       {failed.length > 0 && (
         <li className="outcome is-failed">
-          <span className="outcome__icon" aria-hidden>
-            {OUTCOME_ICONS.failed}
-          </span>
+          <Icon name="x" className="outcome__icon" />
           <span>
             Tấn công thất bại (trả lời sai): {tags(failed.flatMap((o) => o.attackers).sort((a, b) => a - b))}
           </span>
@@ -150,9 +144,7 @@ export function OutcomeList({ outcome }: { outcome: TurnOutcome | null }) {
       {outcome.cells.length === 0 && <li className="outcome is-none">Không nhóm nào tấn công lượt này.</li>}
       {shieldGroups.length > 0 && (
         <li className="outcome is-shield">
-          <span className="outcome__icon" aria-hidden>
-            🛡️
-          </span>
+          <Icon name="shield" className="outcome__icon" />
           <span>
             {shieldGroups.map((g, i) => (
               <span key={g.reason}>

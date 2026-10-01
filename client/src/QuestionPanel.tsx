@@ -1,7 +1,7 @@
 import type { PublicQuestionView } from '@cnxh/shared';
 import { CountdownRing } from './Countdown';
-import { TeamTag } from './TeamTag';
-import { teamStyle } from './teams';
+import { Icon } from './Icon';
+import { Swatch } from './TeamTag';
 
 export const OPTION_LABELS = ['A', 'B', 'C', 'D'];
 
@@ -27,36 +27,30 @@ export function QuestionPanel({
   return (
     <section className={`question question--${view.status}`}>
       <header className="question__head">
-        <span className={`question__tag question__tag--${view.pool}`}>{view.pool === 'board' ? 'Câu hỏi Bàn Cờ' : '💣 Câu hỏi Bom'}</span>
-        {view.status === 'open' ? (
-          showTimer && <CountdownRing endsAt={view.endsAt} startedAt={view.startedAt} className="question__timer" />
-        ) : (
-          <span className="question__done">Đáp án</span>
-        )}
+        <span className="question__label">{view.status === 'open' ? (view.pool === 'board' ? 'Câu hỏi Bàn Cờ' : 'Câu hỏi Bom') : 'Đáp án'}</span>
+        {view.status === 'open' && showTimer && <CountdownRing endsAt={view.endsAt} startedAt={view.startedAt} className="question__timer" />}
       </header>
       <h2 className="question__prompt">{view.prompt}</h2>
-      <ol className={`question__options ${view.options.length === 2 ? 'is-two' : ''}`}>
+      <ol className="question__options">
         {view.options.map((opt, i) => (
           <li key={i} className={reveal ? (i === reveal.answerIndex ? 'is-correct' : 'is-wrong') : ''}>
             <b className="question__letter">{OPTION_LABELS[i]}</b>
-            <span>{opt}</span>
-            {reveal && i === reveal.answerIndex && <span className="question__check" aria-label="Đáp án đúng">✓</span>}
+            <span className="question__text">{opt}</span>
+            {reveal && i === reveal.answerIndex && <Icon name="check" className="question__check" />}
           </li>
         ))}
       </ol>
       {reveal ? (
         <>
-          <p className="question__explanation">
-            <b>Giải thích.</b> {reveal.explanation}
-          </p>
+          <p className="question__explanation">{reveal.explanation}</p>
           <ol className="question__results">
             {reveal.results
               .filter((r) => !activeTeamIds || activeTeamIds.includes(r.teamId))
               .map((r, i, results) => (
-                <li key={r.teamId} className={r.correct ? 'is-correct' : 'is-wrong'} style={teamStyle(r.teamId)}>
-                  <TeamTag teamId={r.teamId} />
+                <li key={r.teamId} className={r.correct ? 'is-correct' : 'is-wrong'}>
+                  <Swatch teamId={r.teamId} />
                   <span className="question__choice">{r.choice === null ? '—' : OPTION_LABELS[r.choice]}</span>
-                  <span className="question__mark">{r.correct ? '✓' : '✗'}</span>
+                  <Icon name={r.correct ? 'check' : 'x'} className="question__mark" />
                   <span className="question__ms">
                     {r.lockedBy === 'timeout' ? 'hết giờ' : formatMs(r.lockedAfterMs)}
                     {i > 0 && r.lockedBy === 'captain' && ` (+${r.lockedAfterMs - results[i - 1]!.lockedAfterMs} ms)`}
@@ -66,18 +60,22 @@ export function QuestionPanel({
           </ol>
         </>
       ) : (
-        <div className="question__locked">
-          {view.locked.map((l, i) => (
-            <span key={l.teamId} className="lock-chip is-locked" style={teamStyle(l.teamId)}>
-              <b>{i + 1}</b> Nhóm {l.teamId} · {formatMs(l.lockedAfterMs)}
-            </span>
-          ))}
-          {waiting.map((t) => (
-            <span key={t} className="lock-chip" style={teamStyle(t)}>
-              Nhóm {t} …
-            </span>
-          ))}
-        </div>
+        (view.locked.length > 0 || waiting.length > 0) && (
+          <div className="question__locked">
+            <span className="question__locked-label">Đã chốt</span>
+            {view.locked.map((l) => (
+              <span key={l.teamId} className="lock-chip">
+                <Swatch teamId={l.teamId} />
+                {formatMs(l.lockedAfterMs)}
+              </span>
+            ))}
+            {waiting.map((t) => (
+              <span key={t} className="lock-chip is-waiting">
+                <Swatch teamId={t} hollow />
+              </span>
+            ))}
+          </div>
+        )
       )}
     </section>
   );

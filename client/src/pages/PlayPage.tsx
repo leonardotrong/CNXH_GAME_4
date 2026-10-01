@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { MAX_NAME_LENGTH, TEAM_IDS, isRoomCode } from '@cnxh/shared';
 import { ConnectionBadge } from '../ConnectionBadge';
+import { Icon } from '../Icon';
 import { Logo } from '../Logo';
 import { PlayBoard } from '../PlayBoard';
 import { PlayQuestion } from '../PlayQuestion';
@@ -97,14 +98,11 @@ export function PlayPage() {
     return (
       <main className={`page page--play ${inGame && game!.phase.startsWith('BOMB_') ? 'page--danger' : ''}`} style={teamStyle(me.teamId)}>
         <header className="play-head">
-          <span className="play-head__badge" aria-hidden>
-            {me.teamId}
-          </span>
           <span className="play-head__who">
-            <span className="play-head__name">{me.name}</span>
-            <span className="play-head__team">
-              {teamName(me.teamId)}
-              {me.isCaptain && <span className="play-head__captain">★ Đội trưởng</span>}
+            <span className="play-head__team">{teamName(me.teamId)}</span>
+            <span className="play-head__name">
+              {me.name}
+              {me.isCaptain && ' · ★ Đội trưởng'}
             </span>
           </span>
           <ConnectionBadge />
@@ -128,9 +126,7 @@ export function PlayPage() {
             <ul>
               {BOARD_RULES.map((r) => (
                 <li key={r.title}>
-                  <span className="play-rules__icon" aria-hidden>
-                    {r.icon}
-                  </span>
+                  <Icon name={r.icon} className="play-rules__icon" />
                   <span>
                     <b>{r.title}.</b> {r.text}
                   </span>
@@ -141,9 +137,6 @@ export function PlayPage() {
           </section>
         ) : (
           <section className="wait-card">
-            <span className="wait-card__icon" aria-hidden>
-              ⏳
-            </span>
             <p className="wait-card__title">
               Chờ người dẫn bắt đầu
               <span className="dots" aria-hidden>
@@ -197,7 +190,6 @@ export function PlayPage() {
       <main className="page page--play page--center">
         <ConnectionBadge />
         <section className="wait-card">
-          <Logo className="wait-card__logo" />
           <p className="wait-card__title">
             Đang vào lại phòng
             <span className="dots" aria-hidden>
@@ -252,7 +244,7 @@ export function PlayPage() {
             {error}
           </p>
         )}
-        <button type="submit" className="primary-btn primary-btn--gold join-form__submit">
+        <button type="submit" className="primary-btn primary-btn--green join-form__submit">
           Vào chơi
         </button>
       </form>

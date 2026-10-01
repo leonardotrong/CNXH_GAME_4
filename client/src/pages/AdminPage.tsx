@@ -5,6 +5,7 @@ import { AdminFallback } from '../AdminFallback';
 import { AdminLog } from '../AdminLog';
 import { PHASE_LABELS } from '../boardText';
 import { ConnectionBadge } from '../ConnectionBadge';
+import { Icon } from '../Icon';
 import { Logo } from '../Logo';
 import { QuestionPanel } from '../QuestionPanel';
 import { socket, useAdminLog, useGame, useQuestion, useRoomState } from '../socket';
@@ -121,7 +122,8 @@ export function AdminPage() {
               className={`primary-btn admin-controls__pause ${paused ? 'primary-btn--gold' : 'primary-btn--danger'}`}
               onClick={() => socket.emit('admin:setPaused', { paused: !paused }, report('Không đổi được tạm dừng'))}
             >
-              {paused ? '▶️ TIẾP TỤC' : '⏸️ TẠM DỪNG'}
+              <Icon name={paused ? 'play' : 'pause'} />
+              {paused ? 'TIẾP TỤC' : 'TẠM DỪNG'}
             </button>
             <label className="switch">
               <input
@@ -143,13 +145,13 @@ export function AdminPage() {
             )}
             <span className="admin-controls__spacer" />
             <button className="primary-btn primary-btn--ghost" onClick={() => socket.emit('admin:setLobbyOpen', { open: !state.lobbyOpen }, () => {})}>
-              {state.lobbyOpen ? '🔓 Đóng cổng vào phòng' : '🔒 Mở lại cổng vào phòng'}
+              {state.lobbyOpen ? 'Đóng cổng vào phòng' : 'Mở lại cổng vào phòng'}
             </button>
             <button className="primary-btn primary-btn--ghost" onClick={createRoom}>
               Tạo phòng mới
             </button>
           </div>
-          {paused && <p className="admin-paused">⏸️ Trận đang TẠM DỪNG — đồng hồ, ngòi bom đứng yên; người chơi không bỏ phiếu được.</p>}
+          {paused && <p className="admin-paused">Trận đang TẠM DỪNG — đồng hồ, ngòi bom đứng yên; người chơi không bỏ phiếu được.</p>}
           {notice && (
             <p className="form-error" role="alert">
               {notice}
@@ -157,7 +159,7 @@ export function AdminPage() {
           )}
           {game?.fallback && (
             <section className="admin-card admin-fallback">
-              <h2>🃏 Chế độ dự phòng</h2>
+              <h2>Chế độ dự phòng</h2>
               <AdminFallback game={game} question={question} report={report} />
             </section>
           )}

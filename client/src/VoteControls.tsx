@@ -1,11 +1,12 @@
 import type { TeamVoteView } from '@cnxh/shared';
+import { Icon } from './Icon';
 
 /** Tiến độ bỏ phiếu của nhóm mình; vạch giữa = mốc "quá nửa" để đội trưởng được CHỐT. */
 function VoteMeter({ view, lockedText }: { view: TeamVoteView; lockedText: string }) {
   if (view.locked) {
     return (
       <p className="vote-meter is-locked" role="status">
-        <span aria-hidden>🔒</span> {lockedText}
+        <Icon name="lock" /> {lockedText}
       </p>
     );
   }
@@ -49,7 +50,7 @@ export function VoteStatus({
     <div className="lock-dock">
       {meter}
       <button className="lock-btn" disabled={!view.canLock} onClick={onLock}>
-        <span aria-hidden>🔒</span> {lockLabel}
+        <Icon name="lock" /> {lockLabel}
       </button>
       {!view.canLock && <p className="lock-hint">Chờ quá nửa thành viên online bỏ phiếu rồi mới CHỐT được</p>}
     </div>

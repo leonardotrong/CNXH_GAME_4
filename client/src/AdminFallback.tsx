@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { cellLabel, validTargets, type FallbackAnswer, type GameView, type PublicQuestionView } from '@cnxh/shared';
+import { Icon } from './Icon';
 import { OPTION_LABELS } from './QuestionPanel';
 import { socket } from './socket';
 import { TeamTag } from './TeamTag';
@@ -33,7 +34,7 @@ export function AdminFallback({ game, question, report }: { game: GameView; ques
               style={teamStyle(t)}
               onClick={() => socket.emit('admin:fallbackPass', { to: t }, report('Không chuyền được'))}
             >
-              💣 → {teamName(t)}
+              → {teamName(t)}
             </button>
           ))}
         </div>
@@ -118,7 +119,9 @@ function FallbackAnswers({ question, report }: { question: PublicQuestionView; r
                 <button className={e && e.choice === null ? 'is-on' : ''} onClick={() => setChoice(t, null)} title="Không giơ thẻ">
                   —
                 </button>
-                <button onClick={() => clear(t)} title="Theo điện thoại">📱</button>
+                <button onClick={() => clear(t)} title="Theo điện thoại" aria-label="Theo điện thoại">
+                  <Icon name="phone" />
+                </button>
               </span>
               {e && (
                 <label className="fallback__rank">

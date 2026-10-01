@@ -37,10 +37,10 @@ export function HostGame({
 
   const turnBadge = (
     <>
-      Lượt <b>{board.turn}</b>/{board.totalTurns}
+      Lượt {board.turn}/{board.totalTurns}
+      {board.endAfterThisTurn && phase !== 'SUMMARY' && <span className="host-bar__flag"> · lượt cuối</span>}
     </>
   );
-  const lastTurn = board.endAfterThisTurn && phase !== 'SUMMARY' && <span className="host-bar__flag">Lượt cuối</span>;
 
   const standings = (
     <Standings
@@ -54,15 +54,13 @@ export function HostGame({
   if (phase === 'BOARD_QUESTION' && question) {
     return (
       <section className="host-game host-game--question">
-        <HostBar badge={turnBadge} title={PHASE_LABELS[phase]}>
-          {lastTurn}
+        <HostBar badge={turnBadge} owners={board.owners} title={PHASE_LABELS[phase]}>
           {question.status === 'open' && <CountdownRing endsAt={question.endsAt} startedAt={question.startedAt} />}
         </HostBar>
         <div className="host-game__main">
           <QuestionPanel view={question} activeTeamIds={activeTeamIds} showTimer={false} />
         </div>
         <aside className="host-game__side">
-          <p className="host-side__title">Mục tiêu các nhóm</p>
           <HexBoard owners={board.owners} shields={board.shields} targets={board.targets} label="Bàn cờ và mục tiêu các nhóm" />
         </aside>
       </section>
@@ -73,9 +71,7 @@ export function HostGame({
     const outcome = board.outcome;
     return (
       <section className="host-game host-game--reveal">
-        <HostBar badge={turnBadge} title={PHASE_LABELS[phase]}>
-          {lastTurn}
-        </HostBar>
+        <HostBar badge={turnBadge} owners={board.owners} title={PHASE_LABELS[phase]} />
         <div className="host-game__main">
           <HexBoard owners={board.owners} shields={board.shields} targets={board.targets} outcome={outcome} />
         </div>
@@ -98,34 +94,26 @@ export function HostGame({
     return (
       <section className="host-game host-game--summary">
         <Confetti />
-        <HostBar badge="🏆 Vinh danh" title="Kết thúc trận" />
+        <HostBar badge="Chung cuộc" title="Bàn Cờ Quyền Lực & Quả Bom Tham Nhũng" owners={board.owners} />
         <div className="host-game__main">
           <ol className="podium">
             {podium.map((s) => (
               <li key={s.teamId} className={`podium__step podium__step--${Math.min(s.rank, 3)}`} style={teamStyle(s.teamId)}>
-                {s.rank === 1 && (
-                  <span className="podium__crown" aria-hidden>
-                    👑
-                  </span>
-                )}
                 <span className="podium__team">{teamName(s.teamId)}</span>
                 <span className="podium__score">{s.score} điểm</span>
-                <span className="podium__block">
-                  <span className="podium__medal">{s.rank}</span>
-                </span>
+                <span className="podium__block">{s.rank}</span>
               </li>
             ))}
           </ol>
-          {standings}
+          <Standings standings={board.standings} shields={board.shields} activeTeamIds={activeTeamIds} showMeta />
         </div>
         <aside className="host-game__side">
-          <p className="host-side__title">Bàn cờ chung cuộc</p>
           <HexBoard owners={board.owners} />
           {game.bomb && game.bomb.explosions.length > 0 && (
             <ul className="bomb-log">
               {game.bomb.explosions.map((e) => (
                 <li key={e.bombNumber}>
-                  💥 Quả {e.bombNumber}: {describeExplosion(e)}
+                  Quả {e.bombNumber}: {describeExplosion(e)}
                 </li>
               ))}
             </ul>
@@ -139,11 +127,10 @@ export function HostGame({
   const select = board.select;
   return (
     <section className="host-game host-game--select">
-      <HostBar badge={turnBadge} title={PHASE_LABELS[phase]}>
-        {lastTurn}
+      <HostBar badge={turnBadge} owners={board.owners} title={PHASE_LABELS[phase]}>
         {phase === 'BOARD_SELECT' && select && (
           <span className="host-bar__info">
-            <b>{select.locked.length}</b>/{select.teamIds.length} nhóm đã chốt
+            {select.locked.length}/{select.teamIds.length} nhóm đã chốt
           </span>
         )}
         {phase === 'BOARD_SELECT' && <CountdownRing endsAt={select?.endsAt ?? game.phaseEndsAt} startedAt={select?.startedAt} />}
@@ -152,7 +139,7 @@ export function HostGame({
         <HexBoard owners={board.owners} shields={board.shields} targets={board.targets} />
       </div>
       <aside className="host-game__side">
-        {phase === 'BOARD_SELECT' && <p className="host-hint">📱 Các nhóm đang chọn ô mục tiêu trên điện thoại…</p>}
+        {phase === 'BOARD_SELECT' && <p className="host-hint">Các nhóm đang chọn ô mục tiêu trên điện thoại…</p>}
         {standings}
       </aside>
     </section>

@@ -1,55 +1,50 @@
-/* ─── Nền tảng: token màu, phông, nền sân khấu ─────────────────────────────
- * Host và điện thoại: "sân khấu" xanh đêm, chữ trắng, nhấn vàng Hiến pháp + đỏ.
- * Admin: nền sáng (html[data-route='admin']), cùng bộ màu nhấn.
+/* ─── Nền tảng: token màu, phông, nền ─────────────────────────────────────
+ * Phong cách game chiếm lãnh thổ trên di động (kiểu State.io / Risk), gọn và dễ đọc:
+ * nền "biển" xanh nhạt, thẻ trắng có bóng khối, nút nổi, chữ bo tròn đậm màu xanh than.
+ * Màu nhấn: vàng (Hiến pháp, điểm nhấn), xanh dương (hành động chính), đỏ (CHỐT, bom), màu 7 nhóm.
  */
 :root {
-  --font: 'Be Vietnam Pro', system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', sans-serif;
+  --font: 'Nunito Variable', 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
-  --stage-0: #0a0f26;
-  --stage-1: #111a3e;
-  --stage-2: #19244f;
-  --stage-3: #24316a;
-  --glass: rgb(255 255 255 / 0.06);
-  --glass-2: rgb(255 255 255 / 0.1);
-  --line: rgb(255 255 255 / 0.13);
-  --text: #f4f6ff;
-  --muted: #b6c0e8;
-
-  --paper: #ffffff;
-  --paper-2: #f1f3fa;
-  --ink: #141a3a;
-  --ink-2: #4a5379;
-  --ink-3: #7c86ab;
+  --sea-1: #eaf6fe;
+  --sea-2: #c6e2f4;
+  --lava-1: #fff1eb;
+  --lava-2: #f6cdc2;
+  --surface: #ffffff;
+  --surface-2: #eef4fa;
+  --surface-3: #dfe8f1;
+  --line: #e2e9f1;
+  --text: #1c2a4a;
+  --text-2: #44557b;
+  --muted: #7d8bab;
 
   --gold: #ffc83d;
-  --gold-2: #f4b400;
-  --gold-soft: #fff4d1;
-  --gold-ink: #4a3300;
-  --red: #e5383b;
-  --red-2: #b3121b;
-  --green: #1fae5b;
-  --green-2: #127a3e;
-  --green-soft: #e3f8eb;
-  --red-soft: #fdeaea;
+  --gold-dark: #d69a00;
+  --gold-ink: #5a3d00;
+  --blue: #2f80ed;
+  --blue-dark: #1c5cb8;
+  --red: #ff4d4f;
+  --red-dark: #c4262b;
+  --green: #22c55e;
+  --green-dark: #149140;
   --amber: #f59e0b;
-  --violet: #6d4bd8;
+  --violet: #7c5cff;
 
-  --hex-empty: rgb(255 255 255 / 0.09);
-  --hex-line: rgb(255 255 255 / 0.14);
+  --hex-empty: #ffffff;
+  --hex-empty-side: #b7cade;
 
+  --chunky: 0 4px 0 rgb(28 42 74 / 0.1);
+  --soft: 0 14px 30px -16px rgb(28 42 74 / 0.4);
   --radius-sm: 10px;
-  --radius: 16px;
-  --radius-lg: 22px;
-  --shadow: 0 16px 36px -16px rgb(0 0 0 / 0.65);
-  --shadow-sm: 0 6px 16px -8px rgb(0 0 0 / 0.55);
-  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
-  --ease-spring: cubic-bezier(0.3, 1.6, 0.5, 1);
+  --radius: 14px;
+  --radius-lg: 20px;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
 
-  color-scheme: dark;
+  color-scheme: light;
   font-family: var(--font);
   color: var(--text);
-  background: var(--stage-0);
-  line-height: 1.4;
+  background: var(--sea-2);
+  line-height: 1.45;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
@@ -57,15 +52,11 @@
 }
 
 html[data-route='admin'] {
-  color-scheme: light;
-  --text: var(--ink);
-  --muted: var(--ink-2);
-  --line: #dde2ef;
-  --glass: #f5f7fc;
-  --glass-2: #e9edf7;
-  --hex-empty: #dfe3ee;
-  --hex-line: #c6cde0;
-  background: #eef1f8;
+  background: #f1f5f9;
+}
+
+html:has(.page--danger) {
+  background: var(--lava-2);
 }
 
 *,
@@ -99,7 +90,7 @@ button {
 }
 
 :focus-visible {
-  outline: 3px solid var(--gold);
+  outline: 3px solid var(--blue);
   outline-offset: 2px;
 }
 
@@ -115,7 +106,7 @@ button {
   border: 0;
 }
 
-/* ─── Trang + nền sân khấu (hai lớp để chuyển mượt sang "nguy hiểm" khi chơi Quả Bom) ── */
+/* ─── Trang: "biển" xanh nhạt; chuyển sang sắc đỏ ấm khi chơi Quả Bom ───── */
 .page {
   position: relative;
   isolation: isolate;
@@ -126,166 +117,165 @@ button {
   align-items: center;
   gap: 1.25rem;
   padding: 1.25rem 1rem;
+  background: radial-gradient(ellipse 90% 75% at 50% 35%, var(--sea-1), var(--sea-2));
   text-align: center;
 }
 
-/* Lớp nền phủ cả trang (absolute, không fixed: không hở nền khi cuộn trang dài hay khi thanh địa chỉ co giãn). */
-.page::before,
-.page::after {
+.page::before {
   content: '';
   position: absolute;
   inset: 0;
   z-index: -1;
-  pointer-events: none;
-  transition: opacity 1.2s ease;
-}
-
-.page::before {
-  background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='69.28' height='120' viewBox='0 0 69.28 120'%3E%3Cpath d='M0 20 L34.64 0 L69.28 20 L69.28 60 L34.64 80 L0 60 Z M34.64 80 V120' fill='none' stroke='%23ffffff' stroke-opacity='0.05' stroke-width='1.4'/%3E%3C/svg%3E"),
-    radial-gradient(70vmax 55vmax at 6% -8%, rgb(255 200 61 / 0.14), transparent 70%),
-    radial-gradient(60vmax 60vmax at 108% 110%, rgb(229 56 59 / 0.17), transparent 70%),
-    linear-gradient(165deg, #131d47 0%, #0a0f26 58%, #070b1d 100%);
-}
-
-.page::after {
+  background: radial-gradient(ellipse 90% 75% at 50% 35%, var(--lava-1), var(--lava-2));
   opacity: 0;
-  background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='69.28' height='120' viewBox='0 0 69.28 120'%3E%3Cpath d='M0 20 L34.64 0 L69.28 20 L69.28 60 L34.64 80 L0 60 Z M34.64 80 V120' fill='none' stroke='%23ffffff' stroke-opacity='0.045' stroke-width='1.4'/%3E%3C/svg%3E"),
-    radial-gradient(70vmax 50vmax at 50% -12%, rgb(229 56 59 / 0.32), transparent 70%),
-    radial-gradient(60vmax 50vmax at 100% 110%, rgb(255 145 0 / 0.16), transparent 70%),
-    linear-gradient(170deg, #2b0d1b 0%, #170812 58%, #0c0409 100%);
+  pointer-events: none;
+  transition: opacity 0.8s ease;
 }
 
-.page--danger::after {
+.page--danger::before {
   opacity: 1;
 }
 
-html:has(.page--danger) {
-  background: #170812;
+html[data-route='admin'] .page {
+  background: #f1f5f9;
 }
 
-html[data-route='admin'] .page::before,
-html[data-route='admin'] .page::after {
-  display: none;
-}
-
-/* ─── Nút ────────────────────────────────────────────────────────────────── */
+/* ─── Nút nổi kiểu game ─────────────────────────────────────────────────── */
 .primary-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5em;
   min-height: 52px;
-  padding: 0.4em 1.4em;
+  padding: 0.5em 1.3em;
   border: 0;
-  border-radius: 14px;
-  background: linear-gradient(180deg, #34469a, #1d2a63);
+  border-radius: var(--radius);
+  background: var(--blue);
   color: #fff;
-  font-size: 1.05rem;
-  font-weight: 700;
+  font-size: 1rem;
+  font-weight: 800;
   line-height: 1.2;
   cursor: pointer;
-  box-shadow:
-    0 1px 0 rgb(255 255 255 / 0.18) inset,
-    0 6px 16px -8px rgb(13 20 60 / 0.8);
+  box-shadow: 0 4px 0 var(--blue-dark);
   transition:
-    transform 0.12s ease,
-    filter 0.12s ease,
-    box-shadow 0.12s ease;
+    transform 0.08s ease,
+    box-shadow 0.08s ease,
+    filter 0.15s ease;
 }
 
 .primary-btn:hover:not(:disabled) {
-  filter: brightness(1.08);
+  filter: brightness(1.05);
 }
 
 .primary-btn:active:not(:disabled) {
-  transform: translateY(1px) scale(0.99);
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--blue-dark);
 }
 
 .primary-btn:disabled {
+  opacity: 0.45;
   cursor: not-allowed;
-  opacity: 0.42;
-  box-shadow: none;
-}
-
-.primary-btn--danger {
-  background: linear-gradient(180deg, #f0514f, #c21f26);
-  box-shadow:
-    0 1px 0 rgb(255 255 255 / 0.22) inset,
-    0 6px 16px -8px rgb(150 10 20 / 0.8);
 }
 
 .primary-btn--gold {
-  background: linear-gradient(180deg, #ffd668, #f4b400);
+  background: var(--gold);
   color: var(--gold-ink);
-  box-shadow:
-    0 1px 0 rgb(255 255 255 / 0.5) inset,
-    0 8px 20px -8px rgb(244 180 0 / 0.65);
+  box-shadow: 0 4px 0 var(--gold-dark);
+}
+
+.primary-btn--gold:active:not(:disabled) {
+  box-shadow: 0 1px 0 var(--gold-dark);
+}
+
+.primary-btn--green {
+  background: var(--green);
+  box-shadow: 0 4px 0 var(--green-dark);
+}
+
+.primary-btn--green:active:not(:disabled) {
+  box-shadow: 0 1px 0 var(--green-dark);
+}
+
+.primary-btn--danger {
+  background: var(--red);
+  box-shadow: 0 4px 0 var(--red-dark);
+}
+
+.primary-btn--danger:active:not(:disabled) {
+  box-shadow: 0 1px 0 var(--red-dark);
 }
 
 .primary-btn--ghost {
-  background: transparent;
-  color: inherit;
-  box-shadow: inset 0 0 0 2px var(--line);
+  background: #fff;
+  color: var(--text);
+  box-shadow:
+    inset 0 0 0 2px var(--line),
+    0 3px 0 var(--line);
+}
+
+.primary-btn--ghost:active:not(:disabled) {
+  box-shadow:
+    inset 0 0 0 2px var(--line),
+    0 1px 0 var(--line);
 }
 
 /* ─── Ô nhập ─────────────────────────────────────────────────────────────── */
 .field {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.45rem;
+  color: var(--text-2);
+  font-size: 0.95rem;
   font-weight: 700;
   text-align: left;
 }
 
 .field input {
-  min-height: 56px;
+  min-height: 54px;
   padding: 0 1rem;
-  border: 2px solid transparent;
-  border-radius: 14px;
-  background: var(--paper);
-  color: var(--ink);
-  font-size: 1.2rem;
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+  color: var(--text);
+  font-size: 1.15rem;
+  font-weight: 700;
+  box-shadow: 0 3px 0 var(--line);
+}
+
+.field input::placeholder {
+  color: var(--muted);
   font-weight: 600;
-  box-shadow: 0 2px 0 rgb(0 0 0 / 0.08) inset;
 }
 
 .field input:focus {
+  border-color: var(--blue);
   outline: none;
-  border-color: var(--gold);
-  box-shadow: 0 0 0 4px rgb(255 200 61 / 0.3);
 }
 
 .form-error {
   margin: 0;
-  padding: 0.6rem 0.9rem;
-  border-radius: 12px;
-  background: rgb(229 56 59 / 0.16);
-  color: #ffb4b4;
+  padding: 0.6rem 0.85rem;
+  border-radius: var(--radius-sm);
+  background: #ffe8e8;
+  color: #b4232b;
   font-weight: 700;
   text-align: left;
-}
-
-html[data-route='admin'] .form-error {
-  background: var(--red-soft);
-  color: var(--red-2);
 }
 
 /* Ba chấm "đang chờ" */
 .dots {
   display: inline-flex;
-  gap: 0.25em;
-  margin-left: 0.35em;
+  gap: 0.22em;
+  margin-left: 0.3em;
   vertical-align: middle;
 }
 
 .dots i {
-  width: 0.32em;
-  height: 0.32em;
+  width: 0.28em;
+  height: 0.28em;
   border-radius: 50%;
   background: currentColor;
-  animation: dot-bounce 1.2s ease-in-out infinite;
+  animation: dot-pulse 1.2s ease-in-out infinite;
 }
 
 .dots i:nth-child(2) {
@@ -296,16 +286,34 @@ html[data-route='admin'] .form-error {
   animation-delay: 0.3s;
 }
 
-@keyframes dot-bounce {
+@keyframes dot-pulse {
   0%,
   60%,
   100% {
-    transform: translateY(0);
-    opacity: 0.5;
+    opacity: 0.3;
   }
   30% {
-    transform: translateY(-0.35em);
     opacity: 1;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    transform: translateY(0.4em);
+    opacity: 0;
+  }
+}
+
+@keyframes pop-in {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0.35;
   }
 }
 

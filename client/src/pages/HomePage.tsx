@@ -1,9 +1,10 @@
+import { Icon, type IconName } from '../Icon';
 import { Logo } from '../Logo';
 
-const ROLES = [
-  { href: '/host', icon: '📽️', title: 'Màn chiếu', text: 'Mở trên máy chiếu: mã QR, bàn cờ, câu hỏi, bảng xếp hạng.' },
-  { href: '/play', icon: '📱', title: 'Người chơi', text: 'Sinh viên quét QR, chọn nhóm và biểu quyết trên điện thoại.' },
-  { href: '/admin', icon: '🎛️', title: 'Người dẫn', text: 'Tạo phòng, điều khiển các pha, tạm dừng, chế độ dự phòng.' },
+const ROLES: { href: string; icon: IconName; title: string; text: string }[] = [
+  { href: '/host', icon: 'monitor', title: 'Màn chiếu', text: 'Mở trên máy chiếu: mã QR, bàn cờ, câu hỏi, bảng xếp hạng.' },
+  { href: '/play', icon: 'phone', title: 'Người chơi', text: 'Sinh viên quét QR, chọn nhóm và biểu quyết trên điện thoại.' },
+  { href: '/admin', icon: 'sliders', title: 'Người dẫn', text: 'Tạo phòng, điều khiển các pha, tạm dừng, chế độ dự phòng.' },
 ];
 
 export function HomePage() {
@@ -19,9 +20,7 @@ export function HomePage() {
       <nav className="home-links">
         {ROLES.map((r) => (
           <a key={r.href} href={r.href}>
-            <span className="home-links__icon" aria-hidden>
-              {r.icon}
-            </span>
+            <Icon name={r.icon} className="home-links__icon" />
             <span>
               <b>{r.title}</b>
               <small>{r.text}</small>

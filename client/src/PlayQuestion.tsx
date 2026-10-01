@@ -1,6 +1,7 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import type { PublicQuestionView, TeamQuestionView } from '@cnxh/shared';
 import { CountdownRing } from './Countdown';
+import { Icon } from './Icon';
 import { OPTION_LABELS } from './QuestionPanel';
 import { socket } from './socket';
 import { VoteStatus } from './VoteControls';
@@ -48,13 +49,7 @@ export function PlayQuestion({
   return (
     <section className={`play-question ${readOnly ? 'is-readonly' : ''}`}>
       <div className="play-task">
-        {view.status === 'open' ? (
-          <CountdownRing endsAt={view.endsAt} startedAt={view.startedAt} />
-        ) : (
-          <span className="play-task__icon" aria-hidden>
-            💡
-          </span>
-        )}
+        {view.status === 'open' && <CountdownRing endsAt={view.endsAt} startedAt={view.startedAt} />}
         <span className="play-task__text">
           <b>{view.status === 'open' ? (view.pool === 'board' ? 'Câu hỏi Bàn Cờ' : 'Câu hỏi Bom') : 'Đáp án'}</b>
           <span>
@@ -86,7 +81,10 @@ export function PlayQuestion({
               style={{ '--votes': `${share}%` } as CSSProperties}
             >
               <b className="option-btn__letter">{OPTION_LABELS[i]}</b>
-              <span className="option-btn__text">{opt}</span>
+              <span className="option-btn__text">
+                {opt}
+                {current?.choice === i && <small className="option-btn__chosen">Nhóm đã chốt</small>}
+              </span>
               {current && <span className="option-btn__count">{votes}</span>}
             </button>
           );
@@ -109,22 +107,17 @@ export function PlayQuestion({
 
       {reveal && readOnly && (
         <div className="result-card">
-          <span className="result-card__icon" aria-hidden>
-            📖
-          </span>
           <p>{reveal.explanation}</p>
         </div>
       )}
       {reveal && !readOnly && (
         <div className={`result-card ${myResult?.correct ? 'is-correct' : 'is-wrong'}`}>
-          <span className="result-card__icon" aria-hidden>
-            {myResult?.correct ? '🎉' : '😕'}
-          </span>
-          <div>
-            <strong>{myResult?.correct ? 'Nhóm trả lời ĐÚNG!' : 'Nhóm trả lời chưa đúng'}</strong>
-            {current?.locked && current.choice !== null && <span className="result-card__sub">Nhóm đã chọn {OPTION_LABELS[current.choice]}</span>}
-            <p>{reveal.explanation}</p>
-          </div>
+          <strong>
+            <Icon name={myResult?.correct ? 'check' : 'x'} />
+            {myResult?.correct ? 'Nhóm trả lời đúng' : 'Nhóm trả lời chưa đúng'}
+            {current?.locked && current.choice !== null && <span className="result-card__sub"> · đã chọn {OPTION_LABELS[current.choice]}</span>}
+          </strong>
+          <p>{reveal.explanation}</p>
         </div>
       )}
     </section>
