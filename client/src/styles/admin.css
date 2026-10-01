@@ -493,8 +493,8 @@
 }
 
 .fallback__cards button.is-on {
-  border-color: var(--ink);
-  background: var(--ink);
+  border-color: var(--text);
+  background: var(--text);
   color: #fff;
 }
 
@@ -648,8 +648,8 @@
   font-size: 1.15rem;
 }
 
-/* Câu hỏi trong admin: nền sáng */
-.admin-question .question__options li {
+/* Câu hỏi trong admin: nền sáng (trừ đáp án đúng — giữ nền xanh, nếu không chữ trắng sẽ mất trên nền trắng) */
+.admin-question .question__options li:not(.is-correct) {
   background: #fff;
 }
 
