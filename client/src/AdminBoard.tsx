@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
-import { CELLS, DEFAULT_BOARD_TURNS, DEFAULT_BOMB_COUNT, MAX_BOARD_TURNS, MAX_BOMB_COUNT, TEAM_IDS, cellLabel, type CellId, type GameView } from '@cnxh/shared';
-import { PHASE_LABELS, describeCell, describeExplosion, isBombPhase } from './boardText';
+import { CELLS, DEFAULT_BOARD_TURNS, MAX_BOARD_TURNS, TEAM_IDS, cellLabel, type CellId, type GameView } from '@cnxh/shared';
+import { describeCell, describeExplosion, isBombPhase } from './boardText';
 import { TeamTag } from './TeamTag';
 import { teamName, teamStyle } from './teams';
-import { useCountdown } from './clock';
 import { HexBoard } from './HexBoard';
 import { socket } from './socket';
 import { Standings } from './Standings';
@@ -14,12 +13,10 @@ export function AdminBoard({ game, onNotice }: { game: GameView | null; onNotice
   const board = game?.board ?? null;
   const inPlay = !!board && !!game && game.phase.startsWith('BOARD_');
   const bombPhase = !!game?.bomb && isBombPhase(game.phase);
-  const [bombs, setBombs] = useState(DEFAULT_BOMB_COUNT);
   const [editing, setEditing] = useState(false);
   const [focused, setFocused] = useState<CellId | null>(null);
   const canEdit = !!board && game!.phase !== 'BOARD_SELECT';
   const allCells = CELLS.map((c) => c.id);
-  const left = useCountdown(inPlay || bombPhase ? game!.phaseEndsAt : null);
   // Ô "Số lượt" theo N thật khi đang chơi.
   const actualTurns = inPlay ? board!.totalTurns : null;
   useEffect(() => {
@@ -32,52 +29,13 @@ export function AdminBoard({ game, onNotice }: { game: GameView | null; onNotice
     <section className="admin-card admin-board">
       <h2>{bombPhase ? 'Quả Bom Tham Nhũng' : 'Bàn Cờ Quyền Lực'}</h2>
       {game?.phase === 'BOMB_INTRO' ? (
-        <div className="admin-actions">
-          <label className="admin-inline">
-            Số bom
-            <input type="number" min={1} max={MAX_BOMB_COUNT} value={bombs} onChange={(e) => setBombs(Number(e.target.value))} />
-          </label>
-          <button
-            className="primary-btn"
-            onClick={() => socket.emit('admin:startBomb', { totalBombs: bombs }, report('Không bắt đầu được Quả Bom'))}
-          >
-            Bắt đầu Quả Bom
-          </button>
-          <span>
-            Nhóm cầm bom đầu tiên: <TeamTag teamId={game.bomb!.holder} />
-          </span>
-        </div>
-      ) : bombPhase ? (
         <p className="admin-board__status">
-          Quả <b>{game!.bomb!.bombNumber}/{game!.bomb!.totalBombs}</b> · {PHASE_LABELS[game!.phase]} · đang cầm:{' '}
-          <TeamTag teamId={game!.bomb!.holder} /> · bom {game!.bomb!.burning ? 'đang cháy' : 'tạm dừng'}
-          {game!.phaseEndsAt !== null && ` · pha còn ${left} s`}
-          {/* Admin cũng không biết ngòi: server không gửi. */}
+          Nhóm cầm bom đầu tiên: <TeamTag teamId={game.bomb!.holder} />
         </p>
-      ) : !inPlay ? (
-        <div className="admin-actions">
-          <label className="admin-inline">
-            Số lượt
-            <input type="number" min={1} max={MAX_BOARD_TURNS} value={turns} onChange={(e) => setTurns(Number(e.target.value))} />
-          </label>
-          <button
-            className="primary-btn"
-            onClick={() => socket.emit('admin:startBoard', { totalTurns: turns }, report('Không bắt đầu được Bàn Cờ'))}
-          >
-            {game?.phase === 'SUMMARY' ? 'Chơi lại Bàn Cờ' : 'Bắt đầu Bàn Cờ'}
-          </button>
-          {(game?.phase ?? 'LOBBY') === 'LOBBY' && (
-            <button className="primary-btn" onClick={() => socket.emit('admin:showRules', report('Không hiện được luật'))}>
-              Hiện luật trên màn chiếu
-            </button>
-          )}
-        </div>
+      ) : bombPhase ? null /* Trạng thái quả bom nằm ở thẻ "Bước tiếp theo". */ : !inPlay ? (
+        !board && <p className="admin-muted">Bàn cờ hiện ra khi bắt đầu Bàn Cờ.</p>
       ) : (
         <>
-          <p className="admin-board__status">
-            Lượt <b>{board!.turn}/{board!.totalTurns}</b> · {PHASE_LABELS[game!.phase]} · còn {left} s
-            {board!.endAfterThisTurn && <b> · sẽ kết thúc sau lượt này</b>}
-          </p>
           <div className="admin-actions">
             <label className="admin-inline">
               Số lượt

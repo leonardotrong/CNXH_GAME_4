@@ -125,15 +125,28 @@ export function PlayBomb({
 function PassVote({ game, teamPass, playerId }: { game: GameView; teamPass: TeamPassView | null; playerId: string }) {
   const pass = game.bomb!.pass;
   const [error, setError] = useState('');
+  const [pending, setPending] = useState<number | null>(null);
   const mine = pass && teamPass?.roundId === pass.roundId ? teamPass : null;
   const open = pass?.status === 'open' && !!mine && !mine.locked;
   const isCaptain = mine?.captainId === playerId;
-  const myVote = mine?.votes[playerId];
+  const myVote = pending ?? mine?.votes[playerId];
 
-  useEffect(() => setError(''), [pass?.roundId]);
+  useEffect(() => {
+    setError('');
+    setPending(null);
+  }, [pass?.roundId]);
+  useEffect(() => {
+    if (pending !== null && (mine?.votes[playerId] === pending || mine?.locked)) setPending(null);
+  }, [mine, pending, playerId]);
 
-  const vote = (to: number) =>
-    socket.emit('player:vote', { roundId: pass!.roundId, option: to }, (res) => setError(res.ok ? '' : VOTE_ERRORS[res.error] ?? ''));
+  const vote = (to: number) => {
+    navigator.vibrate?.(12);
+    setPending(to);
+    socket.emit('player:vote', { roundId: pass!.roundId, option: to }, (res) => {
+      if (!res.ok) setPending(null);
+      setError(res.ok ? '' : VOTE_ERRORS[res.error] ?? '');
+    });
+  };
   const lock = () => socket.emit('player:lock', { roundId: pass!.roundId }, (res) => setError(res.ok ? '' : VOTE_ERRORS[res.error] ?? ''));
 
   return (

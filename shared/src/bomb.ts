@@ -233,8 +233,8 @@ export function openPassRound(args: {
   };
 }
 
-export function castPass(round: PassRound, teamId: TeamId, playerId: string, to: number, now: number): VoteResult<PassRound> {
-  return castBallot(round, teamId, playerId, to, now, (t) => round.validTargets.includes(t));
+export function castPass(round: PassRound, teamId: TeamId, playerId: string, to: number, now: number, ctx?: TeamContext): VoteResult<PassRound> {
+  return castBallot(round, teamId, playerId, to, now, (t) => round.validTargets.includes(t), ctx);
 }
 
 export function lockPass(round: PassRound, teamId: TeamId, playerId: string, ctx: TeamContext, now: number): VoteResult<PassRound> {

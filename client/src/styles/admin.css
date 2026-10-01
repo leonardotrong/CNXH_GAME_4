@@ -659,3 +659,350 @@
   background: none;
   box-shadow: none;
 }
+
+/* ─── Bước tiếp theo (một nút chính) ────────────────────────────────────── */
+.admin-next {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  border: 2px solid transparent;
+  transition: border-color 0.3s var(--ease), background 0.3s var(--ease);
+}
+
+.admin-next.is-paused {
+  border-color: var(--gold);
+  background: #fffaeb;
+}
+
+.stepper {
+  display: flex;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: none;
+}
+
+.stepper li {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 0.92rem;
+}
+
+.stepper li + li::before {
+  content: '';
+  flex: 0 0 1.2rem;
+  height: 2px;
+  margin-right: 0.1rem;
+  border-radius: 2px;
+  background: var(--line);
+  transition: background 0.4s var(--ease);
+}
+
+.stepper li.is-done + li::before,
+.stepper li.is-current::before {
+  background: var(--green);
+}
+
+.stepper__dot {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 800;
+  transition: background 0.4s var(--ease), color 0.4s var(--ease), transform 0.4s var(--ease);
+}
+
+.stepper__dot svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.stepper__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stepper li.is-done {
+  color: var(--text-2);
+}
+
+.stepper li.is-done .stepper__dot {
+  background: var(--green);
+  color: #fff;
+}
+
+.stepper li.is-current {
+  color: var(--text);
+}
+
+.stepper li.is-current .stepper__dot {
+  background: var(--blue);
+  color: #fff;
+  transform: scale(1.12);
+  box-shadow: 0 0 0 4px rgb(47 128 237 / 0.18);
+}
+
+.admin-next__row {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.admin-next__main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.admin-next__status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  color: var(--text-2);
+  font-weight: 600;
+}
+
+.admin-next__status i {
+  color: var(--muted);
+  font-style: normal;
+}
+
+.admin-next__left {
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-next__paused {
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  background: var(--gold);
+  color: var(--gold-ink);
+  font-size: 0.85rem;
+}
+
+.admin-next__hint {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.admin-next__pause {
+  flex: 0 0 auto;
+}
+
+.next-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-height: 64px;
+  padding: 0 1.8rem 0 1.4rem;
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: var(--green);
+  box-shadow: 0 5px 0 var(--green-dark);
+  color: #fff;
+  font: inherit;
+  font-size: 1.35rem;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform 0.12s var(--ease), box-shadow 0.12s var(--ease), background 0.3s var(--ease);
+}
+
+.next-btn svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.next-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 0 var(--green-dark);
+}
+
+.next-btn:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 var(--green-dark);
+}
+
+.next-btn:focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: 3px;
+}
+
+.next-btn.is-waiting,
+.next-btn:disabled {
+  background: var(--surface-2);
+  box-shadow: 0 5px 0 var(--line);
+  color: var(--text-2);
+  cursor: default;
+}
+
+.next-btn__spinner {
+  width: 1.2rem;
+  height: 1.2rem;
+  border: 3px solid var(--line);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 720px) {
+  .stepper__name {
+    display: none;
+  }
+  .stepper li.is-current .stepper__name {
+    display: inline;
+  }
+  .admin-next__row {
+    flex-direction: column;
+  }
+  .next-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ─── Người chơi dạng chip ──────────────────────────────────────────────── */
+.admin-players h2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+
+.admin-players__tip {
+  margin-left: auto;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.admin-team .player-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.admin-team .player-chips li {
+  display: block;
+  padding: 0;
+  border: 0;
+}
+
+.player-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  min-height: 30px;
+  padding: 0 0.6rem;
+  border: 1.5px solid transparent;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.player-chip:hover {
+  border-color: var(--team);
+}
+
+.player-chip.is-open {
+  border-color: var(--team);
+  background: var(--team);
+  color: #fff;
+}
+
+.player-chip.is-offline {
+  color: var(--muted);
+  text-decoration: line-through;
+  text-decoration-color: rgb(125 139 171 / 0.5);
+}
+
+.player-chip em {
+  font-weight: 600;
+  font-style: normal;
+  opacity: 0.75;
+}
+
+.player-menu {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.7rem;
+  margin-top: 0.8rem;
+  padding: 0.7rem 0.9rem;
+  border-left: 4px solid var(--team);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  animation: fade-in 0.2s var(--ease);
+}
+
+.mini-btn--danger {
+  border-color: #fecaca;
+  color: var(--red-dark);
+}
+
+.admin-trial h2 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.admin-tools .primary-btn svg {
+  width: 1.1em;
+  height: 1.1em;
+}
+
+.admin-tools__tip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0.9rem 0 0;
+  font-size: 0.9rem;
+}
+
+.admin-tools__tip svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+kbd {
+  display: inline-block;
+  min-width: 1.6em;
+  padding: 0.05em 0.45em;
+  border: 1px solid var(--line);
+  border-bottom-width: 3px;
+  border-radius: 6px;
+  background: #fff;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85em;
+  font-weight: 800;
+  text-align: center;
+}

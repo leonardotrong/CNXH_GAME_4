@@ -23,6 +23,13 @@ export function canLock(onlineIds: readonly string[], ballots: readonly Ballot[]
   return votedOnline * 2 > onlineIds.length;
 }
 
+/** MỌI thành viên đang online đã bỏ phiếu → nhóm tự chốt (GAME_SPEC 2.2). */
+export function allOnlineVoted(onlineIds: readonly string[], ballots: readonly Ballot[]): boolean {
+  if (onlineIds.length === 0) return false;
+  const voters = new Set(ballots.map((b) => b.playerId));
+  return onlineIds.every((id) => voters.has(id));
+}
+
 /**
  * Lựa chọn của nhóm khi chốt:
  * - phương án nhiều phiếu nhất;

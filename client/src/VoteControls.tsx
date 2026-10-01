@@ -21,7 +21,7 @@ function VoteMeter({ view, lockedText }: { view: TeamVoteView; lockedText: strin
         <b>
           {view.votedOnlineCount}/{view.onlineCount}
         </b>{' '}
-        thành viên online đã bỏ phiếu
+        đã bỏ phiếu · <span className="vote-meter__auto">đủ cả nhóm là tự chốt</span>
       </p>
     </div>
   );
@@ -52,7 +52,7 @@ export function VoteStatus({
       <button className="lock-btn" disabled={!view.canLock} onClick={onLock}>
         <Icon name="lock" /> {lockLabel}
       </button>
-      {!view.canLock && <p className="lock-hint">Chờ quá nửa thành viên online bỏ phiếu rồi mới CHỐT được</p>}
+      {!view.canLock && <p className="lock-hint">Quá nửa nhóm bỏ phiếu là CHỐT sớm được — nhanh hơn thì dễ thắng tranh chấp</p>}
     </div>
   );
 }

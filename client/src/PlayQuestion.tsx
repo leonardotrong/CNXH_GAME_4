@@ -10,6 +10,7 @@ export const VOTE_ERRORS: Record<string, string> = {
   NOT_ENOUGH_VOTES: 'Cần quá nửa thành viên online bỏ phiếu mới chốt được.',
   NOT_CAPTAIN: 'Chỉ đội trưởng được chốt.',
   LOCKED: 'Nhóm đã chốt.',
+  PAUSED: 'Trận đang tạm dừng.',
   CLOSED: 'Câu hỏi đã đóng.',
 };
 
@@ -27,8 +28,10 @@ export function PlayQuestion({
   readOnly?: boolean;
 }) {
   const [error, setError] = useState('');
+  // Phiếu vừa chạm, hiện ngay trước khi server xác nhận (mạng 4G có thể trễ vài trăm ms).
+  const [pending, setPending] = useState<number | null>(null);
   const current = team?.roundId === view.roundId ? team : null;
-  const myVote = current?.votes[playerId];
+  const myVote = pending ?? current?.votes[playerId];
   const isCaptain = current?.captainId === playerId;
   const open = !readOnly && view.status === 'open' && !current?.locked;
 
@@ -36,10 +39,21 @@ export function PlayQuestion({
   useEffect(() => {
     if (view.status === 'open' && !readOnly) navigator.vibrate?.(200);
     setError('');
+    setPending(null);
   }, [view.roundId]);
+  // Server đã ghi nhận (hoặc nhóm đã chốt) → bỏ trạng thái chờ.
+  useEffect(() => {
+    if (pending !== null && (current?.votes[playerId] === pending || current?.locked)) setPending(null);
+  }, [current, pending, playerId]);
 
-  const vote = (option: number) =>
-    socket.emit('player:vote', { roundId: view.roundId, option }, (res) => setError(res.ok ? '' : VOTE_ERRORS[res.error] ?? ''));
+  const vote = (option: number) => {
+    navigator.vibrate?.(12);
+    setPending(option);
+    socket.emit('player:vote', { roundId: view.roundId, option }, (res) => {
+      if (!res.ok) setPending(null);
+      setError(res.ok ? '' : VOTE_ERRORS[res.error] ?? '');
+    });
+  };
   const lock = () =>
     socket.emit('player:lock', { roundId: view.roundId }, (res) => setError(res.ok ? '' : VOTE_ERRORS[res.error] ?? ''));
 

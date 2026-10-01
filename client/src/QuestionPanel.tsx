@@ -53,7 +53,7 @@ export function QuestionPanel({
                   <Icon name={r.correct ? 'check' : 'x'} className="question__mark" />
                   <span className="question__ms">
                     {r.lockedBy === 'timeout' ? 'hết giờ' : formatMs(r.lockedAfterMs)}
-                    {i > 0 && r.lockedBy === 'captain' && ` (+${r.lockedAfterMs - results[i - 1]!.lockedAfterMs} ms)`}
+                    {i > 0 && (r.lockedBy === 'captain' || r.lockedBy === 'auto') && ` (+${r.lockedAfterMs - results[i - 1]!.lockedAfterMs} ms)`}
                   </span>
                 </li>
               ))}

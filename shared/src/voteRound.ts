@@ -4,13 +4,16 @@
  *
  *   OPEN ──(mọi nhóm có người đã chốt | hết giờ: tự chốt nhóm còn lại)──▶ CLOSED
  *
+ * Một nhóm chốt khi: đội trưởng CHỐT (quá nửa online đã bầu), mọi thành viên online đã bầu
+ * (tự chốt), hết giờ, hoặc người dẫn nhập tay (dự phòng).
+ *
  * "Phương án" là số nguyên; mỗi loại vòng tự quy định phương án nào hợp lệ (`isValid`).
  */
 import type { TeamId } from './lobby';
-import { canLock, resolveTeamChoice, tallyVotes, type Ballot } from './voting';
+import { allOnlineVoted, canLock, resolveTeamChoice, tallyVotes, type Ballot } from './voting';
 
-/** Ai chốt: đội trưởng, server khi hết giờ, hay người dẫn nhập tay (chế độ dự phòng). */
-export type LockSource = 'captain' | 'timeout' | 'admin';
+/** Ai chốt: đội trưởng, cả nhóm đã bỏ phiếu (tự chốt), server khi hết giờ, hay người dẫn nhập tay (chế độ dự phòng). */
+export type LockSource = 'captain' | 'auto' | 'timeout' | 'admin';
 
 export interface TeamRound {
   ballots: Record<string, Ballot>;
@@ -67,6 +70,10 @@ function withTeam<R extends VoteRound>(round: R, teamId: TeamId, team: TeamRound
   return { ...round, teams: { ...round.teams, [teamId]: team } };
 }
 
+/**
+ * Ghi phiếu (đổi ý được). Có `ctx`: phiếu này làm MỌI thành viên online đã bầu → nhóm tự chốt ngay,
+ * `lockedAt` = `now` (GAME_SPEC 2.2). Không có `ctx` → chỉ ghi phiếu.
+ */
 export function castBallot<R extends VoteRound>(
   round: R,
   teamId: TeamId,
@@ -74,15 +81,23 @@ export function castBallot<R extends VoteRound>(
   option: number,
   now: number,
   isValid: (option: number) => boolean,
+  ctx?: TeamContext,
 ): VoteResult<R> {
   if (round.status !== 'open' || now > round.endsAt) return { ok: false, error: 'CLOSED' };
   const team = round.teams[teamId];
   if (!team) return { ok: false, error: 'NOT_IN_ROUND' };
   if (team.lockedAt !== null) return { ok: false, error: 'LOCKED' };
   if (!Number.isInteger(option) || !isValid(option)) return { ok: false, error: 'BAD_OPTION' };
-  if (team.ballots[playerId]?.option === option) return { ok: true, round };
-  const ballots = { ...team.ballots, [playerId]: { playerId, option, castAt: now } };
-  return { ok: true, round: withTeam(round, teamId, { ...team, ballots }) };
+  const same = team.ballots[playerId]?.option === option;
+  const next: TeamRound = same ? team : { ...team, ballots: { ...team.ballots, [playerId]: { playerId, option, castAt: now } } };
+  if (ctx) {
+    const valid = teamBallots(next, ctx);
+    if (allOnlineVoted(ctx.onlineIds, valid)) {
+      const choice = resolveTeamChoice(valid, ctx.captainId);
+      return { ok: true, round: withTeam(round, teamId, { ...next, lockedAt: now, lockedBy: 'auto', choice }) };
+    }
+  }
+  return { ok: true, round: same ? round : withTeam(round, teamId, next) };
 }
 
 /** Lệnh CHỐT của đội trưởng: chỉ khi quá nửa thành viên online đã bỏ phiếu. `lockedAt` = giờ server nhận lệnh. */

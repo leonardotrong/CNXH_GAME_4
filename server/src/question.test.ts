@@ -65,7 +65,8 @@ describe('câu hỏi qua Socket.IO', () => {
     return log;
   };
 
-  async function setup() {
+  /** `extra`: thêm A3 (nhóm 1) và B2 (nhóm 2) — để nhóm chưa tự chốt khi chỉ một phần bỏ phiếu. */
+  async function setup(extra = false) {
     const admin = client();
     await call(admin, 'admin:login', { password: 'pw' });
     const { code } = (await call(admin, 'admin:createRoom')) as unknown as { code: string };
@@ -75,7 +76,12 @@ describe('câu hỏi qua Socket.IO', () => {
     await call(a1, 'player:join', { roomCode: code, name: 'A1', teamId: 1 });
     await call(a2, 'player:join', { roomCode: code, name: 'A2', teamId: 1 });
     await call(b1, 'player:join', { roomCode: code, name: 'B1', teamId: 2 });
-    return { admin, host, a1, a2, b1 };
+    const [a3, b2] = [client(), client()];
+    if (extra) {
+      await call(a3, 'player:join', { roomCode: code, name: 'A3', teamId: 1 });
+      await call(b2, 'player:join', { roomCode: code, name: 'B2', teamId: 2 });
+    }
+    return { admin, host, a1, a2, b1, a3, b2 };
   }
 
   beforeAll(async () => {
@@ -88,8 +94,8 @@ describe('câu hỏi qua Socket.IO', () => {
   });
 
   it('không payload nào (host, admin, người chơi, ack) chứa đáp án đúng khi câu còn mở', async () => {
-    const { admin, host, a1, a2, b1 } = await setup();
-    const all = [admin, host, a1, a2, b1];
+    const { admin, host, a1, a2, b1, a3, b2 } = await setup(true);
+    const all = [admin, host, a1, a2, b1, a3, b2];
     const logs = all.map(record);
     const acks: Ack[] = [];
 
@@ -122,14 +128,14 @@ describe('câu hỏi qua Socket.IO', () => {
     const a1Teams = logs[2]!.filter((e) => e.event === 'question:team').map((e) => e.payload as TeamQuestionView | null);
     expect(a1Teams.every((v) => v === null || v.teamId === 1)).toBe(true);
 
-    // Nhóm cuối chốt → câu đóng sớm, lúc này mới có đáp án.
-    await call(b1, 'player:lock', { roundId });
+    // Thành viên online cuối cùng của nhóm 2 bỏ phiếu → nhóm tự chốt → mọi nhóm đã chốt → câu đóng sớm, lúc này mới có đáp án.
+    await call(b2, 'player:vote', { roundId, option: (correct + 2) % 4 });
     const closed = await closedAtHost;
     expect(closed!.reveal!.answerIndex).toBe(correct);
     expect(closed!.reveal!.explanation).toBe(SECRET);
     expect(closed!.reveal!.results.map((r) => [r.teamId, r.correct, r.lockedBy])).toEqual([
       [1, true, 'captain'],
-      [2, false, 'captain'],
+      [2, false, 'auto'],
       // nhóm rỗng tự chốt khi đóng, không có lựa chọn
       ...[3, 4, 5, 6, 7].map((t) => [t, false, 'timeout']),
     ]);
@@ -168,6 +174,28 @@ describe('câu hỏi qua Socket.IO', () => {
     const team1 = closed!.reveal!.results.find((r) => r.teamId === 1)!;
     expect(team1).toMatchObject({ choice: 1, lockedBy: 'timeout', lockedAfterMs: 1500 });
     expect(closed!.reveal!.results.find((r) => r.teamId === 2)!.choice).toBeNull();
+  });
+
+  it('tự chốt khi mọi thành viên online đã bỏ phiếu; mọi nhóm tự chốt → câu đóng sớm', async () => {
+    const { admin, host, a1, a2, b1 } = await setup();
+    const closedP = waitFor<PublicQuestionView | null>(host, 'question:state', (v) => v?.status === 'closed');
+    const lockedViewP = waitFor<TeamQuestionView | null>(a2, 'question:team', (v) => v?.locked === true);
+    const startedAt = Date.now();
+    const { roundId } = await call(admin, 'admin:startQuestion', { pool: 'board' });
+
+    await call(a1, 'player:vote', { roundId, option: 2 });
+    await call(a2, 'player:vote', { roundId, option: 2 });
+    // Cả nhóm 1 đã bầu → tự chốt; thành viên thấy nhóm đã chốt, không đổi phiếu được nữa.
+    expect(await lockedViewP).toMatchObject({ locked: true, choice: 2 });
+    expect(await call(a2, 'player:vote', { roundId, option: 3 })).toEqual({ ok: false, error: 'LOCKED' });
+    expect(await call(a1, 'player:lock', { roundId })).toEqual({ ok: false, error: 'LOCKED' });
+
+    await call(b1, 'player:vote', { roundId, option: 1 });
+    const closed = await closedP;
+    expect(Date.now() - startedAt).toBeLessThan(1500); // không chờ hết giờ
+    const byTeam = Object.fromEntries(closed!.reveal!.results.map((r) => [r.teamId, r]));
+    expect(byTeam[1]).toMatchObject({ choice: 2, lockedBy: 'auto' });
+    expect(byTeam[2]).toMatchObject({ choice: 1, lockedBy: 'auto' });
   });
 
   it('admin bỏ qua câu → hủy, không công bố đáp án', async () => {

@@ -42,8 +42,8 @@ function makeRoom(fuseMs: number) {
     room.phase === 'BOARD_SELECT' ? room.select!.roundId : room.phase === 'BOMB_PASS' ? room.pass!.roundId : room.question!.roundId;
   const vote = (name: string, option: number) => must(room.vote(ids[name]!, roundId(), option));
   const voteAndLock = (name: string, option: number) => {
-    vote(name, option);
-    must(room.lock(ids[name]!, roundId()));
+    // Nhóm một người online: phiếu đã tự chốt (GAME_SPEC 2.2).
+    if (!vote(name, option).locked) must(room.lock(ids[name]!, roundId()));
   };
   const answer = () => room.question!.question.answerIndex;
   const wrong = () => 1 - answer();

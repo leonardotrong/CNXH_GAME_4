@@ -24,8 +24,9 @@ function must<T extends { ok: boolean }>(res: T): T {
 /** Người chơi bỏ phiếu rồi (nếu là đội trưởng) chốt vòng đang mở. */
 function voteAndLock(name: string, option: number) {
   const roundId = room.phase === 'BOARD_SELECT' ? room.select!.roundId : room.question!.roundId;
-  must(room.vote(ids[name]!, roundId, option));
-  must(room.lock(ids[name]!, roundId));
+  const v = must(room.vote(ids[name]!, roundId, option));
+  // Nhóm một người online: phiếu đã tự chốt (GAME_SPEC 2.2).
+  if (v.ok && !v.locked) must(room.lock(ids[name]!, roundId));
 }
 const answer = () => room.question!.question.answerIndex;
 const wrong = () => (answer() + 1) % 4;

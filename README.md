@@ -83,17 +83,21 @@ Muốn xem **cả trận chạy tự động** mà không phải bấm tay: `npm
 
 Kịch bản 30 phút ([GAME_SPEC §1](docs/GAME_SPEC.md#1-kịch-bản-30-phút)):
 
-| Phút | Pha | Người dẫn làm gì trên `/admin` |
-|---|---|---|
-| Trước giờ | | Mở `/host` trên máy chiếu **khoảng 15 phút trước giờ học** (gói Render miễn phí cần thời gian "thức dậy"). Đăng nhập `/admin` rồi bấm **Tạo phòng**. |
-| 0–3 | LOBBY | Sinh viên quét QR, nhập tên, chọn Nhóm 1–7. Người vào nhóm đầu tiên là đội trưởng. Có thể bấm **Câu thử** để cả lớp làm quen cách bỏ phiếu. Đủ người thì bấm **Đóng cổng vào phòng**. |
-| 3–4 | RULES | Bấm **Hiện luật trên màn chiếu** rồi giải thích. Pha này không có đồng hồ, người dẫn tự quyết nhịp. |
-| 4–21 | BOARD | Bấm **Bắt đầu Bàn Cờ** (mặc định 14 lượt, chỉnh được). Các lượt tự chạy. Có thể bấm **Kết thúc sau lượt này** nếu thiếu giờ. |
-| 21–28 | BOMB | Hết Bàn Cờ thì trận vào màn giới thiệu Quả Bom (BOMB_INTRO). Chọn **Số bom** (1–5, mặc định 3) rồi bấm **Bắt đầu Quả Bom**. |
-| 28–30 | SUMMARY | Bục vinh danh. Bấm **Hiện 6 đặc điểm (tổng kết)** để chốt bài học. |
+**Người dẫn chỉ cần nhớ một nút: "Bước tiếp theo"** (nút xanh lớn trên `/admin`, hoặc phím `Space` trên màn chiếu). Nút luôn ghi rõ việc sẽ xảy ra; trong pha tự chạy, nút hiện "Đang tự chạy" và không làm gì.
+
+| Phút | Pha | Nút "Bước tiếp theo" ghi | Ghi chú |
+|---|---|---|---|
+| Trước giờ | | **Tạo phòng** | Mở `/host` trên máy chiếu **khoảng 15 phút trước giờ học** (gói Render miễn phí cần thời gian "thức dậy"). |
+| 0–3 | LOBBY | **Hiện luật chơi** | Sinh viên quét QR, nhập tên, chọn Nhóm 1–7. Người vào nhóm đầu tiên là đội trưởng. "Câu thử" (ở *Công cụ khác*) giúp lớp làm quen cách bỏ phiếu. |
+| 3–4 | RULES | **Bắt đầu Bàn Cờ** | Giải thích luật xong mới bấm (pha không có đồng hồ). Chỉnh số lượt ngay cạnh nút (mặc định 14). |
+| 4–21 | BOARD | *Đang tự chạy* | Các lượt tự chạy. Thiếu giờ thì bấm **Kết thúc sau lượt này** ở thẻ Bàn Cờ. |
+| 21–28 | BOMB | **Bắt đầu Quả Bom** | Màn giới thiệu Quả Bom (BOMB_INTRO). Chỉnh số bom ngay cạnh nút (1–5, mặc định 3). |
+| 28–30 | SUMMARY | **Hiện tổng kết bài học** | Bục vinh danh, rồi 6 đặc điểm của nhà nước pháp quyền XHCN. |
+
+**Điều khiển ngay trên máy chiếu (khỏi chuyển cửa sổ):** trên `/host` bấm `K` (hoặc nút mờ ở góc phải dưới) và nhập mật khẩu admin một lần. Sau đó: `Space`/`→` = bước tiếp theo, `P` = tạm dừng/tiếp tục, `M` = tắt/bật âm thanh, `F` = toàn màn hình. Mỗi lần bấm có thông báo xác nhận ngắn; gợi ý phím hiện mờ rồi tự ẩn. (Tạo phòng mới khi đang có trận chỉ làm được ở `/admin`, để tránh bấm nhầm.)
 
 Các nút dùng được bất cứ lúc nào:
-- **TẠM DỪNG / TIẾP TỤC**: mọi đồng hồ (kể cả ngòi bom) đứng yên, người chơi không bỏ phiếu được.
+- **Tạm dừng / Tiếp tục** (cạnh nút Bước tiếp theo, hoặc phím `P`): mọi đồng hồ (kể cả ngòi bom) đứng yên, người chơi không bỏ phiếu được.
 - **Bỏ qua câu lỗi**: đổi sang câu khác. Mục tiêu đã chọn được giữ nguyên, ngòi bom vẫn cháy tiếp.
 - **Chỉnh tay**: đổi chủ ô, đổi đội trưởng, chuyển người chơi sang nhóm khác.
 - **Nhật ký sự kiện**: ai chiếm ô nào, ai phòng thủ thành công, bom nổ ở đâu. Dùng để giải quyết tranh cãi.
@@ -109,7 +113,8 @@ Server sập giữa trận? Khởi động lại server là trận được **kh
 
 ### Biểu quyết trong nhóm (dùng cho mọi lựa chọn) ([§2.2](docs/GAME_SPEC.md#22-biểu-quyết-trong-nhóm-dùng-cho-câu-hỏi-chọn-ô-chọn-nhóm-nhận-bom))
 - Mỗi thành viên bỏ phiếu trên điện thoại và được đổi ý. Thành viên chỉ thấy phiếu của nhóm mình.
-- **Đội trưởng bấm CHỐT.** Nút chỉ bật khi **quá nửa** số thành viên đang online đã bỏ phiếu.
+- **Cả nhóm bầu xong là tự chốt**: ngay khi thành viên online cuối cùng bỏ phiếu, nhóm tự chốt (thời điểm chốt = lúc server nhận phiếu đó).
+- **Đội trưởng có thể CHỐT sớm hơn** khi **quá nửa** số thành viên đang online đã bỏ phiếu — chốt sớm thì dễ thắng tranh chấp.
 - Lựa chọn của nhóm là phương án nhiều phiếu nhất. Hòa thì theo phiếu đội trưởng; đội trưởng chưa bỏ phiếu thì lấy phương án đạt số phiếu đó sớm nhất.
 - Hết giờ mà chưa chốt: server tự chốt, và thời điểm chốt là lúc hết giờ. Không có phiếu nào thì nhóm không có lựa chọn.
 - **"Nhanh hơn" = thời điểm SERVER nhận lệnh CHỐT** (tính bằng mili-giây). Khi mọi nhóm đã chốt, vòng đóng ngay.
@@ -270,7 +275,7 @@ Xuất qua [index.ts](shared/src/index.ts). Mỗi module đi kèm một file `*.
 | [lobby.ts](shared/src/lobby.ts) | Hằng số 7 nhóm, mã phòng 4 số, chuẩn hóa tên, kiểu `RoomState` | §2.1 |
 | [captain.ts](shared/src/captain.ts) | Chọn đội trưởng, chuyển quyền tạm sau 10 s mất kết nối | §2.1 |
 | [voting.ts](shared/src/voting.ts) | Đếm phiếu, `canLock` (quá nửa), `resolveTeamChoice` (đa số / đội trưởng / sớm nhất) | §2.2 |
-| [voteRound.ts](shared/src/voteRound.ts) | **Vòng biểu quyết dùng chung** cho câu hỏi, SELECT, PASS: bỏ phiếu, chốt, đóng, tự chốt khi hết giờ, dời mốc khi tạm dừng, nhập tay (dự phòng) | §2.2 |
+| [voteRound.ts](shared/src/voteRound.ts) | **Vòng biểu quyết dùng chung** cho câu hỏi, SELECT, PASS: bỏ phiếu, chốt, tự chốt khi cả nhóm đã bầu (test: `autoLock.test.ts`), đóng, tự chốt khi hết giờ, dời mốc khi tạm dừng, nhập tay (dự phòng) | §2.2 |
 | [questions.ts](shared/src/questions.ts) | Kiểu `Question`, kiểm tra ngân hàng câu hỏi, trộn phương án, chọn câu không lặp | §2.3 |
 | [questionRound.ts](shared/src/questionRound.ts) | Vòng câu hỏi (dựa trên `voteRound`) + view công khai / view của nhóm | §2.3–2.4 |
 | [clock.ts](shared/src/clock.ts) | Ước lượng lệch đồng hồ client–server, số giây còn lại | §2.4 |
@@ -302,7 +307,8 @@ Không dùng router: [App.tsx](client/src/App.tsx) chọn trang theo `location.p
 | Kết nối | [socket.ts](client/src/socket.ts): **một** socket cho cả trang + các hook `useRoomState`, `useGame`, `useQuestion`, `useTeamVotes`, `useTeamSelect`, `useTeamPass`, `useAdminLog`. [clock.ts](client/src/clock.ts): bù lệch đồng hồ, `useCountdown`. |
 | Màn chiếu | `HostGame`, `HostBomb`, `HostRules`, `HostLessons`, `HostParts`, `Standings`, `TerritoryBar`, `Confetti`, `QuestionPanel` |
 | Điện thoại | `PlayBoard` (chọn ô), `PlayQuestion` + `VoteControls` (biểu quyết, nút CHỐT), `PlayBomb` |
-| Người dẫn | `AdminBoard`, `AdminFallback`, `AdminLog` |
+| Người dẫn | `AdminNext` (thanh tiến trình + nút **Bước tiếp theo**), `AdminBoard`, `AdminPlayers` (người chơi dạng chip), `AdminFallback`, `AdminLog` |
+| Điều khiển | [nextStep.ts](client/src/nextStep.ts): **một nguồn duy nhất** cho "bước tiếp theo" ở mỗi pha — dùng chung cho `/admin` và phím tắt trên `/host` ([HostRemote.tsx](client/src/HostRemote.tsx)). Thêm pha mới cần người dẫn bấm → sửa ở đây. |
 | Dùng chung | `HexBoard` (vẽ bàn cờ SVG), `Countdown`, `Outcome`, `TeamTag`, `StatusBanner`, `ConnectionBadge`, `Icon` (bộ icon nét thay cho emoji), `Logo`, `BombIcon` |
 | Âm thanh | [sound.ts](client/src/sound.ts): tạo âm bằng Web Audio API (không cần file âm thanh), **chỉ phát trên host**. [useHostSounds.ts](client/src/useHostSounds.ts) quyết định lúc nào phát âm nào. |
 | Nội dung | [rules.ts](client/src/rules.ts) (luật tóm tắt), [lessons.ts](client/src/lessons.ts) (6 đặc điểm, lấy từ CONTENT.md), [boardText.ts](client/src/boardText.ts) (nhãn pha), [teams.ts](client/src/teams.ts) (màu nhóm) |
@@ -379,7 +385,7 @@ Sửa **hàm view** tương ứng trong `shared/` (ví dụ `publicBoardView`, `
 ## 7. Test
 
 ```bash
-npm test                 # toàn bộ: 23 file, 234 test (khoảng 10 giây)
+npm test                 # toàn bộ: 24 file, 246 test (khoảng 10 giây)
 npm run test:watch       # chạy lại khi lưu file
 npx vitest run resolveTurn    # chỉ chạy file khớp tên
 ```

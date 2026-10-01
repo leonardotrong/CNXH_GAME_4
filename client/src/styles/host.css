@@ -563,7 +563,11 @@
 }
 
 .host-game--summary .standings {
-  font-size: calc(var(--u) * 1.32);
+  font-size: calc(var(--u) * 1.15);
+}
+
+.host-game--summary .standings__row {
+  padding-block: 0.26em;
 }
 
 .podium {
@@ -625,15 +629,15 @@
 }
 
 .podium__step--1 .podium__block {
-  height: calc(var(--u) * 12);
+  height: calc(var(--u) * 9.5);
 }
 
 .podium__step--2 .podium__block {
-  height: calc(var(--u) * 9);
+  height: calc(var(--u) * 7);
 }
 
 .podium__step--3 .podium__block {
-  height: calc(var(--u) * 6.5);
+  height: calc(var(--u) * 5);
 }
 
 @keyframes rise {
@@ -977,4 +981,213 @@
   width: 1.4em;
   height: 1.4em;
   color: #ff7a1a;
+}
+
+/* ─── Chuyển cảnh giữa các pha ─────────────────────────────────────────────
+   HostGame được dựng lại theo pha (key) → mỗi pha mới trượt nhẹ vào; cột phải hiện lần lượt. */
+.host-game:not(.host-game--explode) {
+  animation: phase-in 0.5s var(--ease) both;
+}
+
+.host-game__side > * {
+  animation: phase-item 0.5s var(--ease) both;
+}
+
+.host-game__side > :nth-child(2) {
+  animation-delay: 0.08s;
+}
+
+.host-game__side > :nth-child(3) {
+  animation-delay: 0.16s;
+}
+
+.host-game__side > :nth-child(n + 4) {
+  animation-delay: 0.24s;
+}
+
+.host-rules,
+.host-solo,
+.host-lobby {
+  animation: phase-in 0.5s var(--ease) both;
+}
+
+@keyframes phase-in {
+  from {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+}
+
+@keyframes phase-item {
+  from {
+    opacity: 0;
+    transform: translateX(calc(var(--u) * 1.5));
+  }
+}
+
+/* ─── Điều khiển bằng phím trên màn chiếu (HostRemote) ────────────────────── */
+.remote-open {
+  position: fixed;
+  right: calc(var(--u) * 2.4);
+  bottom: calc(var(--u) * 0.5);
+  z-index: 11;
+  display: grid;
+  place-items: center;
+  width: calc(var(--u) * 2.4);
+  height: calc(var(--u) * 2.4);
+  min-width: 32px;
+  min-height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  opacity: 0.35;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.remote-open:hover,
+.remote-open:focus-visible {
+  opacity: 1;
+  background: rgb(255 255 255 / 0.8);
+}
+
+.remote-open svg {
+  width: 60%;
+  height: 60%;
+}
+
+.remote-hint {
+  position: fixed;
+  bottom: calc(var(--u) * 0.7);
+  left: 50%;
+  z-index: 12;
+  display: flex;
+  gap: calc(var(--u) * 1.6);
+  padding: calc(var(--u) * 0.5) calc(var(--u) * 1.4);
+  border-radius: 999px;
+  background: rgb(28 42 74 / 0.82);
+  color: #fff;
+  font-size: max(13px, calc(var(--u) * 0.95));
+  font-weight: 700;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate(-50%, 0.6em);
+  pointer-events: none;
+  transition: opacity 0.35s var(--ease), transform 0.35s var(--ease);
+}
+
+.remote-hint.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.remote-hint kbd {
+  margin-right: 0.3em;
+  border-color: rgb(255 255 255 / 0.4);
+  background: rgb(255 255 255 / 0.15);
+  color: #fff;
+}
+
+.remote-toast {
+  position: fixed;
+  top: calc(var(--u) * 5.5);
+  left: 50%;
+  z-index: 13;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.5em 1.2em;
+  border-radius: 999px;
+  background: var(--green);
+  box-shadow: 0 4px 0 var(--green-dark), var(--soft);
+  color: #fff;
+  font-size: max(15px, calc(var(--u) * 1.2));
+  font-weight: 800;
+  transform: translateX(-50%);
+  animation: toast-in 2.6s var(--ease) both;
+  pointer-events: none;
+}
+
+.remote-toast.is-bad {
+  background: var(--red);
+  box-shadow: 0 4px 0 var(--red-dark), var(--soft);
+}
+
+.remote-toast svg {
+  width: 1.1em;
+  height: 1.1em;
+}
+
+@keyframes toast-in {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -0.6em);
+  }
+  10%,
+  85% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -0.3em);
+  }
+}
+
+.remote-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  background: rgb(28 42 74 / 0.45);
+  animation: fade-in 0.2s var(--ease) both;
+}
+
+.remote-dialog__card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  width: min(92vw, 30rem);
+  padding: 1.6rem;
+  border-radius: var(--radius-lg);
+  background: #fff;
+  box-shadow: var(--soft);
+  font-size: 1rem;
+  text-align: left;
+  animation: pop-in 0.25s var(--ease) both;
+}
+
+.remote-dialog__card h2 {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 900;
+}
+
+.remote-dialog__card p {
+  margin: 0;
+  color: var(--text-2);
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.remote-dialog__card input {
+  min-height: 52px;
+  padding: 0 1rem;
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  font: inherit;
+  font-size: 1.1rem;
+}
+
+.remote-dialog__card input:focus {
+  border-color: var(--blue);
+  outline: none;
+}
+
+.remote-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
 }

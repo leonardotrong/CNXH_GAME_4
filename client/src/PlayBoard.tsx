@@ -107,6 +107,7 @@ function PlaySelect({
   const board = game.board!;
   const select = board.select;
   const [error, setError] = useState('');
+  const [pending, setPending] = useState<CellId | null>(null);
   const mine = select && teamSelect?.roundId === select.roundId ? teamSelect : null;
   const inRound = select?.teamIds.includes(teamId) ?? false;
   const open = select?.status === 'open' && !!mine && !mine.locked;
@@ -117,10 +118,20 @@ function PlaySelect({
   useEffect(() => {
     navigator.vibrate?.(150);
     setError('');
+    setPending(null);
   }, [select?.roundId]);
+  useEffect(() => {
+    if (pending !== null && (mine?.votes[playerId] === pending || mine?.locked)) setPending(null);
+  }, [mine, pending, playerId]);
 
-  const vote = (cellId: CellId) =>
-    socket.emit('player:vote', { roundId: select!.roundId, option: cellId }, (res) => setError(res.ok ? '' : VOTE_ERRORS[res.error] ?? ''));
+  const vote = (cellId: CellId) => {
+    navigator.vibrate?.(12);
+    setPending(cellId);
+    socket.emit('player:vote', { roundId: select!.roundId, option: cellId }, (res) => {
+      if (!res.ok) setPending(null);
+      setError(res.ok ? '' : VOTE_ERRORS[res.error] ?? '');
+    });
+  };
   const lock = () => socket.emit('player:lock', { roundId: select!.roundId }, (res) => setError(res.ok ? '' : VOTE_ERRORS[res.error] ?? ''));
 
   return (
@@ -133,7 +144,7 @@ function PlaySelect({
             {!inRound
               ? 'Nhóm không có ô hợp lệ lượt này — bỏ lượt chọn. Vẫn trả lời câu hỏi để phòng thủ!'
               : open
-                ? 'Chạm vào một ô sáng để bỏ phiếu chọn mục tiêu.'
+                ? 'Chạm một ô sáng để bỏ phiếu. Cả nhóm bầu xong là tự chốt.'
                 : 'Chờ các nhóm khác chốt…'}
           </span>
         </span>
@@ -149,7 +160,7 @@ function PlaySelect({
         shields={board.shields}
         selectable={open ? mine!.validTargets : undefined}
         counts={mine?.tally}
-        mine={mine?.votes[playerId] ?? null}
+        mine={pending ?? mine?.votes[playerId] ?? null}
         chosen={mine?.locked ? mine.choice : null}
         onCellClick={open ? vote : undefined}
         label="Bản đồ chọn ô"

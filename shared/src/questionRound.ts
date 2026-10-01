@@ -46,8 +46,9 @@ export function castVote(
   playerId: string,
   option: number,
   now: number,
+  ctx?: TeamContext,
 ): RoundResult {
-  return castBallot(round, teamId, playerId, option, now, (o) => o >= 0 && o < round.question.options.length);
+  return castBallot(round, teamId, playerId, option, now, (o) => o >= 0 && o < round.question.options.length, ctx);
 }
 
 export function lockTeam(

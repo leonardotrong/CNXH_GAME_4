@@ -769,11 +769,27 @@
   background: #fff;
 }
 
+.sound-toggle svg {
+  width: 1.2em;
+  height: 1.2em;
+}
+
+/* Đã bật âm thanh: chỉ còn icon mờ ở góc, không che nội dung. */
+.sound-toggle:not(.is-locked) {
+  padding: 0.4em;
+  background: transparent;
+  opacity: 0.4;
+}
+
+.sound-toggle:not(.is-locked):hover {
+  background: rgb(255 255 255 / 0.85);
+  opacity: 1;
+}
+
 .sound-toggle.is-locked {
-  background: var(--red);
-  color: #fff;
-  box-shadow: 0 3px 0 var(--red-dark);
-  animation: blink 1.4s ease-in-out infinite;
+  background: rgb(255 255 255 / 0.9);
+  color: var(--red-dark);
+  box-shadow: var(--chunky);
 }
 
 .status-banner {

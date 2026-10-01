@@ -14,7 +14,7 @@ import {
 } from '@cnxh/shared';
 import { loadQuestionBank } from './questionBank';
 import { readSnapshot, writeSnapshot } from './persistence';
-import { DEFAULT_TIMING, Room, RoomRegistry, type RoomTiming } from './room';
+import { DEFAULT_TIMING, Room, RoomRegistry, type RoomTiming, type VoteKind } from './room';
 
 interface SocketData {
   isAdmin?: boolean;
@@ -179,6 +179,19 @@ export function createAppServer(options: AppServerOptions = {}): AppServer {
     arm(room);
   };
 
+  /** Một nhóm vừa chốt (đội trưởng hoặc tự chốt): đóng sớm nếu mọi nhóm đã chốt, nếu không chỉ phát lại phần liên quan. */
+  const afterLock = (room: Room, res: { teamId: number; kind: VoteKind }) => {
+    if (room.everyoneLocked()) {
+      // Đóng sớm: SELECT → câu hỏi, câu → REVEAL (câu bom: Room tự quyết nổ nếu ngòi hết đúng lúc chốt), PASS → câu mới.
+      const adv = room.advance(questions);
+      if (!adv.ok) console.error(`[server] Phòng ${room.code}: không đóng sớm được (${adv.error})`);
+      return changed(room);
+    }
+    if (res.kind === 'question') emitQuestion(room);
+    else emitGame(room);
+    emitTeamViews(room, res.teamId);
+  };
+
   io.on('connection', (socket) => {
     socket.emit('server:hello', { serverTime: Date.now() });
     socket.on('client:ping', (ack) => {
@@ -256,8 +269,10 @@ export function createAppServer(options: AppServerOptions = {}): AppServer {
       if (!room || !socket.data.playerId) return done(ack, { ok: false, error: 'PLAYER_NOT_FOUND' });
       const res = room.vote(socket.data.playerId, req?.roundId, req?.option);
       if (!res.ok) return done(ack, res);
-      emitTeamViews(room, res.teamId);
       done(ack, { ok: true });
+      // Phiếu này làm nhóm tự chốt (mọi thành viên online đã bầu): xử lý như lệnh CHỐT.
+      if (res.locked) return afterLock(room, res);
+      emitTeamViews(room, res.teamId);
     });
 
     socket.on('player:lock', (req, ack) => {
@@ -266,15 +281,7 @@ export function createAppServer(options: AppServerOptions = {}): AppServer {
       const res = room.lock(socket.data.playerId, req?.roundId);
       if (!res.ok) return done(ack, res);
       done(ack, { ok: true });
-      if (room.everyoneLocked()) {
-        // Đóng sớm: SELECT → câu hỏi, câu → REVEAL (câu bom: Room tự quyết nổ nếu ngòi hết đúng lúc chốt), PASS → câu mới.
-        const adv = room.advance(questions);
-        if (!adv.ok) console.error(`[server] Phòng ${room.code}: không đóng sớm được (${adv.error})`);
-        return changed(room);
-      }
-      if (res.kind === 'question') emitQuestion(room);
-      else emitGame(room);
-      emitTeamViews(room, res.teamId);
+      afterLock(room, res);
     });
 
     socket.on('admin:login', (req, ack) => {

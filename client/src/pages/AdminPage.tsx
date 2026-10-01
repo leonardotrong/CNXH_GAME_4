@@ -1,15 +1,14 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { TEAM_IDS } from '@cnxh/shared';
 import { AdminBoard } from '../AdminBoard';
 import { AdminFallback } from '../AdminFallback';
 import { AdminLog } from '../AdminLog';
-import { PHASE_LABELS } from '../boardText';
+import { AdminNext } from '../AdminNext';
+import { AdminPlayers } from '../AdminPlayers';
 import { ConnectionBadge } from '../ConnectionBadge';
 import { Icon } from '../Icon';
 import { Logo } from '../Logo';
 import { QuestionPanel } from '../QuestionPanel';
 import { socket, useAdminLog, useGame, useQuestion, useRoomState } from '../socket';
-import { teamName, teamStyle } from '../teams';
 
 const PW_KEY = 'cnxh.adminPassword';
 
@@ -58,7 +57,6 @@ export function AdminPage() {
   /** Câu thử chỉ mở được ngoài trận (LOBBY/SUMMARY). */
   const testAllowed = !game || game.phase === 'LOBBY' || game.phase === 'SUMMARY';
   const report = (what: string) => (res: { ok: boolean; error?: string }) => setNotice(res.ok ? '' : `${what} (${res.error}).`);
-  const paused = game?.pausedAt != null;
 
   const createRoom = () => {
     if (state && game && game.phase !== 'LOBBY' && game.phase !== 'SUMMARY' && !window.confirm('Đang có trận. Tạo phòng mới sẽ bỏ trận hiện tại. Tiếp tục?')) return;
@@ -90,8 +88,6 @@ export function AdminPage() {
     );
   }
 
-  const players = state?.teams.reduce((n, t) => n + t.players.length, 0) ?? 0;
-
   return (
     <main className="page page--admin">
       <header className="admin-top">
@@ -105,58 +101,16 @@ export function AdminPage() {
             Mã phòng <b>{state.code}</b>
           </span>
         )}
-        {state && <span className="admin-top__phase">{game ? PHASE_LABELS[game.phase] ?? game.phase : '…'}</span>}
         <ConnectionBadge />
       </header>
-      {!state ? (
-        <section className="admin-card admin-empty">
-          <p>Chưa có phòng. Tạo phòng để màn chiếu hiện mã QR cho sinh viên quét.</p>
-          <button className="primary-btn primary-btn--gold" onClick={createRoom}>
-            Tạo phòng
-          </button>
-        </section>
-      ) : (
+      <AdminNext hasRoom={!!state} game={game} question={question} onNotice={setNotice} />
+      {notice && (
+        <p className="form-error" role="alert">
+          {notice}
+        </p>
+      )}
+      {state && (
         <>
-          <div className={`admin-controls ${paused ? 'is-paused' : ''}`}>
-            <button
-              className={`primary-btn admin-controls__pause ${paused ? 'primary-btn--gold' : 'primary-btn--danger'}`}
-              onClick={() => socket.emit('admin:setPaused', { paused: !paused }, report('Không đổi được tạm dừng'))}
-            >
-              <Icon name={paused ? 'play' : 'pause'} />
-              {paused ? 'TIẾP TỤC' : 'TẠM DỪNG'}
-            </button>
-            <label className="switch">
-              <input
-                type="checkbox"
-                checked={game?.fallback ?? false}
-                onChange={(e) => socket.emit('admin:setFallback', { on: e.target.checked }, report('Không đổi được chế độ dự phòng'))}
-              />
-              Chế độ dự phòng (thẻ màu)
-            </label>
-            {game?.phase === 'SUMMARY' && (
-              <button
-                className="primary-btn"
-                onClick={() =>
-                  socket.emit('admin:setSummaryView', { view: game.summaryView === 'ranking' ? 'lessons' : 'ranking' }, report('Không đổi được màn tổng kết'))
-                }
-              >
-                {game.summaryView === 'ranking' ? 'Hiện 6 đặc điểm (tổng kết)' : 'Hiện bảng xếp hạng'}
-              </button>
-            )}
-            <span className="admin-controls__spacer" />
-            <button className="primary-btn primary-btn--ghost" onClick={() => socket.emit('admin:setLobbyOpen', { open: !state.lobbyOpen }, () => {})}>
-              {state.lobbyOpen ? 'Đóng cổng vào phòng' : 'Mở lại cổng vào phòng'}
-            </button>
-            <button className="primary-btn primary-btn--ghost" onClick={createRoom}>
-              Tạo phòng mới
-            </button>
-          </div>
-          {paused && <p className="admin-paused">Trận đang TẠM DỪNG — đồng hồ, ngòi bom đứng yên; người chơi không bỏ phiếu được.</p>}
-          {notice && (
-            <p className="form-error" role="alert">
-              {notice}
-            </p>
-          )}
           {game?.fallback && (
             <section className="admin-card admin-fallback">
               <h2>Chế độ dự phòng</h2>
@@ -166,90 +120,73 @@ export function AdminPage() {
           <div className="admin-grid">
             <AdminBoard game={game} onNotice={setNotice} />
             <div className="admin-col">
-              <section className="admin-card admin-trial">
-                <h2>Câu hỏi</h2>
-                <div className="admin-actions">
-                  <button
-                    className="primary-btn"
-                    disabled={question?.status === 'open' || !testAllowed}
-                    onClick={() =>
-                      socket.emit('admin:startQuestion', { pool: 'board' }, (res) => setNotice(res.ok ? '' : `Không mở được câu hỏi (${res.error}).`))
-                    }
-                  >
-                    Câu thử
-                  </button>
-                  <button
-                    className="primary-btn"
-                    disabled={question?.status === 'open' || !testAllowed}
-                    onClick={() =>
-                      socket.emit('admin:startQuestion', { pool: 'bomb' }, (res) => setNotice(res.ok ? '' : `Không mở được câu hỏi (${res.error}).`))
-                    }
-                  >
-                    Câu thử (kho bom)
-                  </button>
-                  <button
-                    className="primary-btn primary-btn--danger"
-                    disabled={!question || (!testAllowed && question.status !== 'open')}
-                    onClick={() => socket.emit('admin:skipQuestion', (res) => setNotice(res.ok ? '' : `Không bỏ qua được (${res.error}).`))}
-                  >
-                    {testAllowed ? 'Bỏ qua câu' : 'Bỏ qua câu lỗi (đổi câu khác)'}
-                  </button>
-                </div>
-                {question ? (
+              {question && (
+                <section className="admin-card admin-trial">
+                  <h2>
+                    Câu hỏi
+                    <button
+                      className="mini-btn mini-btn--danger"
+                      disabled={!testAllowed && question.status !== 'open'}
+                      onClick={() => socket.emit('admin:skipQuestion', (res) => setNotice(res.ok ? '' : `Không bỏ qua được (${res.error}).`))}
+                    >
+                      {testAllowed ? 'Hủy câu thử' : 'Câu lỗi? Đổi câu khác'}
+                    </button>
+                  </h2>
                   <div className="admin-question">
                     <QuestionPanel view={question} activeTeamIds={state.teams.filter((t) => t.players.length > 0).map((t) => t.id)} />
                   </div>
-                ) : (
-                  <p className="admin-muted">Không có câu hỏi đang mở.</p>
-                )}
-              </section>
+                </section>
+              )}
               <AdminLog entries={log} />
             </div>
           </div>
-          <section className="admin-card">
-            <h2>
-              Người chơi <span className="admin-count">{players}</span>
-            </h2>
-            <div className="admin-teams">
-              {state.teams.map((t) => (
-                <section key={t.id} className="admin-team" style={teamStyle(t.id)}>
-                  <h3>
-                    {teamName(t.id)} <span>{t.players.length}</span>
-                  </h3>
-                  {t.players.length === 0 && <p className="admin-muted">Chưa có ai.</p>}
-                  <ul>
-                    {t.players.map((p) => (
-                      <li key={p.id} className={p.online ? '' : 'is-offline'}>
-                        <span className="admin-team__name">
-                          {p.isDesignatedCaptain && <span className="captain-star">★</span>}
-                          {p.name}
-                          {p.isCaptain && !p.isDesignatedCaptain && <em> (giữ quyền tạm)</em>}
-                        </span>
-                        <button
-                          className="mini-btn"
-                          disabled={p.isDesignatedCaptain}
-                          onClick={() => socket.emit('admin:setCaptain', { playerId: p.id }, () => {})}
-                        >
-                          Làm đội trưởng
-                        </button>
-                        <select
-                          className="mini-select"
-                          value={t.id}
-                          aria-label={`Chuyển ${p.name} sang nhóm`}
-                          onChange={(e) => socket.emit('admin:movePlayer', { playerId: p.id, teamId: Number(e.target.value) }, () => {})}
-                        >
-                          {TEAM_IDS.map((id) => (
-                            <option key={id} value={id}>
-                              {teamName(id)}
-                            </option>
-                          ))}
-                        </select>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              ))}
+          <AdminPlayers state={state} />
+          <section className="admin-card admin-tools">
+            <h2>Công cụ khác</h2>
+            <div className="admin-actions">
+              <button
+                className="primary-btn primary-btn--ghost"
+                disabled={question?.status === 'open' || !testAllowed}
+                title="Một câu cho cả lớp làm quen cách bỏ phiếu (chỉ ở phòng chờ / tổng kết)"
+                onClick={() => socket.emit('admin:startQuestion', { pool: 'board' }, (res) => setNotice(res.ok ? '' : `Không mở được câu hỏi (${res.error}).`))}
+              >
+                <Icon name="question" /> Câu thử
+              </button>
+              <button
+                className="primary-btn primary-btn--ghost"
+                disabled={question?.status === 'open' || !testAllowed}
+                onClick={() => socket.emit('admin:startQuestion', { pool: 'bomb' }, (res) => setNotice(res.ok ? '' : `Không mở được câu hỏi (${res.error}).`))}
+              >
+                <Icon name="bomb" /> Câu thử (kho bom)
+              </button>
+              <button className="primary-btn primary-btn--ghost" onClick={() => socket.emit('admin:setLobbyOpen', { open: !state.lobbyOpen }, () => {})}>
+                <Icon name="users" /> {state.lobbyOpen ? 'Đóng cổng vào phòng' : 'Mở lại cổng vào phòng'}
+              </button>
+              {game?.phase === 'SUMMARY' && (
+                <button
+                  className="primary-btn primary-btn--ghost"
+                  onClick={() => socket.emit('admin:startBoard', { totalTurns: game.board?.totalTurns }, report('Không bắt đầu được Bàn Cờ'))}
+                >
+                  <Icon name="repeat" /> Chơi lại Bàn Cờ
+                </button>
+              )}
+              <label className="switch">
+                <input
+                  type="checkbox"
+                  checked={game?.fallback ?? false}
+                  onChange={(e) => socket.emit('admin:setFallback', { on: e.target.checked }, report('Không đổi được chế độ dự phòng'))}
+                />
+                Chế độ dự phòng (mạng sập: chơi bằng thẻ màu)
+              </label>
+              <span className="admin-controls__spacer" />
+              <button className="primary-btn primary-btn--ghost" onClick={createRoom}>
+                Tạo phòng mới
+              </button>
             </div>
+            <p className="admin-muted admin-tools__tip">
+              <Icon name="monitor" /> Mẹo: trên màn chiếu (/host) bấm <kbd>K</kbd> và nhập mật khẩu này để điều khiển bằng phím
+              <kbd>Space</kbd> (bước tiếp), <kbd>P</kbd> (tạm dừng) — không cần chuyển cửa sổ.
+            </p>
           </section>
         </>
       )}

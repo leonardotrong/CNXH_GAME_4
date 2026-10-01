@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import { ConnectionBadge } from '../ConnectionBadge';
 import { HostGame } from '../HostGame';
+import { HostRemote } from '../HostRemote';
 import { HostRules } from '../HostRules';
 import { Icon } from '../Icon';
 import { Logo } from '../Logo';
@@ -51,6 +52,7 @@ export function HostPage() {
       <ConnectionBadge />
       <SoundToggle />
       <StatusBanner game={game} audience="host" />
+      <HostRemote hasRoom={!!state} game={game} question={question} />
     </>
   );
 
@@ -61,7 +63,8 @@ export function HostPage() {
     return (
       <main className={`page page--host page--game ${game.phase.startsWith('BOMB_') ? 'page--danger' : ''}`} onPointerDown={unlockAudio}>
         {chrome}
-        <HostGame game={game} question={question} activeTeamIds={activeTeamIds} />
+        {/* key theo pha: mỗi pha dựng lại màn hình → hiệu ứng chuyển cảnh (CSS .host-game). */}
+        <HostGame key={`${game.phase}-${game.summaryView}`} game={game} question={question} activeTeamIds={activeTeamIds} />
       </main>
     );
   }
@@ -73,7 +76,7 @@ export function HostPage() {
     <main className="page page--host" onPointerDown={unlockAudio}>
       {chrome}
       {game?.phase === 'RULES' && !question ? (
-        <HostRules />
+        <HostRules key="rules" />
       ) : question ? (
         <div className="host-solo">
           <QuestionPanel view={question} activeTeamIds={activeTeamIds} />

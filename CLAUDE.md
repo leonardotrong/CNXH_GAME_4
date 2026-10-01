@@ -48,6 +48,8 @@ Ghi chú kỹ thuật: `shared/` xuất thẳng mã TypeScript (`@cnxh/shared` �
 
 Giao diện: phong cách game chiếm lãnh thổ di động (kiểu State.io/Risk) — nền "biển" sáng, thẻ trắng bóng khối, nút nổi, ô lục giác nổi khối, thanh tỉ lệ lãnh thổ (`TerritoryBar`), icon nét (`Icon.tsx`) thay emoji. CSS trong `client/src/styles/` (`base` token màu, `components`, `board`, `host`, `play`, `admin`); màu nhóm truyền qua biến CSS `--team`/`--team-dark` (`teamStyle()` trong `client/src/teams.ts`). Phông Nunito tự host qua `@fontsource-variable/nunito` (không cần mạng ngoài). Màn chiếu tính mọi kích thước theo `--u` (1% chiều rộng, giới hạn theo chiều cao 16:9) để vừa khít một màn hình ở mọi độ phân giải. Hoạt ảnh bom (tia lửa, lắc, nhấp nháy) luôn có nhịp cố định.
 
+Điều khiển người dẫn: `client/src/nextStep.ts` là nguồn duy nhất cho "Bước tiếp theo" ở mỗi pha — dùng chung cho nút lớn `/admin` (`AdminNext`) và phím tắt trên `/host` (`HostRemote`: K đăng nhập, Space bước tiếp, P tạm dừng, M âm thanh, F toàn màn hình). Thêm pha cần người dẫn bấm thì sửa ở đó. Biểu quyết: nhóm tự chốt khi mọi thành viên online đã bầu (`castBallot` nhận `TeamContext`, nguồn chốt `'auto'`); đội trưởng vẫn CHỐT sớm được khi quá nửa.
+
 Cloud: hook `SessionStart` (`.claude/settings.json` → `scripts/claude-session-start.sh`) tự `npm ci` khi chạy trên Claude Code on the web; ở máy local thì bỏ qua. GitHub Actions (`.github/workflows/ci.yml`) chạy typecheck + test + build cho mỗi push/PR.
 
 ## Trạng thái (cập nhật khi xong mỗi giai đoạn)

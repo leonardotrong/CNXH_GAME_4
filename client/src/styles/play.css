@@ -875,3 +875,85 @@
     opacity: 0;
   }
 }
+
+/* ─── Chuyển cảnh giữa các pha (PlayBoard dựng lại theo pha) ───────────────── */
+.play-board,
+.play-bomb,
+.play-question,
+.play-rules,
+.wait-card {
+  animation: play-in 0.35s var(--ease) both;
+}
+
+@keyframes play-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.6rem);
+  }
+}
+
+/* Nhóm của bạn — thu gọn khi đang có việc cần làm */
+.play-team--compact {
+  padding: 0.65rem 1rem;
+}
+
+.play-team--compact summary {
+  color: var(--text-2);
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+
+.play-team--compact summary::-webkit-details-marker {
+  display: none;
+}
+
+.play-team--compact summary::after {
+  content: '▾';
+  float: right;
+  color: var(--muted);
+  transition: transform 0.2s var(--ease);
+}
+
+.play-team--compact[open] summary::after {
+  transform: rotate(180deg);
+}
+
+.play-team--compact[open] .play-members {
+  margin-top: 0.6rem;
+}
+
+/* Màn vào phòng: mã phòng từ QR hiện dạng nhãn */
+.join-room {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.7rem 1rem;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-weight: 700;
+}
+
+.join-room b {
+  color: var(--text);
+  font-size: 1.2rem;
+  letter-spacing: 0.08em;
+}
+
+.link-btn {
+  margin-left: auto;
+  padding: 0.3rem 0.4rem;
+  border: 0;
+  background: none;
+  color: var(--blue);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.vote-meter__auto {
+  color: var(--muted);
+  font-weight: 600;
+}

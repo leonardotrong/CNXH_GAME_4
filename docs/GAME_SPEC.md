@@ -27,6 +27,7 @@
 - Mỗi thành viên online bấm lựa chọn trên điện thoại riêng; được đổi ý trong thời gian cho phép.
 - Mọi thành viên thấy số phiếu trực tiếp của nhóm mình (không thấy nhóm khác).
 - Đội trưởng có nút **CHỐT**. Nút chỉ bật khi quá nửa số thành viên đang online đã bỏ phiếu.
+- **Tự chốt khi đủ phiếu**: ngay khi phiếu của thành viên online cuối cùng được server ghi nhận (tức MỌI thành viên đang online đều đã bỏ phiếu), nhóm tự chốt — không cần đội trưởng. Thời điểm chốt = lúc server nhận phiếu đó; lựa chọn tính theo quy tắc bên dưới. Chỉ xét khi có phiếu mới (một người rời mạng không làm nhóm tự chốt). Nhóm chỉ có một người online thì chạm là chốt.
 - Khi chốt: lựa chọn của nhóm = phương án nhiều phiếu nhất. Hòa → theo phiếu của đội trưởng; nếu đội trưởng chưa bỏ phiếu → phương án đạt số phiếu đó sớm nhất.
 - Hết giờ mà chưa chốt: server tự chốt theo quy tắc trên (không cần quá nửa), thời điểm chốt = thời điểm hết giờ. Không có phiếu nào → nhóm không có lựa chọn (câu hỏi tính là sai, chọn ô tính là bỏ lượt).
 - Thời điểm chốt do SERVER ghi nhận (mili-giây) là căn cứ duy nhất để so nhóm nào nhanh hơn.
@@ -152,6 +153,8 @@ Với mỗi ô bị ít nhất một nhóm nhắm tới:
 - Rung nhẹ (`navigator.vibrate`, nếu hỗ trợ) khi câu mới bắt đầu và khi bom chuyền tới nhóm mình.
 
 ### 5.3 `/admin` — người dẫn; bảo vệ bằng mật khẩu từ biến môi trường `ADMIN_PASSWORD`
+- **Nút "Bước tiếp theo"**: một nút lớn luôn ghi rõ việc sẽ xảy ra (Tạo phòng → Hiện luật → Bắt đầu Bàn Cờ → Bắt đầu Quả Bom → Hiện 6 đặc điểm). Trong pha tự chạy, nút hiện "Đang tự chạy" và không làm gì; không có cách bỏ qua REVEAL (lúc học).
+- **Điều khiển ngay trên `/host`**: người dẫn đăng nhập (mật khẩu admin) một lần trên máy chiếu rồi dùng phím: `Space`/`→` = Bước tiếp theo, `P` = tạm dừng/tiếp tục, `M` = tắt/bật âm thanh, `F` = toàn màn hình. Gợi ý phím hiện mờ ở góc và tự ẩn. Tạo phòng mới khi đang có trận chỉ làm được ở `/admin`.
 - Tạo phòng; mở/đóng LOBBY; bắt đầu từng pha; tạm dừng/tiếp tục; bỏ qua câu lỗi; "Kết thúc Bàn Cờ sau lượt này".
 - Chỉnh tay: đổi chủ ô, đổi đội trưởng, chuyển người chơi sang nhóm khác.
 - **Chế độ dự phòng**: khi mạng sập, các nhóm giơ thẻ màu A/B/C/D; admin nhập ô mục tiêu, đáp án và thứ tự nhanh chậm cho từng nhóm; trò chơi vẫn chạy trên host.
@@ -198,3 +201,5 @@ Với mỗi ô bị ít nhất một nhóm nhắm tới:
 - Khôi phục sau khi server khởi động lại → trận ở trạng thái tạm dừng: người chơi cần thời gian kết nối lại trước khi đồng hồ chạy tiếp.
 - Chế độ dự phòng tắt tự đóng pha: người dẫn cần thời gian nhìn thẻ màu và nhập; thứ tự nhanh chậm quy đổi thành hạng × 1 giây để dùng lại nguyên luật 3.3.
 - Pha RULES do admin chuyển (không đếm giờ): người dẫn giải thích luật theo nhịp của lớp.
+- Tự chốt khi mọi thành viên online đã bỏ phiếu: nhóm không bị kẹt vì đội trưởng lơ đãng; vẫn là quyết định của tập thể (đa số), đội trưởng vẫn có thể chốt sớm khi quá nửa. Chỉ xét khi có phiếu mới để thời điểm chốt luôn gắn với một thao tác của nhóm.
+- Một nút "Bước tiếp theo" + phím tắt trên `/host`: người dẫn không phải nhớ thứ tự các nút, có thể điều khiển chỉ bằng máy chiếu. Không cho bỏ qua REVEAL để giữ "sau mỗi câu là lúc học".

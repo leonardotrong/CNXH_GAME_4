@@ -48,8 +48,9 @@ export function castTarget(
   playerId: string,
   cellId: number,
   now: number,
+  ctx?: TeamContext,
 ): VoteResult<SelectRound> {
-  return castBallot(round, teamId, playerId, cellId, now, (c) => round.validTargets[teamId]?.includes(c) ?? false);
+  return castBallot(round, teamId, playerId, cellId, now, (c) => round.validTargets[teamId]?.includes(c) ?? false, ctx);
 }
 
 export function lockTarget(

@@ -67,10 +67,12 @@ describe('Bàn Cờ qua Socket.IO', () => {
     const { code } = (await call(admin, 'admin:createRoom')) as unknown as { code: string };
     const host = client();
     await call(host, 'host:watch', { roomCode: code });
-    const [p1, p2] = [client(), client()];
+    const [p1, p2, p3] = [client(), client(), client()];
     await call(p1, 'player:join', { roomCode: code, name: 'A', teamId: 1 });
     await call(p2, 'player:join', { roomCode: code, name: 'B', teamId: 2 });
-    const [hostLog, p1Log, p2Log] = [host, p1, p2].map(record);
+    // C cùng nhóm 2: nhóm 2 chỉ tự chốt khi cả B và C đã bỏ phiếu (GAME_SPEC 2.2).
+    await call(p3, 'player:join', { roomCode: code, name: 'C', teamId: 2 });
+    const [hostLog, p1Log, p2Log, p3Log] = [host, p1, p2, p3].map(record);
 
     // Câu thử không được mở khi đang chơi.
     const selectAtP1 = waitFor<TeamSelectView | null>(p1, 'select:team', (v) => v !== null);
@@ -82,11 +84,12 @@ describe('Bàn Cờ qua Socket.IO', () => {
     expect(sel.validTargets).toContain(c(1, -3));
 
     expect((await call(p1, 'player:vote', { roundId: sel.roundId, option: c(1, -3) })).ok).toBe(true);
-    expect((await call(p1, 'player:lock', { roundId: sel.roundId })).ok).toBe(true);
+    // A là người online duy nhất của nhóm 1 → phiếu đã tự chốt.
+    expect(await call(p1, 'player:lock', { roundId: sel.roundId })).toEqual({ ok: false, error: 'LOCKED' });
     expect((await call(p2, 'player:vote', { roundId: sel.roundId, option: c(2, -3) })).ok).toBe(true);
 
     // Trước khi SELECT đóng: không payload công khai nào có mục tiêu, không ai thấy phiếu nhóm khác.
-    for (const log of [hostLog, p1Log, p2Log]) {
+    for (const log of [hostLog, p1Log, p2Log, p3Log]) {
       for (const { event, payload } of log) {
         if (event !== 'game:state') continue;
         const board = (payload as GameView).board;
@@ -98,10 +101,10 @@ describe('Bàn Cờ qua Socket.IO', () => {
     expect(p2Log.filter((e) => e.event === 'select:team').every((e) => (e.payload as TeamSelectView | null)?.teamId !== 1)).toBe(true);
     expect(p1Log.filter((e) => e.event === 'select:team').every((e) => (e.payload as TeamSelectView | null)?.teamId !== 2)).toBe(true);
 
-    // Nhóm cuối chốt → SELECT đóng sớm, lật mục tiêu, mở câu hỏi.
+    // Thành viên cuối của nhóm 2 bỏ phiếu → nhóm tự chốt → mọi nhóm đã chốt → SELECT đóng sớm, lật mục tiêu, mở câu hỏi.
     const questionAtHost = waitFor<GameView>(host, 'game:state', (v) => v.phase === 'BOARD_QUESTION');
     const qAtP1 = waitFor<PublicQuestionView | null>(p1, 'question:state', (v) => v?.status === 'open');
-    expect((await call(p2, 'player:lock', { roundId: sel.roundId })).ok).toBe(true);
+    expect((await call(p3, 'player:vote', { roundId: sel.roundId, option: c(2, -3) })).ok).toBe(true);
     const questionPhase = await questionAtHost;
     expect(questionPhase.board!.targets).toMatchObject({ 1: c(1, -3), 2: c(2, -3) });
     expect(questionPhase.board!.outcome).toBeNull();
@@ -112,15 +115,14 @@ describe('Bàn Cờ qua Socket.IO', () => {
     const revealAtHost = waitFor<GameView>(host, 'game:state', (v) => v.phase === 'BOARD_REVEAL');
     await call(p1, 'player:vote', { roundId: q.roundId, option: right });
     await call(p2, 'player:vote', { roundId: q.roundId, option: (right + 1) % 4 });
-    await call(p1, 'player:lock', { roundId: q.roundId });
-    await call(p2, 'player:lock', { roundId: q.roundId });
+    await call(p3, 'player:vote', { roundId: q.roundId, option: (right + 1) % 4 });
     const reveal = await revealAtHost;
     expect(reveal.board!.owners[c(1, -3)]).toBe(1);
     expect(reveal.board!.owners[c(2, -3)]).toBeNull();
     expect(reveal.board!.outcome!.cells.map((x) => x.result)).toEqual(['captured', 'failed']);
 
     // Kết quả lượt không xuất hiện trước REVEAL.
-    for (const log of [hostLog, p1Log, p2Log]) {
+    for (const log of [hostLog, p1Log, p2Log, p3Log]) {
       const idx = log.findIndex((e) => e.event === 'game:state' && (e.payload as GameView).phase === 'BOARD_REVEAL');
       for (const { event, payload } of log.slice(0, idx)) {
         if (event === 'game:state') expect((payload as GameView).board?.outcome ?? null).toBeNull();

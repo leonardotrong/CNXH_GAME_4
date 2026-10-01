@@ -34,6 +34,11 @@ function tick() {
   time = Math.max(time, at);
   must(room.advance(BANK));
 }
+/** CHỐT nếu nhóm chưa tự chốt — nhóm một người online thì phiếu đã tự chốt (GAME_SPEC 2.2). */
+function lockIfOpen(name: string, roundId: number) {
+  const res = room.lock(ids[name]!, roundId);
+  if (!res.ok && res.error !== 'LOCKED') throw new Error(JSON.stringify(res));
+}
 const answer = () => room.question!.question.answerIndex;
 const answerText = () => room.question!.question.options[answer()];
 
@@ -77,7 +82,7 @@ describe('Room — tạm dừng toàn cục', () => {
     expect(room.select!.endsAt).toBe(endsAt + 60_000);
     expect(room.nextDeadline()).toBe(endsAt + 60_000);
     // Phiếu cũ vẫn còn, CHỐT được.
-    must(room.lock(ids['An']!, roundId));
+    lockIfOpen('An', roundId);
     expect(room.teamSelect(1)!.choice).toBe(c(1, -3));
   });
 
@@ -87,13 +92,13 @@ describe('Room — tạm dừng toàn cục', () => {
     const q = room.question!;
     time += 3_000;
     must(room.vote(ids['An']!, q.roundId, answer()));
-    must(room.lock(ids['An']!, q.roundId));
+    lockIfOpen('An', q.roundId);
     must(room.pause());
     time += 100_000;
     must(room.resume());
     time += 2_000;
     must(room.vote(ids['Bình']!, q.roundId, answer()));
-    must(room.lock(ids['Bình']!, q.roundId));
+    lockIfOpen('Bình', q.roundId);
     expect(room.everyoneLocked()).toBe(true);
     must(room.advance(BANK));
     const results = room.publicQuestion()!.reveal!.results;
@@ -190,15 +195,15 @@ describe('Room — chế độ dự phòng (không cần điện thoại)', () =
     const q = room.question!;
     time += 4_000;
     must(room.vote(ids['Bình']!, q.roundId, answer()));
-    must(room.lock(ids['Bình']!, q.roundId));
+    lockIfOpen('Bình', q.roundId);
     must(room.vote(ids['An']!, q.roundId, answer()));
-    must(room.lock(ids['An']!, q.roundId));
+    lockIfOpen('An', q.roundId);
     // Điện thoại đã chốt hết nhưng dự phòng không đóng sớm.
     expect(room.everyoneLocked()).toBe(false);
     must(room.fallbackAnswers([{ teamId: 1, choice: (answer() + 1) % 4, rank: 1 }]));
     const results = room.publicQuestion()!.reveal!.results;
     expect(results.find((r) => r.teamId === 1)).toMatchObject({ correct: false, lockedBy: 'admin' });
-    expect(results.find((r) => r.teamId === 2)).toMatchObject({ correct: true, lockedBy: 'captain', lockedAfterMs: 4_000 });
+    expect(results.find((r) => r.teamId === 2)).toMatchObject({ correct: true, lockedBy: 'auto', lockedAfterMs: 4_000 });
   });
 
   it('Quả Bom dự phòng: đáp án + nhóm nhận do người dẫn nhập; ngòi chỉ cháy trong thời gian câu', () => {
@@ -262,12 +267,12 @@ describe('Room — chỉnh tay và nhật ký', () => {
     must(room.startBoard(BANK, 2));
     const sel = room.select!.roundId;
     must(room.vote(ids['An']!, sel, OUTER_RING[1]!));
-    must(room.lock(ids['An']!, sel));
+    lockIfOpen('An', sel);
     tick();
     const q = room.question!;
     time += 2_345;
     must(room.vote(ids['An']!, q.roundId, answer()));
-    must(room.lock(ids['An']!, q.roundId));
+    lockIfOpen('An', q.roundId);
     tick();
     const texts = room.log().map((e) => e.text);
     expect(texts).toEqual(
@@ -290,7 +295,7 @@ describe('Room — lưu và khôi phục', () => {
     const q = room.question!;
     time += 5_000;
     must(room.vote(ids['An']!, q.roundId, answer()));
-    must(room.lock(ids['An']!, q.roundId));
+    lockIfOpen('An', q.roundId);
     const snap = JSON.parse(JSON.stringify(room.toSnapshot())) as RoomSnapshot;
     expect(snap.savedAt).toBe(time);
 

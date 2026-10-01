@@ -379,30 +379,34 @@ export class Room {
     return this.phase === 'BOMB_PASS' && this.pass && this.pass.roundId === roundId ? this.pass : null;
   }
 
-  /** Bỏ phiếu cho vòng đang mở: SELECT (option = id ô), PASS (option = số nhóm) hoặc câu hỏi (option = chỉ số phương án). */
-  vote(playerId: string, roundId: unknown, option: unknown): RoomResult<{ teamId: TeamId; kind: VoteKind }> {
+  /**
+   * Bỏ phiếu cho vòng đang mở: SELECT (option = id ô), PASS (option = số nhóm) hoặc câu hỏi (option = chỉ số phương án).
+   * `locked` = phiếu này làm nhóm tự chốt (mọi thành viên online đã bầu, GAME_SPEC 2.2).
+   */
+  vote(playerId: string, roundId: unknown, option: unknown): RoomResult<{ teamId: TeamId; kind: VoteKind; locked: boolean }> {
     const teamId = this.teamOf(playerId);
     if (teamId === null) return { ok: false, error: 'PLAYER_NOT_FOUND' };
     if (this.pausedAt !== null) return PAUSED;
     if (typeof option !== 'number') return { ok: false, error: 'BAD_OPTION' };
+    const ctx = this.teamContext(teamId);
     const select = this.selectRound(roundId);
     if (select) {
-      const res = castTarget(select, teamId, playerId, option, this.now());
+      const res = castTarget(select, teamId, playerId, option, this.now(), ctx);
       if (!res.ok) return res;
       this.select = res.round;
-      return { ok: true, teamId, kind: 'select' };
+      return { ok: true, teamId, kind: 'select', locked: res.round.teams[teamId]!.lockedAt !== null };
     }
     const pass = this.passRound(roundId);
     if (pass) {
-      const res = castPass(pass, teamId, playerId, option, this.now());
+      const res = castPass(pass, teamId, playerId, option, this.now(), ctx);
       if (!res.ok) return res;
       this.pass = res.round;
-      return { ok: true, teamId, kind: 'pass' };
+      return { ok: true, teamId, kind: 'pass', locked: res.round.teams[teamId]!.lockedAt !== null };
     }
     const r = this.playerRound(playerId, roundId);
     if (!r.ok) return r;
-    const res = this.applyRound(castVote(r.round, r.teamId, playerId, option, this.now()), r.teamId);
-    return res.ok ? { ...res, kind: 'question' } : res;
+    const res = this.applyRound(castVote(r.round, r.teamId, playerId, option, this.now(), ctx), r.teamId);
+    return res.ok ? { ...res, kind: 'question', locked: this.question!.teams[r.teamId]!.lockedAt !== null } : res;
   }
 
   lock(playerId: string, roundId: unknown): RoomResult<{ teamId: TeamId; kind: VoteKind }> {

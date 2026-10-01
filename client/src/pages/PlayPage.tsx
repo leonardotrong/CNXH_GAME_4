@@ -11,6 +11,16 @@ import { socket, useGame, useQuestion, useRoomState, useTeamPass, useTeamSelect,
 import { teamName, teamStyle } from '../teams';
 
 const STORAGE_KEY = 'cnxh.player';
+/** Tên đã nhập lần trước — điền sẵn khi vào phòng mới (buổi sau, hoặc khi phòng bị tạo lại). */
+const NAME_KEY = 'cnxh.name';
+
+function loadName(): string {
+  try {
+    return localStorage.getItem(NAME_KEY) ?? '';
+  } catch {
+    return '';
+  }
+}
 
 interface Saved {
   roomCode: string;
@@ -45,7 +55,9 @@ export function PlayPage() {
     return s && (!roomFromUrl || s.roomCode === roomFromUrl) ? s : null;
   });
   const [roomCode, setRoomCode] = useState(roomFromUrl);
-  const [name, setName] = useState('');
+  // Mã phòng có sẵn từ QR → chỉ hiện dạng nhãn, khỏi phải nhìn/nhập.
+  const [editRoom, setEditRoom] = useState(!isRoomCode(roomFromUrl));
+  const [name, setName] = useState(loadName);
   const [teamId, setTeamId] = useState<number | null>(null);
   const [error, setError] = useState('');
 
@@ -84,7 +96,10 @@ export function PlayPage() {
       return;
     }
     socket.emit('player:join', { roomCode, name, teamId }, (res) => {
-      if (res.ok) remember({ roomCode, playerId: res.playerId });
+      if (res.ok) {
+        remember({ roomCode, playerId: res.playerId });
+        try { localStorage.setItem(NAME_KEY, name.trim()); } catch { /* bỏ qua */ }
+      }
       else setError(ERRORS[res.error] ?? 'Không vào được phòng.');
     });
   };
@@ -95,6 +110,9 @@ export function PlayPage() {
     const inGame = !!game?.board && game.phase !== 'LOBBY' && !(game.phase === 'SUMMARY' && question);
     const members = state.teams[me.teamId - 1]!.players;
     const inLobby = state.lobbyOpen && !question && (game?.phase ?? 'LOBBY') === 'LOBBY';
+    // Đang có vòng bỏ phiếu/câu hỏi: thu gọn danh sách nhóm để màn hình chỉ còn việc cần làm.
+    const busy = inGame || !!question;
+    const online = members.filter((p) => p.online).length;
     return (
       <main className={`page page--play ${inGame && game!.phase.startsWith('BOMB_') ? 'page--danger' : ''}`} style={teamStyle(me.teamId)}>
         <header className="play-head">
@@ -110,6 +128,7 @@ export function PlayPage() {
         <StatusBanner game={game} audience="play" />
         {inGame ? (
           <PlayBoard
+            key={game!.phase}
             game={game!}
             question={question}
             teamVotes={teamVotes}
@@ -168,19 +187,21 @@ export function PlayPage() {
             </div>
           </section>
         )}
-        <section className="play-team">
-          <h2 className="play-section-title">
-            Nhóm của bạn <span>({members.length})</span>
-          </h2>
-          <ul className="play-members">
-            {members.map((p) => (
-              <li key={p.id} className={[p.online ? '' : 'is-offline', p.id === me.id ? 'is-me' : ''].join(' ')}>
-                {p.isCaptain && '★ '}
-                {p.name}
-              </li>
-            ))}
-          </ul>
-        </section>
+        {busy ? (
+          <details className="play-team play-team--compact">
+            <summary>
+              Nhóm của bạn: <b>{members.length}</b> người · {online} online
+            </summary>
+            <MemberList members={members} meId={me.id} />
+          </details>
+        ) : (
+          <section className="play-team">
+            <h2 className="play-section-title">
+              Nhóm của bạn <span>({members.length})</span>
+            </h2>
+            <MemberList members={members} meId={me.id} />
+          </section>
+        )}
       </main>
     );
   }
@@ -214,10 +235,19 @@ export function PlayPage() {
         </div>
       </header>
       <form className="join-form" onSubmit={submit}>
-        <label className="field">
-          Mã phòng
-          <input inputMode="numeric" maxLength={4} placeholder="4 chữ số" value={roomCode} onChange={(e) => setRoomCode(e.target.value.replace(/\D/g, ''))} />
-        </label>
+        {editRoom ? (
+          <label className="field">
+            Mã phòng
+            <input inputMode="numeric" maxLength={4} placeholder="4 chữ số trên màn chiếu" value={roomCode} onChange={(e) => setRoomCode(e.target.value.replace(/\D/g, ''))} />
+          </label>
+        ) : (
+          <p className="join-room">
+            Phòng <b>{roomCode}</b>
+            <button type="button" className="link-btn" onClick={() => setEditRoom(true)}>
+              Đổi
+            </button>
+          </p>
+        )}
         <label className="field">
           Tên của bạn
           <input maxLength={MAX_NAME_LENGTH} placeholder="Họ và tên" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} />
@@ -249,5 +279,19 @@ export function PlayPage() {
         </button>
       </form>
     </main>
+  );
+}
+
+/** Danh sách thành viên nhóm mình (★ = đội trưởng, mờ = mất kết nối). */
+function MemberList({ members, meId }: { members: { id: string; name: string; online: boolean; isCaptain: boolean }[]; meId: string }) {
+  return (
+    <ul className="play-members">
+      {members.map((p) => (
+        <li key={p.id} className={[p.online ? '' : 'is-offline', p.id === meId ? 'is-me' : ''].join(' ')}>
+          {p.isCaptain && '★ '}
+          {p.name}
+        </li>
+      ))}
+    </ul>
   );
 }
