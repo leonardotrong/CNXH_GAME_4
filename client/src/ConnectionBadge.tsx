@@ -9,7 +9,8 @@ const LABELS: Record<ConnectionStatus, string> = {
 export function ConnectionBadge() {
   const status = useConnectionStatus();
   return (
-    <span className={`badge badge--${status}`} role="status">
+    <span className={`conn conn--${status}`} role="status">
+      <i aria-hidden />
       {LABELS[status]}
     </span>
   );

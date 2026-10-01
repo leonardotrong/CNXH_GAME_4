@@ -1,0 +1,132 @@
+import { useEffect, useState, type CSSProperties } from 'react';
+import type { PublicQuestionView, TeamQuestionView } from '@cnxh/shared';
+import { CountdownRing } from './Countdown';
+import { OPTION_LABELS } from './QuestionPanel';
+import { socket } from './socket';
+import { VoteStatus } from './VoteControls';
+
+export const VOTE_ERRORS: Record<string, string> = {
+  NOT_ENOUGH_VOTES: 'Cần quá nửa thành viên online bỏ phiếu mới chốt được.',
+  NOT_CAPTAIN: 'Chỉ đội trưởng được chốt.',
+  LOCKED: 'Nhóm đã chốt.',
+  CLOSED: 'Câu hỏi đã đóng.',
+};
+
+/** Biểu quyết trên điện thoại (GAME_SPEC 2.2, 5.2). */
+export function PlayQuestion({
+  view,
+  team,
+  playerId,
+  readOnly = false,
+}: {
+  view: PublicQuestionView;
+  team: TeamQuestionView | null;
+  playerId: string;
+  /** Nhóm không trả lời câu này (Quả Bom: chỉ nhóm cầm bom trả lời) — chỉ xem. */
+  readOnly?: boolean;
+}) {
+  const [error, setError] = useState('');
+  const current = team?.roundId === view.roundId ? team : null;
+  const myVote = current?.votes[playerId];
+  const isCaptain = current?.captainId === playerId;
+  const open = !readOnly && view.status === 'open' && !current?.locked;
+
+  // Rung nhẹ khi câu mới bắt đầu.
+  useEffect(() => {
+    if (view.status === 'open' && !readOnly) navigator.vibrate?.(200);
+    setError('');
+  }, [view.roundId]);
+
+  const vote = (option: number) =>
+    socket.emit('player:vote', { roundId: view.roundId, option }, (res) => setError(res.ok ? '' : VOTE_ERRORS[res.error] ?? ''));
+  const lock = () =>
+    socket.emit('player:lock', { roundId: view.roundId }, (res) => setError(res.ok ? '' : VOTE_ERRORS[res.error] ?? ''));
+
+  const reveal = view.reveal;
+  const myResult = reveal?.results.find((r) => r.teamId === current?.teamId);
+
+  return (
+    <section className={`play-question ${readOnly ? 'is-readonly' : ''}`}>
+      <div className="play-task">
+        {view.status === 'open' ? (
+          <CountdownRing endsAt={view.endsAt} startedAt={view.startedAt} />
+        ) : (
+          <span className="play-task__icon" aria-hidden>
+            💡
+          </span>
+        )}
+        <span className="play-task__text">
+          <b>{view.status === 'open' ? (view.pool === 'board' ? 'Câu hỏi Bàn Cờ' : 'Câu hỏi Bom') : 'Đáp án'}</b>
+          <span>
+            {readOnly && view.status === 'open'
+              ? 'Chỉ xem — nhóm khác đang trả lời.'
+              : open
+                ? 'Chạm để bỏ phiếu cho nhóm.'
+                : view.status === 'open'
+                  ? 'Nhóm đã chốt, chờ các nhóm khác…'
+                  : 'Xem giải thích bên dưới.'}
+          </span>
+        </span>
+      </div>
+      <h2 className="play-question__prompt">{view.prompt}</h2>
+      <div className="play-question__options">
+        {view.options.map((opt, i) => {
+          const classes = ['option-btn'];
+          if (myVote === i) classes.push('is-mine');
+          if (current?.choice === i) classes.push('is-chosen');
+          if (reveal) classes.push(i === reveal.answerIndex ? 'is-correct' : 'is-wrong');
+          const votes = current?.tally[i] ?? 0;
+          const share = current && current.onlineCount > 0 ? Math.min(100, (votes / current.onlineCount) * 100) : 0;
+          return (
+            <button
+              key={i}
+              className={classes.join(' ')}
+              disabled={!open}
+              onClick={() => vote(i)}
+              style={{ '--votes': `${share}%` } as CSSProperties}
+            >
+              <b className="option-btn__letter">{OPTION_LABELS[i]}</b>
+              <span className="option-btn__text">{opt}</span>
+              {current && <span className="option-btn__count">{votes}</span>}
+            </button>
+          );
+        })}
+      </div>
+
+      {current && !reveal && (
+        <VoteStatus
+          view={current}
+          lockedText={`Nhóm đã chốt: ${current.choice === null ? 'không có lựa chọn' : OPTION_LABELS[current.choice]}`}
+          showLock={isCaptain && open}
+          onLock={lock}
+        />
+      )}
+      {error && (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      )}
+
+      {reveal && readOnly && (
+        <div className="result-card">
+          <span className="result-card__icon" aria-hidden>
+            📖
+          </span>
+          <p>{reveal.explanation}</p>
+        </div>
+      )}
+      {reveal && !readOnly && (
+        <div className={`result-card ${myResult?.correct ? 'is-correct' : 'is-wrong'}`}>
+          <span className="result-card__icon" aria-hidden>
+            {myResult?.correct ? '🎉' : '😕'}
+          </span>
+          <div>
+            <strong>{myResult?.correct ? 'Nhóm trả lời ĐÚNG!' : 'Nhóm trả lời chưa đúng'}</strong>
+            {current?.locked && current.choice !== null && <span className="result-card__sub">Nhóm đã chọn {OPTION_LABELS[current.choice]}</span>}
+            <p>{reveal.explanation}</p>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}

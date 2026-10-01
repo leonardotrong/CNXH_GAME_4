@@ -39,18 +39,23 @@ Chủ đề kiến thức: nhà nước, nhà nước XHCN, đặc điểm nhà 
 - `npm run typecheck` — kiểm tra kiểu cả 3 workspace
 - `npm run build` — typecheck + build client ra `client/dist`
 - `npm start` — chạy server production (`NODE_ENV=production`, cổng `PORT`, mặc định 3000), phục vụ luôn `client/dist`
-- `npm run simulate` — giả lập 63 người chơi (Giai đoạn 7, chưa có)
+- `npm run simulate` — giả lập 63 bot chơi trọn một trận trên server trong tiến trình (thời lượng rút ngắn, ~2,5 phút); `-- --turns 3 --bombs 1` cho nhanh; `-- --url https://... --password ... --real` để thử tải bản deploy
+- Deploy: xem `docs/DEPLOY.md` (Render Blueprint `render.yaml`)
+
+Biến môi trường: `ADMIN_PASSWORD` (bắt buộc để vào `/admin`, vd. `ADMIN_PASSWORD=admin npm run dev`), `STATE_FILE` (file lưu trạng thái trận, mặc định `server/data/match.json`; đặt rỗng để tắt), `PUBLIC_URL` (địa chỉ công khai/LAN dùng để tạo QR trên `/host`; mặc định là origin của trang host — khi dev nên đặt thành địa chỉ "Network" của Vite để điện thoại quét được).
 
 Ghi chú kỹ thuật: `shared/` xuất thẳng mã TypeScript (`@cnxh/shared` → `shared/src/index.ts`), không có bước build riêng; server luôn chạy qua `tsx` (cả production). Kiểu sự kiện Socket.IO nằm trong `shared/src/events.ts`.
+
+Giao diện: CSS trong `client/src/styles/` (`base` token màu + nền "sân khấu" tối, `components`, `board`, `host`, `play`, `admin` nền sáng); màu nhóm truyền qua biến CSS `--team` (`teamStyle()` trong `client/src/teams.ts`). Phông Be Vietnam Pro tự host qua `@fontsource/be-vietnam-pro` (không cần mạng ngoài). Màn chiếu tính mọi kích thước theo `--u` (1% chiều rộng, giới hạn theo chiều cao 16:9) để vừa khít một màn hình ở mọi độ phân giải. Hoạt ảnh bom (tia lửa, lắc, nhấp nháy) luôn có nhịp cố định.
 
 Cloud: hook `SessionStart` (`.claude/settings.json` → `scripts/claude-session-start.sh`) tự `npm ci` khi chạy trên Claude Code on the web; ở máy local thì bỏ qua. GitHub Actions (`.github/workflows/ci.yml`) chạy typecheck + test + build cho mỗi push/PR.
 
 ## Trạng thái (cập nhật khi xong mỗi giai đoạn)
 - [x] 0 — Khung dự án
-- [ ] 1 — Phòng chơi
-- [ ] 2 — Câu hỏi & biểu quyết
-- [ ] 3 — Bàn Cờ Quyền Lực
-- [ ] 4 — Quả Bom Tham Nhũng
-- [ ] 5 — Admin & chế độ dự phòng
-- [ ] 6 — Giao diện & âm thanh
-- [ ] 7 — Test tải & deploy
+- [x] 1 — Phòng chơi
+- [x] 2 — Câu hỏi & biểu quyết
+- [x] 3 — Bàn Cờ Quyền Lực
+- [x] 4 — Quả Bom Tham Nhũng (hết Bàn Cờ → BOMB_INTRO, admin bấm bắt đầu; ngòi chỉ nằm trong `Room` ở server)
+- [x] 5 — Admin & chế độ dự phòng (một timer/phòng theo `Room.nextDeadline()`; lưu `server/data/match.json`, khôi phục ở trạng thái tạm dừng; nhật ký chỉ gửi admin)
+- [x] 6 — Giao diện & âm thanh (âm thanh Web Audio chỉ trên host, `client/src/sound.ts`; tích tắc bom nhịp cố định 500 ms)
+- [ ] 7 — Test tải & deploy (đã xong: `scripts/simulate.ts` 63 bot × 14 lượt × 3 bom không lỗi, `render.yaml`, `docs/DEPLOY.md`, simulate trong CI; CÒN: deploy thật lên Render và thử ≥ 10 điện thoại 4G)

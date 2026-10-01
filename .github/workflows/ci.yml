@@ -18,3 +18,5 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build -w client
+      # Giả lập tải rút gọn: 63 bot, 2 lượt Bàn Cờ, 1 quả bom.
+      - run: npm run simulate -- --turns 2 --bombs 1
