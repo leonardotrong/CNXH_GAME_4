@@ -6,6 +6,12 @@ Hai trò chơi nối tiếp nhau trên **cùng một bàn cờ lục giác**:
 1. **Bàn Cờ Quyền Lực**: các nhóm biểu quyết chọn ô, trả lời câu hỏi và chiếm lãnh thổ.
 2. **Quả Bom Tham Nhũng**: nhóm cầm bom trả lời đúng thì được chuyền bom đi; bom nổ ở nhóm nào thì nhóm đó mất ô.
 
+<p align="center">
+  <img src="docs/images/host-reveal.webp" alt="Màn chiếu: kết quả một lượt Bàn Cờ, Nhóm 3 chiếm ô Hiến pháp" width="70%" align="top">
+  <img src="docs/images/play-select.webp" alt="Điện thoại: cả nhóm biểu quyết chọn ô mục tiêu" width="25%">
+</p>
+<p align="center"><sub>Màn chiếu (trái) và điện thoại của một sinh viên (phải). Mọi hình trong file này là ảnh chụp app thật, trong một trận chơi thử với người chơi giả lập. Xem đủ từng màn hình ở <a href="#3-luật-chơi-và-cách-chơi">mục 3</a>.</sub></p>
+
 | Màn hình | Ai dùng | Thiết bị |
 |---|---|---|
 | `/host` | Cả lớp nhìn | Máy chiếu 16:9 (QR, bàn cờ, câu hỏi, bảng điểm) |
@@ -19,7 +25,7 @@ Hai trò chơi nối tiếp nhau trên **cùng một bàn cờ lục giác**:
 ## Mục lục
 1. [Cài đặt và chạy thử trong 5 phút](#1-cài-đặt-và-chạy-thử-trong-5-phút)
 2. [Cách tổ chức một buổi chơi](#2-cách-tổ-chức-một-buổi-chơi)
-3. [Luật chơi tóm tắt](#3-luật-chơi-tóm-tắt)
+3. [Luật chơi và cách chơi](#3-luật-chơi-và-cách-chơi) (có hình từng màn hình)
 4. [Kiến trúc](#4-kiến-trúc)
 5. [Bản đồ codebase](#5-bản-đồ-codebase)
 6. [Hướng dẫn sửa đổi thường gặp](#6-hướng-dẫn-sửa-đổi-thường-gặp)
@@ -85,6 +91,9 @@ Kịch bản 30 phút ([GAME_SPEC §1](docs/GAME_SPEC.md#1-kịch-bản-30-phút
 
 **Người dẫn chỉ cần nhớ một nút: "Bước tiếp theo"** (nút xanh lớn trên `/admin`, hoặc phím `Space` trên màn chiếu). Nút luôn ghi rõ việc sẽ xảy ra; trong pha tự chạy, nút hiện "Đang tự chạy" và không làm gì.
 
+<p align="center"><img src="docs/images/admin-lobby.webp" alt="Bảng điều khiển /admin ở phòng chờ" width="90%"></p>
+<p align="center"><sub><code>/admin</code> ở phòng chờ: thanh 5 chặng, nút xanh <b>Bước tiếp theo</b> (lúc này ghi "Hiện luật chơi"), bên dưới là người chơi theo nhóm (★ = đội trưởng; chạm vào tên để đổi đội trưởng hoặc chuyển nhóm).</sub></p>
+
 | Phút | Pha | Nút "Bước tiếp theo" ghi | Ghi chú |
 |---|---|---|---|
 | Trước giờ | | **Tạo phòng** | Mở `/host` trên máy chiếu **khoảng 15 phút trước giờ học** (gói Render miễn phí cần thời gian "thức dậy"). |
@@ -94,7 +103,13 @@ Kịch bản 30 phút ([GAME_SPEC §1](docs/GAME_SPEC.md#1-kịch-bản-30-phút
 | 21–28 | BOMB | **Bắt đầu Quả Bom** | Màn giới thiệu Quả Bom (BOMB_INTRO). Chỉnh số bom ngay cạnh nút (1–5, mặc định 3). |
 | 28–30 | SUMMARY | **Hiện tổng kết bài học** | Bục vinh danh, rồi 6 đặc điểm của nhà nước pháp quyền XHCN. |
 
+<p align="center"><img src="docs/images/host-lobby.webp" alt="Màn chiếu ở phòng chờ: mã QR, mã phòng và 7 cột nhóm" width="90%"></p>
+<p align="center"><sub>Màn chiếu ở phòng chờ: sinh viên quét QR (hoặc gõ địa chỉ rồi nhập mã phòng 4 chữ số); tên hiện ngay trong cột nhóm vừa chọn, ★ là đội trưởng.</sub></p>
+
 **Điều khiển ngay trên máy chiếu (khỏi chuyển cửa sổ):** trên `/host` bấm `K` (hoặc nút mờ ở góc phải dưới) và nhập mật khẩu admin một lần. Sau đó: `Space`/`→` = bước tiếp theo, `P` = tạm dừng/tiếp tục, `M` = tắt/bật âm thanh, `F` = toàn màn hình. Mỗi lần bấm có thông báo xác nhận ngắn; gợi ý phím hiện mờ rồi tự ẩn. (Tạo phòng mới khi đang có trận chỉ làm được ở `/admin`, để tránh bấm nhầm.)
+
+<p align="center"><img src="docs/images/host-remote.webp" alt="Màn chiếu sau khi bấm K và nhập mật khẩu: thông báo xác nhận và gợi ý phím" width="90%"></p>
+<p align="center"><sub>Sau khi bấm <code>K</code> và nhập mật khẩu: thông báo "Đã bật điều khiển bằng phím" ở trên, gợi ý phím ở dưới (tự ẩn sau vài giây).</sub></p>
 
 Các nút dùng được bất cứ lúc nào:
 - **Tạm dừng / Tiếp tục** (cạnh nút Bước tiếp theo, hoặc phím `P`): mọi đồng hồ (kể cả ngòi bom) đứng yên, người chơi không bỏ phiếu được.
@@ -103,13 +118,38 @@ Các nút dùng được bất cứ lúc nào:
 - **Nhật ký sự kiện**: ai chiếm ô nào, ai phòng thủ thành công, bom nổ ở đâu. Dùng để giải quyết tranh cãi.
 - **Chế độ dự phòng** (khi mạng sập): các nhóm giơ thẻ màu A/B/C/D, người dẫn nhập ô mục tiêu, đáp án và thứ tự nhanh chậm, còn `/host` vẫn chạy. Chi tiết ở [GAME_SPEC §5.3](docs/GAME_SPEC.md#53-admin--người-dẫn-bảo-vệ-bằng-mật-khẩu-từ-biến-môi-trường-admin_password).
 
+<table>
+  <tr>
+    <td width="50%"><img src="docs/images/admin-game.webp" alt="/admin trong lúc chơi Bàn Cờ"></td>
+    <td width="50%"><img src="docs/images/admin-fallback.webp" alt="/admin ở chế độ dự phòng"></td>
+  </tr>
+  <tr>
+    <td><sub>Trong trận: lượt, pha và đồng hồ; nút <b>Tạm dừng</b>; số lượt và <b>Kết thúc sau lượt này</b>; bàn cờ có số ô để chỉnh tay; câu hỏi đang chạy và nhật ký sự kiện.</sub></td>
+    <td><sub>Chế độ dự phòng: bấm thẻ mỗi nhóm giơ theo thứ tự nhanh → chậm (hạng tự tăng, sửa được), rồi bấm <b>Chốt đáp án các nhóm</b>. Màn chiếu hiện băng-rôn "Chế độ dự phòng".</sub></td>
+  </tr>
+</table>
+
 Server sập giữa trận? Khởi động lại server là trận được **khôi phục ở trạng thái tạm dừng** (nếu file lưu mới hơn 3 giờ). Người chơi tải lại trang sẽ vào lại đúng nhóm, sau đó người dẫn bấm **TIẾP TỤC**.
 
 ---
 
-## 3. Luật chơi tóm tắt
+## 3. Luật chơi và cách chơi
 
-> Bản đầy đủ, kèm mọi trường hợp biên, nằm ở [docs/GAME_SPEC.md](docs/GAME_SPEC.md). Phần dưới đây chỉ đủ để hiểu code.
+> Bản đầy đủ, kèm mọi trường hợp biên, nằm ở [docs/GAME_SPEC.md](docs/GAME_SPEC.md). Phần dưới đây tóm tắt luật và cho xem từng màn hình theo đúng thứ tự một buổi chơi. Ảnh chụp từ một trận chơi thử; điện thoại trong ảnh là của "Ngọc Hân", đội trưởng Nhóm 3.
+
+<p align="center"><img src="docs/images/host-rules.webp" alt="Màn luật chơi tóm tắt trên máy chiếu" width="90%"></p>
+<p align="center"><sub>Màn luật tóm tắt người dẫn mở trước khi chơi (pha RULES, không có đồng hồ).</sub></p>
+
+### Vào phòng
+1. Quét QR trên màn chiếu: mã phòng được điền sẵn. Nhập tên, chọn nhóm, bấm **Vào chơi**. Không cần cài app.
+2. Người vào nhóm đầu tiên là **đội trưởng ★**. Mất mạng hay tải lại trang thì tự vào lại đúng nhóm, đúng vai trò.
+3. Còn ở phòng chờ thì đổi nhóm được. Người dẫn bấm **Hiện luật chơi** thì điện thoại cũng hiện luật tóm tắt.
+
+<p align="center">
+  <img src="docs/images/play-join.webp" alt="Điện thoại: vào phòng" width="30%">
+  <img src="docs/images/play-lobby.webp" alt="Điện thoại: chờ người dẫn bắt đầu" width="30%">
+  <img src="docs/images/play-rules.webp" alt="Điện thoại: luật chơi tóm tắt" width="30%">
+</p>
 
 ### Biểu quyết trong nhóm (dùng cho mọi lựa chọn) ([§2.2](docs/GAME_SPEC.md#22-biểu-quyết-trong-nhóm-dùng-cho-câu-hỏi-chọn-ô-chọn-nhóm-nhận-bom))
 - Mỗi thành viên bỏ phiếu trên điện thoại và được đổi ý. Thành viên chỉ thấy phiếu của nhóm mình.
@@ -119,6 +159,9 @@ Server sập giữa trận? Khởi động lại server là trận được **kh
 - Hết giờ mà chưa chốt: server tự chốt, và thời điểm chốt là lúc hết giờ. Không có phiếu nào thì nhóm không có lựa chọn.
 - **"Nhanh hơn" = thời điểm SERVER nhận lệnh CHỐT** (tính bằng mili-giây). Khi mọi nhóm đã chốt, vòng đóng ngay.
 - Đội trưởng mất kết nối quá 10 giây: quyền tạm chuyển cho thành viên online vào nhóm sớm nhất, và được trả lại khi đội trưởng quay lại.
+
+<p align="center"><img src="docs/images/play-question.webp" alt="Điện thoại: số phiếu của nhóm trên từng phương án, thanh tiến độ và nút CHỐT" width="32%"></p>
+<p align="center"><sub>Mỗi phương án hiện số phiếu của nhóm mình (tô màu theo tỉ lệ); thanh dưới đếm người đã bầu, vạch giữa là mốc quá nửa. Chỉ đội trưởng thấy nút <b>CHỐT</b>.</sub></p>
 
 ### Bàn Cờ Quyền Lực ([§3](docs/GAME_SPEC.md#3-bàn-cờ-quyền-lực))
 - Lưới lục giác bán kính 3, tức **37 ô**. Ô giữa là **ô Hiến pháp** (tính 3 điểm). Mỗi nhóm có người được 1 ô xuất phát ở vòng ngoài.
@@ -132,11 +175,71 @@ Server sập giữa trận? Khởi động lại server là trận được **kh
   - *Khiên bảo hộ*: mất ≥ 2 ô trong một lượt.
 - Điểm = số ô sở hữu (ô Hiến pháp tính 3). Hòa điểm thì xét số câu đúng cả trận, rồi đến tổng thời gian chốt các câu đúng (ít hơn xếp trên).
 
+**Một lượt qua hình ảnh** (lượt 3 của trận chơi thử: Nhóm 3 nhắm ô Hiến pháp).
+
+**① Chọn ô — 15 giây.** Trên điện thoại, các ô nhóm được nhắm sáng viền xanh; số trên ô là số phiếu của nhóm mình (ở đây 4 phiếu cho ô Hiến pháp, 1 phiếu cho ô khác). Màn chiếu chỉ cho biết bao nhiêu nhóm đã chốt (✓ trong bảng điểm), **chưa lộ mục tiêu** của nhóm nào.
+
+<p align="center">
+  <img src="docs/images/host-select.webp" alt="Màn chiếu: pha chọn ô, 5/7 nhóm đã chốt" width="66%" align="top">
+  <img src="docs/images/play-select.webp" alt="Điện thoại: chọn ô mục tiêu, đội trưởng có nút CHỐT Ô" width="29%">
+</p>
+
+**② Trả lời — 20 giây.** Hết pha chọn ô, mục tiêu của mọi nhóm được lật cùng lúc (huy hiệu số nhóm trên ô). Cả 7 nhóm trả lời cùng một câu; màn chiếu hiện nhóm nào đã chốt và sau bao nhiêu giây, nhưng không lộ nhóm chọn gì.
+
+<p align="center">
+  <img src="docs/images/host-question.webp" alt="Màn chiếu: câu hỏi Bàn Cờ, mục tiêu đã lật và thứ tự chốt" width="66%" align="top">
+  <img src="docs/images/play-question-locked.webp" alt="Điện thoại: nhóm đã chốt đáp án A" width="29%">
+</p>
+
+**③ Kết quả — 10 giây.** Ô đổi chủ, đáp án kèm giải thích (lúc học), và mỗi tranh chấp ghi rõ ai thắng, nhanh hơn bao nhiêu giây. Ở đây Nhóm 3 trả lời đúng nên chiếm được ô Hiến pháp và nhận **Khiên Hiến pháp**; Nhóm 5 chiếm ô của Nhóm 4 vì cả hai cùng đúng nhưng Nhóm 5 chốt sớm hơn 2,060 s.
+
+<p align="center">
+  <img src="docs/images/host-reveal.webp" alt="Màn chiếu: kết quả lượt, đáp án và các tranh chấp" width="66%" align="top">
+  <img src="docs/images/play-reveal.webp" alt="Điện thoại: nhóm chiếm được ô Hiến pháp" width="29%">
+</p>
+
+Lượt sau, ô của nhóm có khiên phát sáng viền vàng trên màn chiếu và không sáng lên là mục tiêu trên điện thoại các nhóm khác; điện thoại của nhóm có khiên được nhắc như ảnh dưới.
+
+<p align="center"><img src="docs/images/play-shield.webp" alt="Điện thoại: nhóm đang có Khiên Hiến pháp" width="29%"></p>
+
 ### Quả Bom Tham Nhũng ([§4](docs/GAME_SPEC.md#4-quả-bom-tham-nhũng))
 - Mặc định 3 quả, nổ lần lượt. Quả đầu tiên giao cho nhóm đang dẫn đầu.
 - Mỗi quả có **ngòi bí mật 30–60 s**. Ngòi **chỉ cháy trong lúc nhóm cầm bom trả lời câu hỏi** (12 s/câu).
 - Trả lời đúng: nhóm biểu quyết chuyền bom cho nhóm khác (PASS, 10 s), nhưng không được chuyền lại cho nhóm vừa chuyền cho mình. Trả lời sai: nhóm nhận câu mới và vẫn giữ bom.
 - **Nổ**: nhóm đang cầm mất 2 ô ngẫu nhiên, và các ô đó thành ô trống.
+
+<p align="center"><img src="docs/images/host-bomb-intro.webp" alt="Màn chiếu: giới thiệu Quả Bom, bảng điểm và nhóm cầm bom đầu tiên" width="90%"></p>
+<p align="center"><sub>Hết Bàn Cờ, màn chiếu chuyển sang tông đỏ: luật Quả Bom, bảng điểm và nhóm dẫn đầu cầm quả đầu tiên. Người dẫn bấm <b>Bắt đầu Quả Bom</b> khi lớp đã nắm luật.</sub></p>
+
+**Cầm bom → trả lời (12 giây).** Chỉ nhóm cầm bom trả lời; điện thoại các nhóm khác chỉ xem. Ngòi chỉ cháy trong lúc này, nhưng không ai thấy còn bao lâu, kể cả người dẫn.
+
+<p align="center">
+  <img src="docs/images/host-bomb-question.webp" alt="Màn chiếu: Nhóm 3 đang cầm bom và trả lời" width="66%" align="top">
+  <img src="docs/images/play-bomb-question.webp" alt="Điện thoại: Nhóm bạn đang cầm bom" width="29%">
+</p>
+
+**Đúng → chuyền bom (10 giây).** Cả nhóm biểu quyết chọn nhóm nhận. Không được chuyền ngược cho nhóm vừa chuyền cho mình (ở đây Nhóm 7 không có trong danh sách).
+
+<p align="center">
+  <img src="docs/images/host-bomb-pass.webp" alt="Màn chiếu: Nhóm 3 đang chọn nhóm nhận bom" width="66%" align="top">
+  <img src="docs/images/play-bomb-pass.webp" alt="Điện thoại: chọn nhóm nhận bom" width="29%">
+</p>
+
+**Hết ngòi → BÙM!** Nhóm đang cầm mất 2 ô ngẫu nhiên (đánh dấu tia nổ). Quả kế tiếp giao cho nhóm dẫn đầu, trừ nhóm vừa bị nổ.
+
+<p align="center">
+  <img src="docs/images/host-explode.webp" alt="Màn chiếu: bom nổ ở Nhóm 5, mất 2 ô" width="66%" align="top">
+  <img src="docs/images/play-explode.webp" alt="Điện thoại: BÙM! Bom nổ ở Nhóm 5" width="29%">
+</p>
+
+### Kết thúc trận ([§3.6](docs/GAME_SPEC.md#36-kết-thúc-và-tính-điểm))
+Sau quả bom cuối: bục vinh danh, bảng xếp hạng đầy đủ (kèm số ô và số câu đúng để phân định khi bằng điểm) và nhật ký các vụ nổ; mỗi điện thoại hiện hạng của nhóm mình. Người dẫn bấm **Bước tiếp theo** để chuyển sang màn tổng kết 6 đặc điểm.
+
+<p align="center">
+  <img src="docs/images/host-summary.webp" alt="Màn chiếu: bục vinh danh và bảng xếp hạng chung cuộc" width="66%" align="top">
+  <img src="docs/images/play-summary.webp" alt="Điện thoại: hạng chung cuộc của nhóm" width="29%">
+</p>
+<p align="center"><img src="docs/images/host-lessons.webp" alt="Màn chiếu: 6 đặc điểm của Nhà nước pháp quyền XHCN Việt Nam" width="90%"></p>
 
 ### Ý nghĩa bài học ([CONTENT §6](docs/CONTENT.md))
 - Biểu quyết đa số, chốt cần quá nửa: minh họa **tập trung dân chủ**.
@@ -379,6 +482,7 @@ Sửa **hàm view** tương ứng trong `shared/` (ví dụ `publicBoardView`, `
 - Màn chiếu: dùng đơn vị `calc(var(--u) * …)` thay cho `px`, để hiển thị đúng trên mọi máy chiếu.
 - Điện thoại: nút cao ≥ 56 px, thử ở chiều rộng khoảng 360 px.
 - Mọi chữ hiển thị đều bằng **tiếng Việt có dấu**. Tên biến, hàm, file bằng tiếng Anh.
+- Ảnh minh họa trong file này nằm ở `docs/images/` (WebP, chụp từ app thật). Đổi giao diện một màn hình thì nên chụp lại ảnh tương ứng.
 
 ---
 
