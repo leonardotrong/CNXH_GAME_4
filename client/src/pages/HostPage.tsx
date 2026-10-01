@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import { ConnectionBadge } from '../ConnectionBadge';
 import { HostGame } from '../HostGame';
+import { HostRules } from '../HostRules';
+import { StatusBanner } from '../StatusBanner';
 import { QuestionPanel } from '../QuestionPanel';
 import { socket, useConnectionStatus, useGame, useQuestion, useRoomState } from '../socket';
 import { TEAM_COLORS, teamName } from '../teams';
@@ -45,6 +47,7 @@ export function HostPage() {
     return (
       <main className="page page--host page--game">
         <ConnectionBadge />
+        <StatusBanner game={game} audience="host" />
         <HostGame game={game} question={question} activeTeamIds={activeTeamIds} />
       </main>
     );
@@ -53,7 +56,10 @@ export function HostPage() {
   return (
     <main className="page page--host">
       <ConnectionBadge />
-      {question ? (
+      <StatusBanner game={game} audience="host" />
+      {game?.phase === 'RULES' && !question ? (
+        <HostRules />
+      ) : question ? (
         <QuestionPanel view={question} activeTeamIds={activeTeamIds} />
       ) : !state ? (
         <h1>{status === 'connected' ? 'Đang chờ người dẫn tạo phòng…' : 'Bàn Cờ Quyền Lực — Màn chiếu'}</h1>

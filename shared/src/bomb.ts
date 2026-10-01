@@ -73,6 +73,11 @@ export function pauseFuse(fuse: Fuse, now: number): Fuse {
   return { remainingMs: Math.max(0, fuse.remainingMs - Math.max(0, now - fuse.burningSince)), burningSince: null };
 }
 
+/** Tạm dừng toàn cục: ngòi đang cháy được dời mốc, thời gian còn lại giữ nguyên. */
+export function shiftFuse(fuse: Fuse, deltaMs: number): Fuse {
+  return fuse.burningSince === null ? fuse : { ...fuse, burningSince: fuse.burningSince + deltaMs };
+}
+
 /** Thời điểm nổ nếu cứ cháy tiếp (null khi đang dừng). */
 export function fuseDeadline(fuse: Fuse): number | null {
   return fuse.burningSince === null ? null : fuse.burningSince + fuse.remainingMs;

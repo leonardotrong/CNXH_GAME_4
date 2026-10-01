@@ -109,11 +109,19 @@ export function publicBoardView(match: BoardMatch, select: PublicSelectView | nu
   };
 }
 
+/** Màn SUMMARY trên host: bảng xếp hạng hoặc tổng kết 6 đặc điểm. */
+export type SummaryView = 'ranking' | 'lessons';
+
 /** Trạng thái trận công khai (host, admin, người chơi). */
 export interface GameView {
   phase: Phase;
   /** Hạn của pha hiện tại (giờ server), để hiện đếm ngược. */
   phaseEndsAt: number | null;
+  /** Đang tạm dừng toàn cục từ thời điểm này (giờ server); đồng hồ đứng ở `hạn − pausedAt`. */
+  pausedAt: number | null;
+  /** Chế độ dự phòng: người dẫn nhập kết quả từ thẻ màu. */
+  fallback: boolean;
+  summaryView: SummaryView;
   board: PublicBoardView | null;
   /** Quả Bom (từ BOMB_INTRO). KHÔNG có ngòi — chỉ biết bom đang cháy hay dừng. */
   bomb: PublicBombView | null;

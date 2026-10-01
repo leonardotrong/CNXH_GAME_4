@@ -264,3 +264,59 @@ body {
 @keyframes boom { from { transform: scale(0.3); opacity: 0; } }
 .bomb-targets { display: flex; flex-direction: column; gap: 0.5rem; }
 .bomb-log { margin: 0; padding-left: 1.2em; font-size: 0.65em; }
+
+/* ─── Admin: điều khiển, dự phòng, nhật ký (Giai đoạn 5) ──────────────── */
+.admin-code { margin: 0; }
+.admin-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.8rem; background: #fff; border-radius: 10px; padding: 0.6rem 0.8rem; position: sticky; top: 0; z-index: 3; box-shadow: 0 2px 6px rgb(0 0 0 / 0.12); }
+.admin-controls.is-paused { background: #fff3cd; }
+.admin-controls__pause { min-width: 11rem; font-size: 1.3rem; }
+.admin-paused { margin: 0; background: #fff3cd; border-left: 8px solid #b7791f; padding: 0.5rem 0.8rem; font-weight: 700; text-align: left; }
+.admin-fallback { background: #fff; border: 3px dashed #b7791f; border-radius: 10px; padding: 0.8rem; text-align: left; }
+.admin-fallback h2 { margin: 0 0 0.4rem; font-size: 1.2rem; }
+.fallback { display: flex; flex-direction: column; gap: 0.6rem; }
+.fallback p { margin: 0; }
+.fallback__idle { margin: 0; color: #555; }
+.fallback__rows { display: grid; grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); gap: 0.4rem; }
+.fallback__row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; border-left: 8px solid; background: #faf8f3; border-radius: 6px; padding: 0.3rem 0.5rem; }
+.fallback__row select { min-height: 40px; font-size: 1rem; flex: 1; }
+.fallback__cards { display: flex; gap: 0.25rem; }
+.fallback__cards button { min-width: 2.4rem; min-height: 40px; font-size: 1.1rem; font-weight: 800; border: 2px solid #999; border-radius: 8px; background: #fff; cursor: pointer; }
+.fallback__cards button.is-on { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+.fallback__rank { display: flex; align-items: center; gap: 0.3rem; font-size: 0.9rem; }
+.fallback__rank input { width: 3.5rem; min-height: 36px; font-size: 1rem; }
+.admin-owner { background: #faf8f3; border-radius: 8px; padding: 0.4rem 0.6rem; margin-top: 0.4rem; }
+.admin-owner p { margin: 0 0 0.3rem; }
+.admin-owner__buttons { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.admin-owner__buttons button { min-width: 2.6rem; min-height: 40px; font-weight: 800; border: 2px solid #999; border-radius: 8px; background: #fff; cursor: pointer; }
+.hex__id { fill: #1a1a1a; font-size: 2.6px; opacity: 0.55; pointer-events: none; }
+.hex--focused .hex__shape { stroke: #1a1a1a; stroke-width: 2.6; stroke-dasharray: none; }
+.admin-log { background: #fff; border-radius: 10px; padding: 0.8rem; text-align: left; }
+.admin-log h2 { margin: 0 0 0.4rem; font-size: 1.2rem; }
+.admin-log ol { list-style: none; margin: 0; padding: 0; max-height: 22rem; overflow-y: auto; font-size: 0.85rem; }
+.admin-log__item { display: grid; grid-template-columns: 4.6rem 4.4rem 1fr; gap: 0.4rem; padding: 0.2rem 0; border-bottom: 1px solid #eee; }
+.admin-log__item time { color: #777; font-variant-numeric: tabular-nums; }
+.admin-log__kind { font-weight: 700; color: #555; }
+.admin-log__item.is-admin .admin-log__kind { color: #c53030; }
+.admin-log__item.is-bomb .admin-log__kind { color: #8e24aa; }
+.admin-log__item.is-system { background: #fff8e1; }
+
+/* Băng-rôn trạng thái (host + điện thoại) */
+.status-banner { position: fixed; left: 50%; top: 0.6rem; transform: translateX(-50%); z-index: 10; padding: 0.3em 1.2em; border-radius: 999px; font-weight: 900; letter-spacing: 0.05em; color: #fff; box-shadow: 0 4px 14px rgb(0 0 0 / 0.25); }
+.status-banner--paused { background: #b7791f; animation: banner-blink 1.4s ease-in-out infinite; }
+.status-banner--fallback { background: #5a3e9b; top: auto; bottom: 0.6rem; font-size: 0.6em; }
+@keyframes banner-blink { 50% { opacity: 0.65; } }
+
+/* ─── Màn RULES ────────────────────────────────────────────────────────── */
+.host-rules { width: 100%; max-width: 96rem; text-align: left; }
+.host-rules__title { margin: 0 0 0.4em; text-align: center; font-size: 1.6em; }
+.host-rules__list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5em 1.2em; }
+.host-rules__list li { display: flex; gap: 0.5em; align-items: flex-start; background: #fff; border-radius: 14px; padding: 0.4em 0.6em; box-shadow: 0 1px 4px rgb(0 0 0 / 0.1); }
+.host-rules__list li:last-child { grid-column: 1 / -1; background: #fdecec; }
+.host-rules__icon { font-size: 1.6em; line-height: 1; }
+.host-rules__list b { font-size: 0.95em; }
+.host-rules__list p { margin: 0.1em 0 0; font-size: 0.72em; line-height: 1.3; }
+.host-rules__lesson { margin: 0.6em 0 0; text-align: center; font-size: 0.8em; color: #444; }
+.play-rules { text-align: left; width: 100%; }
+.play-rules h2 { margin: 0 0 0.4rem; }
+.play-rules ul { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.4rem; }
+.play-rules__captain { font-weight: 800; color: #c53030; }

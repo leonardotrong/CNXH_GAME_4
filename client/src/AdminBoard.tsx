@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { DEFAULT_BOARD_TURNS, DEFAULT_BOMB_COUNT, MAX_BOARD_TURNS, MAX_BOMB_COUNT, type GameView } from '@cnxh/shared';
+import { CELLS, DEFAULT_BOARD_TURNS, DEFAULT_BOMB_COUNT, MAX_BOARD_TURNS, MAX_BOMB_COUNT, TEAM_IDS, cellLabel, type CellId, type GameView } from '@cnxh/shared';
 import { PHASE_LABELS, describeCell, describeExplosion, isBombPhase } from './boardText';
-import { teamName } from './teams';
+import { TEAM_COLORS, teamName } from './teams';
 import { useCountdown } from './clock';
 import { HexBoard } from './HexBoard';
 import { socket } from './socket';
@@ -14,6 +14,10 @@ export function AdminBoard({ game, onNotice }: { game: GameView | null; onNotice
   const inPlay = !!board && !!game && game.phase.startsWith('BOARD_');
   const bombPhase = !!game?.bomb && isBombPhase(game.phase);
   const [bombs, setBombs] = useState(DEFAULT_BOMB_COUNT);
+  const [editing, setEditing] = useState(false);
+  const [focused, setFocused] = useState<CellId | null>(null);
+  const canEdit = !!board && game!.phase !== 'BOARD_SELECT';
+  const allCells = CELLS.map((c) => c.id);
   const left = useCountdown(inPlay || bombPhase ? game!.phaseEndsAt : null);
   // Ô "Số lượt" theo N thật khi đang chơi.
   const actualTurns = inPlay ? board!.totalTurns : null;
@@ -59,6 +63,11 @@ export function AdminBoard({ game, onNotice }: { game: GameView | null; onNotice
           >
             {game?.phase === 'SUMMARY' ? 'Chơi lại Bàn Cờ' : 'Bắt đầu Bàn Cờ'}
           </button>
+          {(game?.phase ?? 'LOBBY') === 'LOBBY' && (
+            <button className="primary-btn" onClick={() => socket.emit('admin:showRules', report('Không hiện được luật'))}>
+              Hiện luật trên màn chiếu
+            </button>
+          )}
         </div>
       ) : (
         <>
@@ -90,14 +99,56 @@ export function AdminBoard({ game, onNotice }: { game: GameView | null; onNotice
       )}
       {board && (
         <div className="admin-board__view">
-          <HexBoard
-            owners={board.owners}
-            shields={board.shields}
-            targets={board.targets}
-            outcome={board.outcome}
-            bombTeam={game?.bomb && game.phase.startsWith('BOMB_') && game.phase !== 'BOMB_EXPLODE' ? game.bomb.holder : null}
-            className="hex-board--admin"
-          />
+          <div>
+            <HexBoard
+              owners={board.owners}
+              shields={board.shields}
+              targets={board.targets}
+              outcome={board.outcome}
+              bombTeam={game?.bomb && game.phase.startsWith('BOMB_') && game.phase !== 'BOMB_EXPLODE' ? game.bomb.holder : null}
+              className="hex-board--admin"
+              showIds
+              selectable={editing && canEdit ? allCells : undefined}
+              onCellClick={editing && canEdit ? setFocused : undefined}
+              focused={editing ? focused : null}
+              label="Bàn cờ (admin)"
+            />
+            <div className="admin-actions">
+              <button
+                className={`primary-btn ${editing ? 'primary-btn--danger' : ''}`}
+                disabled={!canEdit && !editing}
+                onClick={() => {
+                  setEditing(!editing);
+                  setFocused(null);
+                }}
+              >
+                {editing ? 'Xong chỉnh tay' : 'Chỉnh tay chủ ô'}
+              </button>
+            </div>
+            {editing && !canEdit && <p className="form-error">Không chỉnh được trong pha chọn ô.</p>}
+            {editing && canEdit && focused !== null && (
+              <div className="admin-owner">
+                <p>
+                  {cellLabel(focused)} — chủ hiện tại: <b>{board.owners[focused] === null ? 'ô trống' : teamName(board.owners[focused]!)}</b>
+                </p>
+                <div className="admin-owner__buttons">
+                  <button onClick={() => socket.emit('admin:setCellOwner', { cellId: focused, owner: null }, report('Không đổi được chủ ô'))}>
+                    Ô trống
+                  </button>
+                  {TEAM_IDS.map((t) => (
+                    <button
+                      key={t}
+                      style={{ background: TEAM_COLORS[t], color: '#fff' }}
+                      onClick={() => socket.emit('admin:setCellOwner', { cellId: focused, owner: t }, report('Không đổi được chủ ô'))}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {editing && canEdit && focused === null && <p>Chạm vào một ô để đổi chủ.</p>}
+          </div>
           <div>
             <Standings standings={board.standings} shields={board.shields} lockedTeamIds={game!.phase === 'BOARD_SELECT' ? board.select?.locked : undefined} />
             {board.outcome && (

@@ -25,16 +25,27 @@ async function sync() {
 
 socket.on('connect', () => void sync());
 
+/** Tạm dừng toàn cục: mọi đồng hồ đứng ở thời điểm dừng (theo `game:state`). */
+let pausedAt: number | null = null;
+socket.on('game:state', (view) => {
+  pausedAt = view.pausedAt;
+});
+
 export function serverNow(): number {
   return Date.now() + offset;
 }
 
+/** "Bây giờ" cho đồng hồ đếm ngược: lúc dừng nếu đang tạm dừng. */
+export function clockNow(): number {
+  return pausedAt ?? serverNow();
+}
+
 /** Số giây còn lại tới `endsAt` (giờ server), cập nhật ~4 lần/giây. */
 export function useCountdown(endsAt: number | null | undefined): number {
-  const [left, setLeft] = useState(() => (endsAt ? secondsLeft(endsAt, serverNow()) : 0));
+  const [left, setLeft] = useState(() => (endsAt ? secondsLeft(endsAt, clockNow()) : 0));
   useEffect(() => {
     if (!endsAt) return setLeft(0);
-    const tick = () => setLeft(secondsLeft(endsAt, serverNow()));
+    const tick = () => setLeft(secondsLeft(endsAt, clockNow()));
     tick();
     const id = setInterval(tick, 250);
     return () => clearInterval(id);

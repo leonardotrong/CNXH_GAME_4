@@ -1,10 +1,20 @@
-import type { GameView } from './boardMatch';
+import type { GameView, SummaryView } from './boardMatch';
+import type { FallbackAnswer } from './fallback';
 import type { TeamPassView } from './bomb';
 import type { RoomState, TeamId } from './lobby';
 import type { PublicQuestionView, TeamQuestionView } from './questionRound';
 import type { RoundError } from './voteRound';
 import type { QuestionPool } from './questions';
 import type { TeamSelectView } from './selectRound';
+
+/** Một dòng nhật ký sự kiện — chỉ gửi cho admin (GAME_SPEC 5.3). Không bao giờ chứa ngòi bom. */
+export interface LogEntry {
+  id: number;
+  /** Giờ server (ms). */
+  at: number;
+  kind: 'phase' | 'turn' | 'bomb' | 'admin' | 'system';
+  text: string;
+}
 
 /** Vai trò của một kết nối, tương ứng với route trên client. */
 export type ClientRole = 'host' | 'play' | 'admin';
@@ -25,6 +35,7 @@ export type ErrorCode =
   | 'QUESTION_ACTIVE'
   | 'NO_QUESTIONS_IN_POOL'
   | 'WRONG_PHASE'
+  | 'PAUSED'
   | RoundError;
 
 export type Ack<T = object> = ({ ok: true } & T) | { ok: false; error: ErrorCode };
@@ -54,6 +65,8 @@ export interface ServerToClientEvents {
   'select:team': (view: TeamSelectView | null) => void;
   /** Phiếu chọn nhóm nhận bom — chỉ gửi cho thành viên nhóm đang cầm bom (null với nhóm khác). */
   'pass:team': (view: TeamPassView | null) => void;
+  /** Nhật ký sự kiện — chỉ gửi cho admin đã đăng nhập. */
+  'admin:log': (entries: LogEntry[]) => void;
 }
 
 /** Sự kiện client → server. */
@@ -87,4 +100,20 @@ export interface ClientToServerEvents {
   /** Bỏ qua câu lỗi: câu thử → hủy; câu Bàn Cờ → thay câu khác, giữ nguyên mục tiêu; câu bom → thay câu khác, ngòi cháy tiếp. */
   'admin:skipQuestion': (ack: (res: Ack) => void) => void;
   'admin:movePlayer': (req: { playerId: string; teamId: TeamId }, ack: (res: Ack) => void) => void;
+  /** LOBBY/SUMMARY → RULES (host hiện luật tóm tắt). */
+  'admin:showRules': (ack: (res: Ack) => void) => void;
+  /** Tạm dừng/tiếp tục toàn cục. */
+  'admin:setPaused': (req: { paused: boolean }, ack: (res: Ack) => void) => void;
+  /** Chỉnh tay chủ một ô (null = ô trống). */
+  'admin:setCellOwner': (req: { cellId: number; owner: TeamId | null }, ack: (res: Ack) => void) => void;
+  /** SUMMARY: bảng xếp hạng hoặc màn tổng kết 6 đặc điểm. */
+  'admin:setSummaryView': (req: { view: SummaryView }, ack: (res: Ack) => void) => void;
+  /** Bật/tắt chế độ dự phòng. */
+  'admin:setFallback': (req: { on: boolean }, ack: (res: Ack) => void) => void;
+  /** Dự phòng — SELECT: ô mục tiêu của các nhóm (null = bỏ lượt), rồi đóng SELECT. */
+  'admin:fallbackSelect': (req: { targets: Record<number, number | null> }, ack: (res: Ack) => void) => void;
+  /** Dự phòng — câu hỏi đang mở: đáp án + hạng nhanh chậm của các nhóm, rồi đóng câu. */
+  'admin:fallbackAnswers': (req: { answers: FallbackAnswer[] }, ack: (res: Ack) => void) => void;
+  /** Dự phòng — PASS: nhóm nhận bom. */
+  'admin:fallbackPass': (req: { to: TeamId }, ack: (res: Ack) => void) => void;
 }

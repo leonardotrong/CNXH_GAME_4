@@ -79,6 +79,21 @@ import {
   type TeamQuestionView,
   type RoomState,
   type TeamId,
+  rankTeams,
+  cellLabel,
+  describeCell,
+  describeExplosion,
+  describeIgnored,
+  describeShield,
+  forceChoices,
+  isCellId,
+  rankToLockedAt,
+  shiftFuse,
+  shiftVoteRound,
+  teamName,
+  type FallbackAnswer,
+  type LogEntry,
+  type SummaryView,
 } from '@cnxh/shared';
 
 interface Player {
@@ -125,6 +140,33 @@ export const DEFAULT_TIMING: RoomTiming = {
 };
 
 const WRONG_PHASE = { ok: false, error: 'WRONG_PHASE' } as const;
+const PAUSED = { ok: false, error: 'PAUSED' } as const;
+/** Giữ tối đa bấy nhiêu dòng nhật ký. */
+const MAX_LOG = 1000;
+
+/** Toàn bộ trạng thái phòng để lưu ra file (CHỈ SERVER — có ngòi bom). */
+export interface RoomSnapshot {
+  version: 1;
+  savedAt: number;
+  code: string;
+  players: Player[];
+  captains: [TeamId, string | null][];
+  seq: number;
+  lobbyOpen: boolean;
+  phase: Phase;
+  match: BoardMatch | null;
+  select: SelectRound | null;
+  revealEndsAt: number | null;
+  bomb: BombGame | null;
+  pass: PassRound | null;
+  question: QuestionRound | null;
+  roundSeq: number;
+  seenBy: [string, TeamId[]][];
+  pausedAt: number | null;
+  fallback: boolean;
+  summaryView: SummaryView;
+  log: LogEntry[];
+}
 
 /** Một phòng chơi: danh sách người chơi, nhóm, đội trưởng. Đồng hồ được tiêm vào để dễ test. */
 export class Room {
@@ -142,8 +184,16 @@ export class Room {
   private bomb: BombGame | null = null;
   /** Vòng chọn nhóm nhận bom (chỉ trong BOMB_PASS). */
   pass: PassRound | null = null;
-  /** Tăng mỗi lần chuyển pha Quả Bom — server dùng để bỏ qua timer cũ. */
+  /** Tăng mỗi lần chuyển pha Quả Bom. */
   bombStep = 0;
+  /** Tạm dừng toàn cục từ thời điểm này (null = đang chạy). */
+  pausedAt: number | null = null;
+  /** Chế độ dự phòng: pha biểu quyết không tự đóng, người dẫn nhập kết quả. */
+  fallback = false;
+  summaryView: SummaryView = 'ranking';
+  /** Nhật ký sự kiện (chỉ admin xem). */
+  private readonly eventLog: LogEntry[] = [];
+  private logSeq = 0;
   /** Câu hỏi đang mở hoặc đang hiện đáp án. */
   question: QuestionRound | null = null;
   private roundSeq = 0;
@@ -158,6 +208,20 @@ export class Room {
     timing: Partial<RoomTiming> = {},
   ) {
     this.timing = { ...DEFAULT_TIMING, ...timing };
+  }
+
+  private addLog(kind: LogEntry['kind'], text: string): void {
+    this.eventLog.push({ id: ++this.logSeq, at: this.now(), kind, text });
+    if (this.eventLog.length > MAX_LOG) this.eventLog.splice(0, this.eventLog.length - MAX_LOG);
+  }
+
+  /** Nhật ký sự kiện (bản sao). */
+  log(): LogEntry[] {
+    return this.eventLog.map((e) => ({ ...e }));
+  }
+
+  get logLength(): number {
+    return this.logSeq;
   }
 
   private members(teamId: TeamId): Player[] {
@@ -232,7 +296,10 @@ export class Room {
     const p = this.players.get(playerId);
     if (!p) return { ok: false, error: 'PLAYER_NOT_FOUND' };
     if (!isTeamId(teamId)) return { ok: false, error: 'BAD_REQUEST' };
-    if (p.teamId !== teamId) this.enterTeam(p, teamId);
+    if (p.teamId !== teamId) {
+      this.addLog('admin', `Admin chuyển ${p.name} từ ${teamName(p.teamId)} sang ${teamName(teamId)}`);
+      this.enterTeam(p, teamId);
+    }
     return { ok: true };
   }
 
@@ -240,6 +307,7 @@ export class Room {
     const p = this.players.get(playerId);
     if (!p) return { ok: false, error: 'PLAYER_NOT_FOUND' };
     this.captains.set(p.teamId, p.id);
+    this.addLog('admin', `Admin đặt ${p.name} làm đội trưởng ${teamName(p.teamId)}`);
     return { ok: true };
   }
 
@@ -315,6 +383,7 @@ export class Room {
   vote(playerId: string, roundId: unknown, option: unknown): RoomResult<{ teamId: TeamId; kind: VoteKind }> {
     const teamId = this.teamOf(playerId);
     if (teamId === null) return { ok: false, error: 'PLAYER_NOT_FOUND' };
+    if (this.pausedAt !== null) return PAUSED;
     if (typeof option !== 'number') return { ok: false, error: 'BAD_OPTION' };
     const select = this.selectRound(roundId);
     if (select) {
@@ -339,6 +408,7 @@ export class Room {
   lock(playerId: string, roundId: unknown): RoomResult<{ teamId: TeamId; kind: VoteKind }> {
     const teamId = this.teamOf(playerId);
     if (teamId === null) return { ok: false, error: 'PLAYER_NOT_FOUND' };
+    if (this.pausedAt !== null) return PAUSED;
     const select = this.selectRound(roundId);
     if (select) {
       const res = lockTarget(select, teamId, playerId, this.teamContext(teamId), this.now());
@@ -359,23 +429,51 @@ export class Room {
     return res.ok ? { ...res, kind: 'question' } : res;
   }
 
+  /** Đóng sớm khi mọi nhóm chốt — tắt khi tạm dừng hoặc ở chế độ dự phòng (người dẫn quyết định). */
+  private canCloseEarly(): boolean {
+    return this.pausedAt === null && !this.fallback;
+  }
+
   /** Câu hỏi đang mở và mọi nhóm có người đã chốt. */
   allLocked(): boolean {
-    return this.question?.status === 'open' && allTeamsLocked(this.question, this.contexts());
+    return this.canCloseEarly() && this.question?.status === 'open' && allTeamsLocked(this.question, this.contexts());
   }
 
   /** SELECT đang mở và mọi nhóm tham gia (có người) đã chốt. */
   selectAllLocked(): boolean {
-    return this.phase === 'BOARD_SELECT' && this.select?.status === 'open' && allTeamsLocked(this.select, this.contexts());
+    return (
+      this.canCloseEarly() && this.phase === 'BOARD_SELECT' && this.select?.status === 'open' && allTeamsLocked(this.select, this.contexts())
+    );
+  }
+
+  /** Vòng biểu quyết hiện tại đã đủ chốt để đóng sớm (SELECT, câu hỏi, PASS). */
+  everyoneLocked(): boolean {
+    if (this.phase === 'BOARD_SELECT') return this.selectAllLocked();
+    if (this.phase === 'BOMB_PASS') return this.passAllLocked();
+    return this.allLocked();
   }
 
   /** Đóng câu hỏi (hết giờ hoặc mọi nhóm đã chốt): tự chốt nhóm còn lại. */
-  closeQuestion(): void {
-    if (this.question?.status === 'open') this.question = closeRound(this.question, this.contexts(), this.now());
+  closeQuestion(at: number = this.now()): void {
+    if (this.question?.status === 'open') this.question = closeRound(this.question, this.contexts(), at);
   }
 
   clearQuestion(): void {
     this.question = null;
+    this.revealEndsAt = null;
+  }
+
+  /** Câu thử (ngoài trận) đóng: hiện đáp án trong `timing.reveal`. */
+  closeTestQuestion(): RoomResult {
+    if (this.question?.status !== 'open' || this.inMatch()) return WRONG_PHASE;
+    this.closeQuestion();
+    this.revealEndsAt = this.now() + this.timing.reveal;
+    return { ok: true };
+  }
+
+  /** Đang trong trận (câu hỏi thuộc về Bàn Cờ/Quả Bom chứ không phải câu thử). */
+  private inMatch(): boolean {
+    return this.phase !== 'LOBBY' && this.phase !== 'RULES' && this.phase !== 'SUMMARY';
   }
 
   publicQuestion(): PublicQuestionView | null {
@@ -388,18 +486,31 @@ export class Room {
 
   // ─── Bàn Cờ Quyền Lực (GAME_SPEC 3) ────────────────────────────────────────
 
+  /** Nhóm đang chơi: nhóm có thành viên; chế độ dự phòng thì cả 7 nhóm (không cần điện thoại). */
   private activeTeamIds(): TeamId[] {
-    return TEAM_IDS.filter((t) => this.members(t).length > 0);
+    return TEAM_IDS.filter((t) => this.fallback || this.members(t).length > 0);
+  }
+
+  /** LOBBY/SUMMARY → RULES: host hiện luật tóm tắt. */
+  showRules(): RoomResult {
+    if (this.phase !== 'LOBBY' && this.phase !== 'SUMMARY') return WRONG_PHASE;
+    if (this.question) return { ok: false, error: 'QUESTION_ACTIVE' };
+    this.phase = 'RULES';
+    this.addLog('phase', 'Hiện luật chơi');
+    return { ok: true };
   }
 
   /** Bắt đầu Bàn Cờ: nhóm có người nhận ô xuất phát, vào SELECT lượt 1. */
   startBoard(bank: readonly Question[], totalTurns?: unknown): RoomResult {
-    if (this.phase !== 'LOBBY' && this.phase !== 'SUMMARY') return WRONG_PHASE;
+    if (this.phase !== 'LOBBY' && this.phase !== 'RULES' && this.phase !== 'SUMMARY') return WRONG_PHASE;
     if (!bank.some((q) => q.pool === 'board')) return { ok: false, error: 'NO_QUESTIONS_IN_POOL' };
     this.question = null;
     this.bomb = null;
     this.pass = null;
-    this.match = startMatch(this.activeTeamIds(), totalTurns);
+    this.summaryView = 'ranking';
+    const active = this.activeTeamIds();
+    this.match = startMatch(active, totalTurns);
+    this.addLog('phase', `Bắt đầu Bàn Cờ (${this.match.totalTurns} lượt) — nhóm chơi: ${active.join(', ') || 'không có'}`);
     this.beginSelect();
     return { ok: true };
   }
@@ -422,6 +533,13 @@ export class Room {
     if (this.phase !== 'BOARD_SELECT' || !this.match || !this.select) return WRONG_PHASE;
     this.select = closeSelectRound(this.select, this.contexts(), this.now());
     this.match = withTargets(this.match, selectedTargets(this.select));
+    const active = this.activeTeamIds();
+    const picks = Object.entries(this.match.targets ?? {})
+      .filter(([t, cell]) => cell !== null || active.includes(Number(t)))
+      .map(
+      ([t, cell]) => `${teamName(Number(t))} → ${cell === null ? 'bỏ lượt' : cellLabel(cell)}${this.select!.teams[Number(t)]?.lockedBy === 'admin' ? ' (nhập tay)' : ''}`,
+    );
+    this.addLog('turn', `Lượt ${this.match.turn} — mục tiêu: ${picks.join('; ') || 'không nhóm nào chọn'}`);
     this.phase = 'BOARD_QUESTION';
     return this.startQuestion(bank, 'board', { durationMs: this.timing.board, rng });
   }
@@ -430,14 +548,20 @@ export class Room {
   replaceBoardQuestion(bank: readonly Question[], rng?: Rng): RoomResult<{ round: QuestionRound }> {
     if (this.phase !== 'BOARD_QUESTION') return WRONG_PHASE;
     this.question = null;
+    this.addLog('admin', 'Admin bỏ qua câu Bàn Cờ lỗi — thay câu khác, giữ mục tiêu');
     return this.startQuestion(bank, 'board', { durationMs: this.timing.board, rng });
   }
 
   /** Câu hỏi của lượt đóng (hết giờ hoặc mọi nhóm đã chốt): giải quyết lượt, sang REVEAL. */
-  endBoardQuestion(): RoomResult {
+  endBoardQuestion(closeAt: number = this.now()): RoomResult {
     if (this.phase !== 'BOARD_QUESTION' || !this.match || !this.question) return WRONG_PHASE;
-    this.closeQuestion();
+    this.closeQuestion(closeAt);
     this.match = applyTurn(this.match, this.question);
+    this.logAnswers(`Lượt ${this.match.turn}`);
+    const outcome = this.match.outcome!;
+    for (const o of outcome.cells) this.addLog('turn', `Lượt ${this.match.turn}: ${describeCell(o)} [${cellLabel(o.cellId)}]`);
+    for (const x of outcome.ignored) this.addLog('turn', `Lượt ${this.match.turn}: ${describeIgnored(x)}`);
+    for (const sh of outcome.shieldsGranted) this.addLog('turn', `Lượt ${this.match.turn}: ${describeShield(sh)}`);
     this.phase = 'BOARD_REVEAL';
     this.revealEndsAt = this.now() + this.timing.boardReveal;
     return { ok: true };
@@ -453,6 +577,7 @@ export class Room {
       this.question = null;
       this.revealEndsAt = null;
       this.bomb = startBombGame(this.bombSetup(rng));
+      this.addLog('phase', `Kết thúc Bàn Cờ sau lượt ${this.match.turn}${this.bomb ? ` — ${teamName(this.bomb.holder)} cầm quả bom đầu` : ''}`);
       this.enterBomb(this.bomb ? 'BOMB_INTRO' : 'SUMMARY');
     } else {
       this.match = nextTurn(this.match);
@@ -468,12 +593,14 @@ export class Room {
   setBoardTurns(totalTurns: unknown): RoomResult<{ totalTurns: number }> {
     if (!this.boardInPlay()) return WRONG_PHASE;
     this.match = setTotalTurns(this.match!, totalTurns);
+    this.addLog('admin', `Admin đổi số lượt thành ${this.match.totalTurns}`);
     return { ok: true, totalTurns: this.match.totalTurns };
   }
 
   setEndAfterThisTurn(value: boolean): RoomResult {
     if (!this.boardInPlay()) return WRONG_PHASE;
     this.match = { ...this.match!, endAfterThisTurn: value };
+    this.addLog('admin', value ? `Admin: kết thúc Bàn Cờ sau lượt ${this.match.turn}` : 'Admin hủy kết thúc sớm');
     return { ok: true };
   }
 
@@ -506,6 +633,7 @@ export class Room {
     if (this.phase !== 'BOMB_INTRO' || !this.bomb) return WRONG_PHASE;
     if (!bank.some((q) => q.pool === 'bomb')) return { ok: false, error: 'NO_QUESTIONS_IN_POOL' };
     this.bomb = { ...this.bomb, totalBombs: clampBombCount(totalBombs ?? this.bomb.totalBombs) };
+    this.addLog('phase', `Bắt đầu Quả Bom (${this.bomb.totalBombs} quả) — ${teamName(this.bomb.holder)} cầm quả 1`);
     return this.beginBombQuestion(bank, rng);
   }
 
@@ -532,16 +660,17 @@ export class Room {
    * Câu bom đóng (nhóm chốt, hết giờ, hoặc timer ngòi). Hết ngòi tại thời điểm đóng → nổ (hủy câu);
    * còn lại → ngòi dừng, sang REVEAL.
    */
-  endBombQuestion(rng?: Rng): RoomResult<{ exploded: boolean }> {
+  endBombQuestion(rng?: Rng, votesCloseAt: number = this.now()): RoomResult<{ exploded: boolean }> {
     if (this.phase !== 'BOMB_QUESTION' || !this.bomb || !this.match || this.question?.status !== 'open') return WRONG_PHASE;
     const closeAt = Math.min(this.now(), this.question.endsAt);
     if (isFuseSpent(this.bomb.fuse, closeAt)) {
       this.explode(rng);
       return { ok: true, exploded: true };
     }
-    this.closeQuestion();
+    this.closeQuestion(votesCloseAt);
     this.bomb = { ...this.bomb, fuse: pauseFuse(this.bomb.fuse, closeAt) };
     this.match = { ...this.match, stats: recordAnswers(this.match.stats, this.question) };
+    this.logAnswers(`Quả ${this.bomb.bombNumber}`);
     this.revealEndsAt = this.now() + this.timing.bombReveal;
     this.enterBomb('BOMB_REVEAL');
     return { ok: true, exploded: false };
@@ -553,6 +682,8 @@ export class Room {
     const { board, lost } = explodeCells(this.match!.board, bomb.holder, rng);
     this.match = { ...this.match!, board };
     this.bomb = recordExplosion({ ...bomb, fuse: pauseFuse(bomb.fuse, this.now()) }, lost);
+    const e = this.bomb.explosions.at(-1)!;
+    this.addLog('bomb', `Quả ${e.bombNumber}: ${describeExplosion(e)}${lost.length ? ` [${lost.map(cellLabel).join(', ')}]` : ''} — câu đang mở bị hủy`);
     this.question = null;
     this.pass = null;
     this.revealEndsAt = this.now() + this.timing.bombExplode;
@@ -583,7 +714,11 @@ export class Room {
     if (this.phase !== 'BOMB_PASS' || !this.bomb || !this.pass) return WRONG_PHASE;
     const pass = closePassRound(this.pass, this.contexts(), this.now(), rng);
     const to = passChoice(pass);
-    if (to !== null) this.bomb = passBomb(this.bomb, to, pass.randomPick);
+    if (to !== null) {
+      const by = pass.randomPick ? ' (không có phiếu — server chọn ngẫu nhiên)' : pass.teams[pass.holder]?.lockedBy === 'admin' ? ' (nhập tay)' : '';
+      this.addLog('bomb', `Quả ${this.bomb.bombNumber}: ${teamName(this.bomb.holder)} chuyền bom cho ${teamName(to)}${by}`);
+      this.bomb = passBomb(this.bomb, to, pass.randomPick);
+    }
     return this.beginBombQuestion(bank, rng);
   }
 
@@ -593,11 +728,14 @@ export class Room {
     const next = nextBomb(this.bomb, this.bombSetup(rng));
     if (next) {
       this.bomb = next;
+      this.addLog('bomb', `Quả ${next.bombNumber}: ${teamName(next.holder)} cầm bom đầu`);
       return this.beginBombQuestion(bank, rng);
     }
     this.question = null;
     this.pass = null;
     this.revealEndsAt = null;
+    const top = rankTeams(this.match!.board, this.match!.stats, TEAM_IDS).filter((x) => x.rank === 1).map((x) => teamName(x.teamId));
+    this.addLog('phase', `Kết thúc trận — dẫn đầu: ${top.join(', ')}`);
     this.enterBomb('SUMMARY');
     return { ok: true };
   }
@@ -609,6 +747,7 @@ export class Room {
     const res = this.startQuestion(bank, 'bomb', { durationMs: this.timing.bomb, teamIds: [this.bomb.holder], rng });
     if (!res.ok) return res;
     this.bombStep++;
+    this.addLog('admin', 'Admin bỏ qua câu bom lỗi — thay câu khác, ngòi cháy tiếp');
     return { ok: true };
   }
 
@@ -627,6 +766,9 @@ export class Room {
     return {
       phase: this.phase,
       phaseEndsAt,
+      pausedAt: this.pausedAt,
+      fallback: this.fallback,
+      summaryView: this.summaryView,
       board: this.match && publicBoardView(this.match, this.select && publicSelectView(this.select)),
       bomb: this.bomb && publicBombView(this.bomb, this.pass),
     };
@@ -635,6 +777,253 @@ export class Room {
   /** Phiếu chọn ô của nhóm (null: không có SELECT, hoặc nhóm không có ô hợp lệ lượt này). */
   teamSelect(teamId: TeamId): TeamSelectView | null {
     return this.select ? teamSelectView(this.select, teamId, this.teamContext(teamId)) : null;
+  }
+
+  /** Ghi kết quả câu vừa đóng vào nhật ký (chỉ gọi khi câu đã đóng). */
+  private logAnswers(prefix: string): void {
+    const view = this.publicQuestion();
+    if (!view?.reveal) return;
+    const active = this.activeTeamIds();
+    const results = view.reveal.results.filter((r) => active.includes(r.teamId));
+    const parts = results.map((r) => {
+      const choice = r.choice === null ? '—' : 'ABCD'[r.choice] ?? String(r.choice);
+      const when = r.lockedBy === 'timeout' ? 'hết giờ' : r.lockedBy === 'admin' ? `nhập tay, ${r.lockedAfterMs} ms` : `${r.lockedAfterMs} ms`;
+      return `${teamName(r.teamId)} ${choice} ${r.correct ? '✓' : '✗'} (${when})`;
+    });
+    this.addLog(this.phase.startsWith('BOMB_') ? 'bomb' : 'turn', `${prefix} — đáp án ${'ABCD'[view.reveal.answerIndex]}: ${parts.join('; ') || 'không nhóm nào'}`);
+  }
+
+  // ─── Đồng hồ chung (server đặt đúng một timer cho mỗi phòng) ───────────────
+
+  /**
+   * CHỈ SERVER: thời điểm cần gọi `advance()` (null = chờ admin / đang tạm dừng).
+   * Với BOMB_QUESTION có tính ngòi — giá trị này không bao giờ được gửi xuống client.
+   */
+  nextDeadline(): number | null {
+    if (this.pausedAt !== null) return null;
+    const manual = this.fallback;
+    switch (this.phase) {
+      case 'BOARD_SELECT':
+        return manual || this.select?.status !== 'open' ? null : this.select.endsAt;
+      case 'BOARD_QUESTION':
+        return manual || this.question?.status !== 'open' ? null : this.question.endsAt;
+      case 'BOARD_REVEAL':
+      case 'BOMB_REVEAL':
+      case 'BOMB_EXPLODE':
+        return this.revealEndsAt;
+      case 'BOMB_QUESTION': {
+        const at = this.bombDeadline();
+        // Dự phòng: không tự đóng câu, nhưng ngòi vẫn có thể nổ trong thời gian của câu.
+        if (manual && at !== null && this.question && at >= this.question.endsAt) return null;
+        return at;
+      }
+      case 'BOMB_PASS':
+        return manual || this.pass?.status !== 'open' ? null : this.pass.endsAt;
+      case 'BOMB_INTRO':
+        return null;
+      default:
+        // Câu thử ngoài trận.
+        if (this.question?.status === 'open') return manual ? null : this.question.endsAt;
+        return this.question ? this.revealEndsAt : null;
+    }
+  }
+
+  /** Pha hiện tại kết thúc (hết hạn, hoặc mọi nhóm đã chốt): chuyển sang bước kế. */
+  advance(bank: readonly Question[], rng?: Rng): RoomResult {
+    switch (this.phase) {
+      case 'BOARD_SELECT':
+        return this.endSelect(bank, rng);
+      case 'BOARD_QUESTION':
+        return this.endBoardQuestion();
+      case 'BOARD_REVEAL':
+        return this.advanceTurn(rng);
+      case 'BOMB_QUESTION':
+        return this.endBombQuestion(rng);
+      case 'BOMB_REVEAL':
+        return this.afterBombReveal(bank, rng);
+      case 'BOMB_PASS':
+        return this.endPass(bank, rng);
+      case 'BOMB_EXPLODE':
+        return this.afterExplode(bank, rng);
+      case 'BOMB_INTRO':
+        return WRONG_PHASE;
+      default:
+        if (this.question?.status === 'open') return this.closeTestQuestion();
+        if (this.question) {
+          this.clearQuestion();
+          return { ok: true };
+        }
+        return WRONG_PHASE;
+    }
+  }
+
+  // ─── Tạm dừng toàn cục ────────────────────────────────────────────────────
+
+  pause(): RoomResult {
+    if (this.pausedAt !== null) return { ok: true };
+    this.pausedAt = this.now();
+    this.addLog('admin', 'Admin TẠM DỪNG trận');
+    return { ok: true };
+  }
+
+  /** Tiếp tục: dời mọi mốc thời gian đúng bằng thời gian đã dừng (thứ tự và thời gian chốt giữ nguyên). */
+  resume(): RoomResult {
+    if (this.pausedAt === null) return { ok: true };
+    const delta = Math.max(0, this.now() - this.pausedAt);
+    this.pausedAt = null;
+    if (this.select) this.select = shiftVoteRound(this.select, delta);
+    if (this.question) this.question = shiftVoteRound(this.question, delta);
+    if (this.pass) this.pass = shiftVoteRound(this.pass, delta);
+    if (this.revealEndsAt !== null) this.revealEndsAt += delta;
+    if (this.bomb) this.bomb = { ...this.bomb, fuse: shiftFuse(this.bomb.fuse, delta) };
+    this.addLog('admin', `Admin TIẾP TỤC trận (đã dừng ${Math.round(delta / 1000)} s)`);
+    return { ok: true };
+  }
+
+  // ─── Chỉnh tay ─────────────────────────────────────────────────────────────
+
+  /** Admin đổi chủ một ô (null = ô trống). Không được trong SELECT (ô hợp lệ đã tính cho lượt). */
+  setCellOwner(cellId: unknown, owner: unknown): RoomResult {
+    if (!this.match) return WRONG_PHASE;
+    if (this.phase === 'BOARD_SELECT') return WRONG_PHASE;
+    if (!isCellId(cellId) || (owner !== null && !isTeamId(owner))) return { ok: false, error: 'BAD_REQUEST' };
+    const before = this.match.board.owners[cellId] ?? null;
+    if (before === owner) return { ok: true };
+    const owners = [...this.match.board.owners];
+    owners[cellId] = owner;
+    this.match = { ...this.match, board: { ...this.match.board, owners } };
+    this.addLog(
+      'admin',
+      `Admin đổi chủ ${cellLabel(cellId)}: ${before === null ? 'ô trống' : teamName(before)} → ${owner === null ? 'ô trống' : teamName(owner)}`,
+    );
+    return { ok: true };
+  }
+
+  setSummaryView(view: unknown): RoomResult {
+    if (view !== 'ranking' && view !== 'lessons') return { ok: false, error: 'BAD_REQUEST' };
+    this.summaryView = view;
+    return { ok: true };
+  }
+
+  // ─── Chế độ dự phòng (GAME_SPEC 5.3) ───────────────────────────────────────
+
+  setFallback(on: boolean): RoomResult {
+    if (this.fallback === on) return { ok: true };
+    this.fallback = on;
+    this.addLog('admin', on ? 'Admin BẬT chế độ dự phòng (thẻ màu)' : 'Admin TẮT chế độ dự phòng');
+    return { ok: true };
+  }
+
+  /** Dự phòng — SELECT: người dẫn nhập ô mục tiêu (null = bỏ lượt) rồi đóng SELECT, mở câu hỏi. */
+  fallbackSelect(bank: readonly Question[], targets: unknown, rng?: Rng): RoomResult {
+    if (this.phase !== 'BOARD_SELECT' || !this.select || this.select.status !== 'open') return WRONG_PHASE;
+    if (typeof targets !== 'object' || targets === null) return { ok: false, error: 'BAD_REQUEST' };
+    const now = this.now();
+    const select = this.select;
+    const entries = Object.entries(targets as Record<string, unknown>)
+      .map(([t, cell]) => ({ teamId: Number(t), choice: cell === null ? null : (cell as number), lockedAt: now }))
+      .filter((e) => select.teams[e.teamId] !== undefined);
+    const res = forceChoices(select, entries, () => true);
+    if (!res.ok) return res;
+    for (const e of entries) {
+      if (e.choice !== null && !select.validTargets[e.teamId]!.includes(e.choice)) return { ok: false, error: 'BAD_OPTION' };
+    }
+    this.select = res.round;
+    return this.endSelect(bank, rng);
+  }
+
+  /** Dự phòng — câu đang mở: người dẫn nhập đáp án + hạng nhanh chậm của các nhóm rồi đóng câu. */
+  fallbackAnswers(answers: unknown, rng?: Rng): RoomResult {
+    const q = this.question;
+    if (!q || q.status !== 'open') return { ok: false, error: 'NO_QUESTION' };
+    if (!Array.isArray(answers)) return { ok: false, error: 'BAD_REQUEST' };
+    const entries = (answers as FallbackAnswer[])
+      .filter((a) => a && q.teams[a.teamId] !== undefined)
+      .map((a) => ({ teamId: a.teamId, choice: a.choice ?? null, lockedAt: rankToLockedAt(q.startedAt, a.rank) }));
+    const res = forceChoices(q, entries, (o) => o >= 0 && o < q.question.options.length);
+    if (!res.ok) return res;
+    this.question = res.round;
+    // Nhóm người dẫn không nhập: tự chốt như hết giờ (sau mọi hạng nhập tay).
+    switch (this.phase) {
+      case 'BOARD_QUESTION':
+        return this.endBoardQuestion(q.endsAt);
+      case 'BOMB_QUESTION':
+        return this.endBombQuestion(rng, q.endsAt);
+      default:
+        if (this.inMatch()) return WRONG_PHASE;
+        this.closeQuestion(q.endsAt);
+        this.revealEndsAt = this.now() + this.timing.reveal;
+        return { ok: true };
+    }
+  }
+
+  /** Dự phòng — PASS: người dẫn chọn nhóm nhận bom. */
+  fallbackPass(bank: readonly Question[], to: unknown, rng?: Rng): RoomResult {
+    if (this.phase !== 'BOMB_PASS' || !this.pass || this.pass.status !== 'open') return WRONG_PHASE;
+    const pass = this.pass;
+    if (typeof to !== 'number' || !pass.validTargets.includes(to)) return { ok: false, error: 'BAD_OPTION' };
+    const res = forceChoices(pass, [{ teamId: pass.holder, choice: to, lockedAt: this.now() }], (t) => pass.validTargets.includes(t));
+    if (!res.ok) return res;
+    this.pass = res.round;
+    return this.endPass(bank, rng);
+  }
+
+  // ─── Lưu / khôi phục (GAME_SPEC 6) ─────────────────────────────────────────
+
+  toSnapshot(): RoomSnapshot {
+    return structuredClone({
+      version: 1 as const,
+      savedAt: this.now(),
+      code: this.code,
+      players: [...this.players.values()],
+      captains: [...this.captains.entries()],
+      seq: this.seq,
+      lobbyOpen: this.lobbyOpen,
+      phase: this.phase,
+      match: this.match,
+      select: this.select,
+      revealEndsAt: this.revealEndsAt,
+      bomb: this.bomb,
+      pass: this.pass,
+      question: this.question,
+      roundSeq: this.roundSeq,
+      seenBy: [...this.seenBy.entries()].map(([id, set]): [string, TeamId[]] => [id, [...set]]),
+      pausedAt: this.pausedAt,
+      fallback: this.fallback,
+      summaryView: this.summaryView,
+      log: this.eventLog,
+    });
+  }
+
+  /**
+   * Dựng lại phòng từ file sau khi server khởi động lại. Mọi người chơi coi như mất kết nối (sẽ vào lại bằng playerId).
+   * Đang ở pha có đồng hồ → tạm dừng tại thời điểm lưu, admin bấm "Tiếp tục".
+   */
+  static fromSnapshot(snap: RoomSnapshot, now: () => number = Date.now, timing: Partial<RoomTiming> = {}): Room {
+    const room = new Room(snap.code, now, timing);
+    const data = structuredClone(snap);
+    const t = now();
+    for (const p of data.players) room.players.set(p.id, { ...p, online: false, offlineSince: t });
+    for (const [team, id] of data.captains) room.captains.set(team, id);
+    room.seq = data.seq;
+    room.lobbyOpen = data.lobbyOpen;
+    room.phase = data.phase;
+    room.match = data.match;
+    room.select = data.select;
+    room.revealEndsAt = data.revealEndsAt;
+    room.bomb = data.bomb;
+    room.pass = data.pass;
+    room.question = data.question;
+    room.roundSeq = data.roundSeq;
+    for (const [id, teams] of data.seenBy) room.seenBy.set(id, new Set(teams));
+    room.fallback = data.fallback;
+    room.summaryView = data.summaryView;
+    room.eventLog.push(...data.log);
+    room.logSeq = data.log.at(-1)?.id ?? 0;
+    room.pausedAt = data.pausedAt;
+    if (room.pausedAt === null && room.nextDeadline() !== null) room.pausedAt = data.savedAt;
+    room.addLog('system', `Server khởi động lại — khôi phục trận ở pha ${room.phase}${room.pausedAt !== null ? ' (đang tạm dừng, bấm Tiếp tục khi mọi người đã vào lại)' : ''}`);
+    return room;
   }
 
   /** Đội trưởng đang có quyền CHỐT của nhóm (dùng cho các giai đoạn sau). */
@@ -688,6 +1077,12 @@ export class RoomRegistry {
 
   get(code: string | undefined): Room | undefined {
     return code === undefined ? undefined : this.rooms.get(code);
+  }
+
+  /** Thêm phòng khôi phục từ file và đặt làm phòng mới nhất. */
+  adopt(room: Room): void {
+    this.rooms.set(room.code, room);
+    this.latest = room.code;
   }
 
   /** Phòng tạo gần nhất — host và admin mặc định theo dõi phòng này. */

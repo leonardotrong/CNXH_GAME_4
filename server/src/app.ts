@@ -13,7 +13,8 @@ import {
   type ServerToClientEvents,
 } from '@cnxh/shared';
 import { loadQuestionBank } from './questionBank';
-import { DEFAULT_TIMING, RoomRegistry, type Room, type RoomTiming } from './room';
+import { readSnapshot, writeSnapshot } from './persistence';
+import { DEFAULT_TIMING, Room, RoomRegistry, type RoomTiming } from './room';
 
 interface SocketData {
   isAdmin?: boolean;
@@ -36,12 +37,24 @@ export interface AppServerOptions {
   questions?: Question[];
   /** Ghi đè thời lượng các pha (ms) — dùng cho test. */
   durations?: Partial<RoomTiming>;
+  /** File lưu trạng thái trận để khôi phục sau khi khởi động lại (null/không có = không lưu). */
+  stateFile?: string | null;
 }
 
 const channel = (code: string) => `room:${code}`;
+const adminChannel = (code: string) => `admin:${code}`;
+/** Gộp các lần ghi file trạng thái trong khoảng này. */
+const SAVE_DEBOUNCE_MS = 250;
 const HOSTS_CHANNEL = 'hosts';
 
-export function createAppServer(options: AppServerOptions = {}): { httpServer: HttpServer; io: GameIo } {
+export interface AppServer {
+  httpServer: HttpServer;
+  io: GameIo;
+  /** Ghi ngay mọi trạng thái đang chờ lưu (gọi trước khi tắt server). */
+  flush: () => void;
+}
+
+export function createAppServer(options: AppServerOptions = {}): AppServer {
   const app = express();
 
   app.get('/api/health', (_req, res) => {
@@ -95,100 +108,75 @@ export function createAppServer(options: AppServerOptions = {}): { httpServer: H
     if (room.question || room.select || room.pass) emitTeamViews(room);
   };
 
-  // Timer câu hỏi — chạy hoàn toàn trên server.
-  const questionTimers = new Map<string, NodeJS.Timeout>();
-  const clearQuestionTimer = (room: Room) => {
-    clearTimeout(questionTimers.get(room.code));
-    questionTimers.delete(room.code);
-  };
-  const schedule = (room: Room, ms: number, fn: () => void) => {
-    clearQuestionTimer(room);
-    const t = setTimeout(fn, Math.max(0, ms));
-    t.unref();
-    questionTimers.set(room.code, t);
-  };
-  // ─── Lượt Bàn Cờ: SELECT → QUESTION → REVEAL → lượt kế ───────────────────
-  const runSelect = (room: Room) => {
-    const { roundId, endsAt } = room.select!;
-    schedule(room, endsAt - Date.now(), () => endSelect(room, roundId));
-  };
-  const runBoardQuestion = (room: Room) => {
-    const { roundId, endsAt } = room.question!;
-    schedule(room, endsAt - Date.now(), () => endBoardQuestion(room, roundId));
-  };
-  const endSelect = (room: Room, roundId: number) => {
-    if (room.phase !== 'BOARD_SELECT' || room.select?.roundId !== roundId) return;
-    const res = room.endSelect(questions);
-    if (!res.ok) console.error(`[server] Phòng ${room.code}: không mở được câu hỏi Bàn Cờ (${res.error})`);
-    else runBoardQuestion(room);
-    emitAll(room);
-  };
-  const endBoardQuestion = (room: Room, roundId: number) => {
-    if (room.phase !== 'BOARD_QUESTION' || room.question?.roundId !== roundId || room.question.status !== 'open') return;
-    room.endBoardQuestion();
-    const turn = room.match!.turn;
-    schedule(room, durations.boardReveal, () => advanceTurn(room, turn));
-    emitAll(room);
-  };
-  const advanceTurn = (room: Room, turn: number) => {
-    if (room.phase !== 'BOARD_REVEAL' || room.match?.turn !== turn) return;
-    room.advanceTurn();
-    if (room.select?.status === 'open') runSelect(room);
-    else clearQuestionTimer(room); // BOMB_INTRO: chờ admin
-    emitAll(room);
-  };
-
-  // ─── Quả Bom: mỗi pha một timer; `bombStep` bỏ qua timer của pha cũ ──────
-  // Ngòi chỉ nằm trong Room: timer của BOMB_QUESTION đặt tại room.bombDeadline() = min(hạn câu, hạn ngòi);
-  // không có gì về ngòi được gửi đi — client chỉ thấy sự kiện nổ khi nó xảy ra.
-  const bombFail = (room: Room, res: { ok: boolean; error?: string }) => {
-    if (!res.ok) console.error(`[server] Phòng ${room.code}: lỗi Quả Bom (${res.error})`);
-  };
-  /** Việc cần làm khi pha bom hiện tại hết hạn. */
-  const bombTimeout = (room: Room): (() => { ok: boolean; error?: string }) | null => {
-    switch (room.phase) {
-      case 'BOMB_QUESTION':
-        return () => room.endBombQuestion();
-      case 'BOMB_REVEAL':
-        return () => room.afterBombReveal(questions);
-      case 'BOMB_PASS':
-        return () => room.endPass(questions);
-      case 'BOMB_EXPLODE':
-        return () => room.afterExplode(questions);
-      default:
-        return null;
+  // ─── Lưu trạng thái (GAME_SPEC 6): ghi gộp sau mỗi thay đổi, file chỉ nằm trên server ───
+  const stateFile = options.stateFile ?? null;
+  const pendingSaves = new Map<string, NodeJS.Timeout>();
+  const saveNow = (room: Room) => {
+    clearTimeout(pendingSaves.get(room.code));
+    pendingSaves.delete(room.code);
+    if (!stateFile) return;
+    try {
+      writeSnapshot(stateFile, room.toSnapshot());
+    } catch (err) {
+      console.error(`[server] Không lưu được trạng thái phòng ${room.code}:`, err);
     }
   };
-  /** Sau mỗi thay đổi pha bom: phát trạng thái rồi đặt timer cho pha mới. */
-  const bombChanged = (room: Room) => {
-    emitAll(room);
-    const action = bombTimeout(room);
-    if (!action) return clearQuestionTimer(room);
-    const step = room.bombStep;
-    const at = room.phase === 'BOMB_QUESTION' ? room.bombDeadline()! : room.publicGame().phaseEndsAt!;
-    const arm = () =>
-      schedule(room, at - Date.now(), () => {
-        if (room.bombStep !== step) return;
-        // setTimeout có thể chạy sớm ~1 ms: chưa tới hạn ngòi thì chờ tiếp, kẻo đóng câu thay vì nổ.
-        if (Date.now() < at) return arm();
-        bombFail(room, action());
-        bombChanged(room);
-      });
-    arm();
+  const persist = (room: Room) => {
+    if (!stateFile || pendingSaves.has(room.code)) return;
+    const t = setTimeout(() => saveNow(room), SAVE_DEBOUNCE_MS);
+    t.unref();
+    pendingSaves.set(room.code, t);
+  };
+  if (stateFile) {
+    const snap = readSnapshot(stateFile);
+    if (snap) {
+      const room = Room.fromSnapshot(snap, Date.now, durations);
+      registry.adopt(room);
+      console.log(`[server] Khôi phục phòng ${room.code} ở pha ${room.phase}${room.pausedAt !== null ? ' (đang tạm dừng)' : ''}.`);
+    }
+  }
+
+  // ─── Nhật ký: chỉ gửi cho admin đã đăng nhập ─────────────────────────────
+  const sentLog = new Map<string, number>();
+  const emitLog = (room: Room, force = false) => {
+    if (!force && sentLog.get(room.code) === room.logLength) return;
+    sentLog.set(room.code, room.logLength);
+    io.to(adminChannel(room.code)).emit('admin:log', room.log());
   };
 
-  /** Câu thử (ngoài trận). */
-  const finishQuestion = (room: Room, roundId: number) => {
-    if (room.question?.roundId !== roundId || room.question.status !== 'open') return;
-    room.closeQuestion();
-    emitQuestion(room);
-    emitTeamViews(room);
-    schedule(room, durations.reveal, () => {
-      if (room.question?.roundId !== roundId) return;
-      room.clearQuestion();
-      emitQuestion(room);
-      emitTeamViews(room);
-    });
+  // ─── Đồng hồ: MỘT timer mỗi phòng, đặt tại room.nextDeadline() ───────────
+  // Với Quả Bom, hạn này đã tính ngòi (min(hạn câu, hạn ngòi)) — chỉ dùng trong server, không gửi đi.
+  const timers = new Map<string, NodeJS.Timeout>();
+  const clearTimer = (room: Room) => {
+    clearTimeout(timers.get(room.code));
+    timers.delete(room.code);
+  };
+  const arm = (room: Room) => {
+    clearTimer(room);
+    const at = room.nextDeadline();
+    if (at === null) return;
+    const t = setTimeout(() => {
+      const due = room.nextDeadline();
+      if (due === null) return;
+      // setTimeout có thể chạy sớm ~1 ms, hoặc hạn đã đổi: chưa tới hạn thì đặt lại.
+      if (Date.now() < due) return arm(room);
+      const res = room.advance(questions);
+      if (!res.ok) {
+        console.error(`[server] Phòng ${room.code}: không chuyển được pha ${room.phase} (${res.error})`);
+        emitAll(room);
+        return;
+      }
+      changed(room);
+    }, Math.max(0, at - Date.now()));
+    t.unref();
+    timers.set(room.code, t);
+  };
+  /** Sau mỗi thay đổi trạng thái trận: phát cho mọi người, ghi nhật ký cho admin, lưu file, đặt lại timer. */
+  const changed = (room: Room) => {
+    emitAll(room);
+    emitLog(room);
+    persist(room);
+    arm(room);
   };
 
   io.on('connection', (socket) => {
@@ -198,9 +186,16 @@ export function createAppServer(options: AppServerOptions = {}): { httpServer: H
     });
 
     const watch = (room: Room) => {
-      if (socket.data.roomCode) void socket.leave(channel(socket.data.roomCode));
+      if (socket.data.roomCode) {
+        void socket.leave(channel(socket.data.roomCode));
+        void socket.leave(adminChannel(socket.data.roomCode));
+      }
       socket.data.roomCode = room.code;
       void socket.join(channel(room.code));
+      if (socket.data.isAdmin) {
+        void socket.join(adminChannel(room.code));
+        socket.emit('admin:log', room.log());
+      }
       socket.emit('room:state', room.snapshot());
       socket.emit('game:state', room.publicGame());
       socket.emit('question:state', room.publicQuestion());
@@ -241,6 +236,7 @@ export function createAppServer(options: AppServerOptions = {}): { httpServer: H
       socket.data.playerId = res.playerId;
       watch(room);
       broadcast(room);
+      persist(room);
       done(ack, res);
     });
 
@@ -248,7 +244,10 @@ export function createAppServer(options: AppServerOptions = {}): { httpServer: H
       const room = registry.get(socket.data.roomCode);
       if (!room || !socket.data.playerId) return done(ack, { ok: false, error: 'PLAYER_NOT_FOUND' });
       const res = room.changeTeam(socket.data.playerId, req?.teamId);
-      if (res.ok) broadcast(room);
+      if (res.ok) {
+        broadcast(room);
+        persist(room);
+      }
       done(ack, res);
     });
 
@@ -267,29 +266,14 @@ export function createAppServer(options: AppServerOptions = {}): { httpServer: H
       const res = room.lock(socket.data.playerId, req?.roundId);
       if (!res.ok) return done(ack, res);
       done(ack, { ok: true });
-      if (res.kind === 'select') {
-        if (room.selectAllLocked()) return endSelect(room, room.select!.roundId);
-        emitGame(room);
-        return emitTeamViews(room, res.teamId);
+      if (room.everyoneLocked()) {
+        // Đóng sớm: SELECT → câu hỏi, câu → REVEAL (câu bom: Room tự quyết nổ nếu ngòi hết đúng lúc chốt), PASS → câu mới.
+        const adv = room.advance(questions);
+        if (!adv.ok) console.error(`[server] Phòng ${room.code}: không đóng sớm được (${adv.error})`);
+        return changed(room);
       }
-      if (res.kind === 'pass') {
-        if (room.passAllLocked()) {
-          bombFail(room, room.endPass(questions));
-          return bombChanged(room);
-        }
-        emitGame(room);
-        return emitTeamViews(room, res.teamId);
-      }
-      if (room.allLocked()) {
-        const { roundId } = room.question!;
-        if (room.phase === 'BOMB_QUESTION') {
-          // Hết ngòi đúng lúc chốt → nổ (Room tự quyết).
-          bombFail(room, room.endBombQuestion());
-          return bombChanged(room);
-        }
-        return room.phase === 'BOARD_QUESTION' ? endBoardQuestion(room, roundId) : finishQuestion(room, roundId);
-      }
-      emitQuestion(room);
+      if (res.kind === 'question') emitQuestion(room);
+      else emitGame(room);
       emitTeamViews(room, res.teamId);
     });
 
@@ -301,9 +285,12 @@ export function createAppServer(options: AppServerOptions = {}): { httpServer: H
 
     socket.on('admin:createRoom', (ack) => {
       if (!socket.data.isAdmin) return done(ack, { ok: false, error: 'UNAUTHORIZED' });
+      const previous = registry.getLatest();
+      if (previous) clearTimer(previous);
       const room = registry.create();
       io.to(HOSTS_CHANNEL).emit('room:created', { code: room.code });
       watch(room);
+      saveNow(room);
       done(ack, { ok: true, code: room.code });
     });
 
@@ -320,6 +307,7 @@ export function createAppServer(options: AppServerOptions = {}): { httpServer: H
       if (!room) return;
       room.setLobbyOpen(req?.open === true);
       broadcast(room);
+      persist(room);
       done(ack, { ok: true });
     });
 
@@ -327,7 +315,11 @@ export function createAppServer(options: AppServerOptions = {}): { httpServer: H
       const room = adminRoom(ack);
       if (!room) return;
       const res = room.setCaptain(req?.playerId);
-      if (res.ok) broadcast(room);
+      if (res.ok) {
+        broadcast(room);
+        emitLog(room);
+        persist(room);
+      }
       done(ack, res);
     });
 
@@ -338,35 +330,23 @@ export function createAppServer(options: AppServerOptions = {}): { httpServer: H
       const pool: QuestionPool = req?.pool === 'bomb' ? 'bomb' : 'board';
       const res = room.startQuestion(questions, pool, { durationMs: durations[pool] });
       if (!res.ok) return done(ack, res);
-      const { roundId, endsAt } = res.round;
-      schedule(room, endsAt - Date.now(), () => finishQuestion(room, roundId));
-      emitQuestion(room);
-      emitTeamViews(room);
-      done(ack, { ok: true, roundId });
+      changed(room);
+      done(ack, { ok: true, roundId: res.round.roundId });
     });
 
     socket.on('admin:skipQuestion', (ack) => {
       const room = adminRoom(ack);
       if (!room) return;
       if (!room.question) return done(ack, { ok: false, error: 'NO_QUESTION' });
-      if (room.phase === 'BOARD_QUESTION') {
-        const res = room.replaceBoardQuestion(questions);
-        if (!res.ok) return done(ack, res);
-        runBoardQuestion(room);
-        emitAll(room);
-        return done(ack, { ok: true });
-      }
-      if (room.phase === 'BOMB_QUESTION') {
-        const res = room.replaceBombQuestion(questions);
-        if (!res.ok) return done(ack, res);
-        bombChanged(room);
-        return done(ack, { ok: true });
-      }
-      if (room.phase !== 'LOBBY' && room.phase !== 'SUMMARY') return done(ack, { ok: false, error: 'WRONG_PHASE' });
-      clearQuestionTimer(room);
-      room.clearQuestion();
-      emitQuestion(room);
-      emitTeamViews(room);
+      let res: { ok: boolean; error?: string };
+      if (room.phase === 'BOARD_QUESTION') res = room.replaceBoardQuestion(questions);
+      else if (room.phase === 'BOMB_QUESTION') res = room.replaceBombQuestion(questions);
+      else if (room.phase === 'LOBBY' || room.phase === 'RULES' || room.phase === 'SUMMARY') {
+        room.clearQuestion();
+        res = { ok: true };
+      } else res = { ok: false, error: 'WRONG_PHASE' };
+      if (!res.ok) return done(ack, res);
+      changed(room);
       done(ack, { ok: true });
     });
 
@@ -375,8 +355,7 @@ export function createAppServer(options: AppServerOptions = {}): { httpServer: H
       if (!room) return;
       const res = room.startBoard(questions, req?.totalTurns);
       if (!res.ok) return done(ack, res);
-      runSelect(room);
-      emitAll(room);
+      changed(room);
       done(ack, { ok: true });
     });
 
@@ -385,7 +364,7 @@ export function createAppServer(options: AppServerOptions = {}): { httpServer: H
       if (!room) return;
       const res = room.startBombs(questions, req?.totalBombs);
       if (!res.ok) return done(ack, res);
-      bombChanged(room);
+      changed(room);
       done(ack, { ok: true });
     });
 
@@ -393,7 +372,7 @@ export function createAppServer(options: AppServerOptions = {}): { httpServer: H
       const room = adminRoom(ack);
       if (!room) return;
       const res = room.setBoardTurns(req?.totalTurns);
-      if (res.ok) emitGame(room);
+      if (res.ok) changed(room);
       done(ack, res);
     });
 
@@ -401,7 +380,7 @@ export function createAppServer(options: AppServerOptions = {}): { httpServer: H
       const room = adminRoom(ack);
       if (!room) return;
       const res = room.setEndAfterThisTurn(req?.value === true);
-      if (res.ok) emitGame(room);
+      if (res.ok) changed(room);
       done(ack, res);
     });
 
@@ -409,9 +388,32 @@ export function createAppServer(options: AppServerOptions = {}): { httpServer: H
       const room = adminRoom(ack);
       if (!room) return;
       const res = room.movePlayer(req?.playerId, req?.teamId);
-      if (res.ok) broadcast(room);
+      if (res.ok) {
+        broadcast(room);
+        emitLog(room);
+        persist(room);
+      }
       done(ack, res);
     });
+
+    /** Lệnh admin đổi trạng thái trận: chạy `action`, phát lại + lưu + đặt timer nếu thành công. */
+    const adminAction = (ack: unknown, action: (room: Room) => { ok: boolean; error?: string }) => {
+      const room = adminRoom(ack);
+      if (!room) return;
+      const res = action(room);
+      if (res.ok) changed(room);
+      else emitLog(room);
+      done(ack, res.ok ? { ok: true } : res);
+    };
+
+    socket.on('admin:showRules', (ack) => adminAction(ack, (room) => room.showRules()));
+    socket.on('admin:setPaused', (req, ack) => adminAction(ack, (room) => (req?.paused === true ? room.pause() : room.resume())));
+    socket.on('admin:setCellOwner', (req, ack) => adminAction(ack, (room) => room.setCellOwner(req?.cellId, req?.owner)));
+    socket.on('admin:setSummaryView', (req, ack) => adminAction(ack, (room) => room.setSummaryView(req?.view)));
+    socket.on('admin:setFallback', (req, ack) => adminAction(ack, (room) => room.setFallback(req?.on === true)));
+    socket.on('admin:fallbackSelect', (req, ack) => adminAction(ack, (room) => room.fallbackSelect(questions, req?.targets)));
+    socket.on('admin:fallbackAnswers', (req, ack) => adminAction(ack, (room) => room.fallbackAnswers(req?.answers)));
+    socket.on('admin:fallbackPass', (req, ack) => adminAction(ack, (room) => room.fallbackPass(questions, req?.to)));
 
     socket.on('disconnect', () => {
       const { roomCode, playerId } = socket.data;
@@ -429,5 +431,12 @@ export function createAppServer(options: AppServerOptions = {}): { httpServer: H
     });
   });
 
-  return { httpServer, io };
+  const flush = () => {
+    for (const code of [...pendingSaves.keys()]) {
+      const room = registry.get(code);
+      if (room) saveNow(room);
+    }
+  };
+
+  return { httpServer, io, flush };
 }

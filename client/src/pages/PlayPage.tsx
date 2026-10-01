@@ -3,6 +3,8 @@ import { MAX_NAME_LENGTH, TEAM_IDS, isRoomCode } from '@cnxh/shared';
 import { ConnectionBadge } from '../ConnectionBadge';
 import { PlayBoard } from '../PlayBoard';
 import { PlayQuestion } from '../PlayQuestion';
+import { BOARD_RULES } from '../rules';
+import { StatusBanner } from '../StatusBanner';
 import { socket, useGame, useQuestion, useRoomState, useTeamPass, useTeamSelect, useTeamVotes } from '../socket';
 import { TEAM_COLORS, teamName } from '../teams';
 
@@ -92,6 +94,7 @@ export function PlayPage() {
     return (
       <main className="page page--play">
         <ConnectionBadge />
+        <StatusBanner game={game} audience="play" />
         <h1 style={{ color: TEAM_COLORS[me.teamId] }}>{teamName(me.teamId)}</h1>
         <p className="play-name">{me.name}{me.isCaptain && ' ★ Đội trưởng'}</p>
         {inGame ? (
@@ -106,6 +109,18 @@ export function PlayPage() {
           />
         ) : question && question.teamIds.includes(me.teamId) ? (
           <PlayQuestion view={question} team={teamVotes} playerId={me.id} />
+        ) : game?.phase === 'RULES' ? (
+          <section className="play-rules">
+            <h2>Luật chơi</h2>
+            <ul>
+              {BOARD_RULES.map((r) => (
+                <li key={r.title}>
+                  {r.icon} <b>{r.title}:</b> {r.text}
+                </li>
+              ))}
+            </ul>
+            {me.isCaptain && <p className="play-rules__captain">★ Bạn là đội trưởng: bạn có nút CHỐT.</p>}
+          </section>
         ) : (
           <p>Phòng {state.code} — chờ người dẫn bắt đầu…</p>
         )}

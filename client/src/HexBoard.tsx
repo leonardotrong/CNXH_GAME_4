@@ -30,6 +30,10 @@ export interface HexBoardProps {
   /** Nhóm đang cầm bom: ô của nhóm nhấp nháy đỏ. */
   bombTeam?: number | null;
   onCellClick?: (cellId: CellId) => void;
+  /** Ô đang được admin chọn để chỉnh tay. */
+  focused?: CellId | null;
+  /** Hiện số ô (admin). */
+  showIds?: boolean;
   className?: string;
   /** Nhãn cho trình đọc màn hình. */
   label?: string;
@@ -76,6 +80,8 @@ export function HexBoard({
   blasted,
   bombTeam = null,
   onCellClick,
+  focused = null,
+  showIds = false,
   className = '',
   label = 'Bàn cờ',
 }: HexBoardProps) {
@@ -111,6 +117,7 @@ export function HexBoard({
         if (selectableSet) classes.push(canPick ? 'hex--selectable' : 'hex--disabled');
         if (cell.id === mine) classes.push('hex--mine');
         if (cell.id === chosen) classes.push('hex--chosen');
+        if (cell.id === focused) classes.push('hex--focused');
         const result = results.get(cell.id);
         if (result) classes.push(`hex--${result}`);
         if (owner !== null && owner === bombTeam) classes.push('hex--bomb');
@@ -150,6 +157,11 @@ export function HexBoard({
                   {vote}
                 </text>
               </g>
+            )}
+            {showIds && (
+              <text className="hex__id" x={cx} y={cy + SIZE * 0.62} dominantBaseline="central" textAnchor="middle">
+                {cell.id}
+              </text>
             )}
             {isBlasted && (
               <text className="hex__blast" x={cx} y={cy} dominantBaseline="central" textAnchor="middle">

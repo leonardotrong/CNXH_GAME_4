@@ -9,4 +9,4 @@ export const TEAM_COLORS: Record<number, string> = {
   7: '#6D4C41',
 };
 
-export const teamName = (id: number) => `Nhóm ${id}`;
+export { teamName } from '@cnxh/shared';

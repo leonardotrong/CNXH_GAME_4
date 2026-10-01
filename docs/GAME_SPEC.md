@@ -139,10 +139,10 @@ Với mỗi ô bị ít nhất một nhóm nhắm tới:
 
 ### 5.1 `/host` — máy chiếu 16:9, chữ to đọc được từ cuối lớp
 - **LOBBY**: mã QR lớn + URL + mã phòng; 7 cột nhóm với số người và tên đã vào.
-- **RULES**: luật tóm tắt, có minh họa.
+- **RULES**: luật tóm tắt, có minh họa. Admin bấm "Hiện luật" (từ LOBBY) rồi "Bắt đầu Bàn Cờ"; không có đồng hồ tự chuyển.
 - **BOARD**: bàn cờ chiếm khoảng 65% chiều ngang. Thanh bên: 7 nhóm (màu, tên, số điểm, khiên). Trên cùng: tên pha + đồng hồ đếm ngược. Pha QUESTION: câu hỏi và phương án hiển thị lớn. Pha REVEAL: đáp án, giải thích, hiệu ứng đổi màu ô, tên nhóm thắng tranh chấp kèm chênh lệch ms.
 - **BOMB**: quả bom lớn trên nhãn nhóm đang cầm, dây cháy (không lộ thời gian), mũi tên chuyền bom.
-- **SUMMARY**: bục vinh danh top 3, bảng đầy đủ, sau đó màn tổng kết 6 đặc điểm của nhà nước pháp quyền XHCN Việt Nam (lấy từ `docs/CONTENT.md`).
+- **SUMMARY**: bục vinh danh top 3, bảng đầy đủ, sau đó màn tổng kết 6 đặc điểm của nhà nước pháp quyền XHCN Việt Nam (lấy từ `docs/CONTENT.md`). Admin chuyển giữa hai màn bằng nút.
 - Nút tắt/bật âm thanh.
 
 ### 5.2 `/play` — điện thoại, màn dọc, nút cao ≥ 56px
@@ -155,7 +155,14 @@ Với mỗi ô bị ít nhất một nhóm nhắm tới:
 - Tạo phòng; mở/đóng LOBBY; bắt đầu từng pha; tạm dừng/tiếp tục; bỏ qua câu lỗi; "Kết thúc Bàn Cờ sau lượt này".
 - Chỉnh tay: đổi chủ ô, đổi đội trưởng, chuyển người chơi sang nhóm khác.
 - **Chế độ dự phòng**: khi mạng sập, các nhóm giơ thẻ màu A/B/C/D; admin nhập ô mục tiêu, đáp án và thứ tự nhanh chậm cho từng nhóm; trò chơi vẫn chạy trên host.
-- Nhật ký sự kiện (ai chiếm ô nào, ai phòng thủ, bom nổ ở đâu) để giải quyết tranh cãi.
+  - Bật chế độ dự phòng: pha SELECT, QUESTION, PASS không tự đóng khi hết giờ và không đóng sớm khi các nhóm chốt bằng điện thoại — admin bấm xác nhận mới đóng (đồng hồ vẫn hiện để các nhóm suy nghĩ). Pha REVEAL/EXPLODE vẫn tự chạy.
+  - Mọi nhóm 1–7 coi như "có thành viên" (nhận ô xuất phát, được chuyền bom) dù không ai vào bằng điện thoại.
+  - Admin nhập cho nhóm nào thì ghi đè phiếu/chốt trên điện thoại của nhóm đó; nhóm không nhập thì giữ kết quả điện thoại (hoặc tự chốt như hết giờ).
+  - Thứ tự nhanh chậm: hạng 1, 2, 3… quy đổi thành thời điểm chốt = lúc câu mở + hạng × 1 giây (cùng hạng = trùng mili-giây → luật 3.3 "ô giữ nguyên").
+  - Quả Bom dự phòng: admin nhập đáp án của nhóm cầm bom và nhóm nhận bom. Ngòi vẫn chỉ cháy trong 12 giây của câu (không cháy thêm khi admin đang nhập); hết ngòi trong 12 giây đó thì nổ như thường.
+- Tạm dừng/tiếp tục toàn cục: khi dừng, mọi đồng hồ (pha, câu hỏi, ngòi bom) đứng yên, không nhận phiếu/CHỐT; khi tiếp tục, mọi mốc thời gian (kể cả thời điểm chốt đã ghi) được dời đúng bằng thời gian đã dừng nên thứ tự và thời gian chốt không đổi.
+- Chỉnh tay chủ ô: được làm ở mọi pha có bàn cờ, trừ BOARD_SELECT (ô hợp lệ đã tính cho lượt đó).
+- Nhật ký sự kiện (ai chiếm ô nào, ai phòng thủ, bom nổ ở đâu) để giải quyết tranh cãi. Chỉ gửi cho admin, không có ngòi bom.
 
 ## 6. Yêu cầu kỹ thuật
 - Server: Node.js + TypeScript + Express + Socket.IO. Máy trạng thái rõ ràng:
@@ -163,7 +170,7 @@ Với mỗi ô bị ít nhất một nhóm nhắm tới:
 - Mọi timer chạy trên server. Có tạm dừng/tiếp tục toàn cục.
 - Logic game là hàm thuần trong `shared/`, có unit test (Vitest): ô kề, mục tiêu hợp lệ, biểu quyết nhóm, giải quyết lượt, khiên, bom, xếp hạng.
 - Test bắt buộc: không payload nào gửi tới client chứa ngòi bom hoặc đáp án đúng khi câu còn mở.
-- Lưu trạng thái trận ra file JSON mỗi khi đổi pha; khởi động lại server thì khôi phục trận đang chơi (nếu file mới hơn 3 giờ).
+- Lưu trạng thái trận ra file JSON mỗi khi đổi pha (và khi có thay đổi khác như người vào phòng, chỉnh tay); khởi động lại server thì khôi phục trận đang chơi (nếu file mới hơn 3 giờ). Trận khôi phục giữa một pha có đồng hồ sẽ ở trạng thái **tạm dừng** (thời gian còn lại giữ như lúc lưu); admin bấm "Tiếp tục" khi người chơi đã vào lại. File chỉ nằm trên server (có ngòi bom), không bao giờ gửi xuống client.
 - Tải: 1 phòng, khoảng 65 kết nối đồng thời + host + admin. Chỉ broadcast dữ liệu cần thiết.
 - `scripts/simulate.ts`: 63 bot (7 × 9) vào phòng, bỏ phiếu ngẫu nhiên, bot đội trưởng chốt ở thời điểm ngẫu nhiên, chạy trọn một trận.
 - Âm thanh: tạo bằng Web Audio API (khỏi lo bản quyền file): câu mới, 5 giây cuối, chiếm ô, mất ô, tích tắc, nổ, chiến thắng.
@@ -187,3 +194,7 @@ Với mỗi ô bị ít nhất một nhóm nhắm tới:
 - Chỉ chuyền bom cho nhóm có thành viên; được chuyền ngược khi không còn lựa chọn nào khác, để trận không kẹt khi lớp ít nhóm.
 - Câu bị hủy do nổ không công bố đáp án, không tính thống kê. Câu bom trả lời xong tính vào tiêu chí phụ ("cả trận").
 - Ngòi và thời gian còn lại chỉ nằm trong bộ nhớ server; client (kể cả admin) chỉ biết bom đang cháy hay dừng. Có test so sánh hai phòng khác nhau duy nhất ở ngòi: mọi payload trước khi nổ phải giống hệt nhau.
+- Tạm dừng dời mọi mốc thời gian (hạn pha, thời điểm chốt, ngòi) đúng bằng thời gian dừng: giữ nguyên thứ tự chốt và thống kê, không cần trường hợp đặc biệt trong luật.
+- Khôi phục sau khi server khởi động lại → trận ở trạng thái tạm dừng: người chơi cần thời gian kết nối lại trước khi đồng hồ chạy tiếp.
+- Chế độ dự phòng tắt tự đóng pha: người dẫn cần thời gian nhìn thẻ màu và nhập; thứ tự nhanh chậm quy đổi thành hạng × 1 giây để dùng lại nguyên luật 3.3.
+- Pha RULES do admin chuyển (không đếm giờ): người dẫn giải thích luật theo nhịp của lớp.

@@ -3,6 +3,7 @@ import { io, type Socket } from 'socket.io-client';
 import type {
   ClientToServerEvents,
   GameView,
+  LogEntry,
   PublicQuestionView,
   RoomState,
   ServerToClientEvents,
@@ -110,4 +111,16 @@ export function useTeamPass(): TeamPassView | null {
     };
   }, []);
   return view;
+}
+
+/** Nhật ký sự kiện (chỉ admin nhận). */
+export function useAdminLog(): LogEntry[] {
+  const [entries, setEntries] = useState<LogEntry[]>([]);
+  useEffect(() => {
+    socket.on('admin:log', setEntries);
+    return () => {
+      socket.off('admin:log', setEntries);
+    };
+  }, []);
+  return entries;
 }

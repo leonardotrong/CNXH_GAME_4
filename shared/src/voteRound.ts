@@ -9,7 +9,8 @@
 import type { TeamId } from './lobby';
 import { canLock, resolveTeamChoice, tallyVotes, type Ballot } from './voting';
 
-export type LockSource = 'captain' | 'timeout';
+/** Ai chốt: đội trưởng, server khi hết giờ, hay người dẫn nhập tay (chế độ dự phòng). */
+export type LockSource = 'captain' | 'timeout' | 'admin';
 
 export interface TeamRound {
   ballots: Record<string, Ballot>;
@@ -101,6 +102,47 @@ export function lockBallots<R extends VoteRound>(
   if (!canLock(ctx.onlineIds, ballots)) return { ok: false, error: 'NOT_ENOUGH_VOTES' };
   const choice = resolveTeamChoice(ballots, ctx.captainId);
   return { ok: true, round: withTeam(round, teamId, { ...team, lockedAt: now, lockedBy: 'captain', choice }) };
+}
+
+/** Lựa chọn người dẫn nhập tay cho một nhóm (chế độ dự phòng). `choice` null = không có lựa chọn. */
+export interface ForcedChoice {
+  teamId: TeamId;
+  choice: number | null;
+  /** Thời điểm chốt ghi nhận cho nhóm (giờ server). */
+  lockedAt: number;
+}
+
+/**
+ * Chế độ dự phòng (GAME_SPEC 5.3): người dẫn chốt thay các nhóm, ghi đè phiếu/chốt trên điện thoại.
+ * Không đóng vòng — nhóm không được nhập vẫn theo quy tắc thường khi đóng.
+ * Mọi lựa chọn phải hợp lệ, nếu không thì không đổi gì.
+ */
+export function forceChoices<R extends VoteRound>(
+  round: R,
+  entries: readonly ForcedChoice[],
+  isValid: (option: number) => boolean,
+): VoteResult<R> {
+  if (round.status !== 'open') return { ok: false, error: 'CLOSED' };
+  let next = round;
+  for (const e of entries) {
+    const team = next.teams[e.teamId];
+    if (!team) return { ok: false, error: 'NOT_IN_ROUND' };
+    if (e.choice !== null && (!Number.isInteger(e.choice) || !isValid(e.choice))) return { ok: false, error: 'BAD_OPTION' };
+    if (!Number.isFinite(e.lockedAt)) return { ok: false, error: 'BAD_OPTION' };
+    next = withTeam(next, e.teamId, { ...team, lockedAt: e.lockedAt, lockedBy: 'admin', choice: e.choice });
+  }
+  return { ok: true, round: next };
+}
+
+/** Tạm dừng: dời mọi mốc thời gian của vòng (hạn, lúc mở, lúc chốt, lúc bỏ phiếu) thêm `deltaMs`. */
+export function shiftVoteRound<R extends VoteRound>(round: R, deltaMs: number): R {
+  const teams: Record<TeamId, TeamRound> = {};
+  for (const [id, team] of Object.entries(round.teams)) {
+    const ballots: Record<string, Ballot> = {};
+    for (const [pid, b] of Object.entries(team.ballots)) ballots[pid] = { ...b, castAt: b.castAt + deltaMs };
+    teams[Number(id)] = { ...team, ballots, lockedAt: team.lockedAt === null ? null : team.lockedAt + deltaMs };
+  }
+  return { ...round, startedAt: round.startedAt + deltaMs, endsAt: round.endsAt + deltaMs, teams };
 }
 
 /** Mọi nhóm có ít nhất một thành viên đều đã chốt → đóng sớm được. */
