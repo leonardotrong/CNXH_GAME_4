@@ -3,7 +3,10 @@ import QRCode from 'qrcode';
 import { ConnectionBadge } from '../ConnectionBadge';
 import { HostGame } from '../HostGame';
 import { HostRules } from '../HostRules';
+import { SoundToggle } from '../SoundToggle';
 import { StatusBanner } from '../StatusBanner';
+import { unlockAudio } from '../sound';
+import { useHostSounds } from '../useHostSounds';
 import { QuestionPanel } from '../QuestionPanel';
 import { socket, useConnectionStatus, useGame, useQuestion, useRoomState } from '../socket';
 import { TEAM_COLORS, teamName } from '../teams';
@@ -40,23 +43,30 @@ export function HostPage() {
     QRCode.toString(joinUrl, { type: 'svg', margin: 1, width: 400 }).then(setQrSvg);
   }, [joinUrl]);
 
+  useHostSounds(game, question);
+  const chrome = (
+    <>
+      <ConnectionBadge />
+      <SoundToggle />
+      <StatusBanner game={game} audience="host" />
+    </>
+  );
+
   const activeTeamIds = state?.teams.filter((t) => t.players.length > 0).map((t) => t.id) ?? [];
 
   // Trong trận: màn Bàn Cờ. Câu thử (chỉ mở được ở LOBBY/SUMMARY) vẫn hiện như Giai đoạn 2.
   if (state && game?.board && game.phase !== 'LOBBY' && !(game.phase === 'SUMMARY' && question)) {
     return (
-      <main className="page page--host page--game">
-        <ConnectionBadge />
-        <StatusBanner game={game} audience="host" />
+      <main className="page page--host page--game" onPointerDown={unlockAudio}>
+        {chrome}
         <HostGame game={game} question={question} activeTeamIds={activeTeamIds} />
       </main>
     );
   }
 
   return (
-    <main className="page page--host">
-      <ConnectionBadge />
-      <StatusBanner game={game} audience="host" />
+    <main className="page page--host" onPointerDown={unlockAudio}>
+      {chrome}
       {game?.phase === 'RULES' && !question ? (
         <HostRules />
       ) : question ? (

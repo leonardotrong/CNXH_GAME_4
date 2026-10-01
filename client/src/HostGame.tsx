@@ -1,11 +1,20 @@
-import type { GameView, PublicQuestionView } from '@cnxh/shared';
+import type { GameView, PublicQuestionView, TurnOutcome } from '@cnxh/shared';
 import { PHASE_LABELS, describeCell, describeExplosion, describeShield, isBombPhase } from './boardText';
 import { HostBomb } from './HostBomb';
+import { HostLessons } from './HostLessons';
 import { useCountdown } from './clock';
 import { HexBoard } from './HexBoard';
 import { OPTION_LABELS, QuestionPanel } from './QuestionPanel';
 import { Standings } from './Standings';
 import { TEAM_COLORS, teamName } from './teams';
+
+/** Số ô được/mất của từng nhóm trong lượt vừa giải quyết. */
+function deltasOf(outcome: TurnOutcome): Record<number, number> {
+  const out: Record<number, number> = {};
+  for (const [t, n] of Object.entries(outcome.gains)) out[Number(t)] = (out[Number(t)] ?? 0) + (n ?? 0);
+  for (const [t, n] of Object.entries(outcome.losses)) out[Number(t)] = (out[Number(t)] ?? 0) - (n ?? 0);
+  return out;
+}
 
 /** Màn chiếu trong trận Bàn Cờ (GAME_SPEC 5.1 BOARD). */
 export function HostGame({
@@ -76,11 +85,19 @@ export function HostGame({
             </div>
           )}
           <ul className="host-outcome">
-            {outcome?.cells.map((o) => (
-              <li key={o.cellId} className={`host-outcome__item is-${o.result}`} style={{ borderColor: TEAM_COLORS[o.winner ?? o.attackers[0]!] }}>
-                {describeCell(o)}
+            {outcome?.cells
+              .filter((o) => o.result !== 'failed')
+              .map((o) => (
+                <li key={o.cellId} className={`host-outcome__item is-${o.result}`} style={{ borderColor: TEAM_COLORS[o.winner ?? o.attackers[0]!] }}>
+                  {describeCell(o)}
+                </li>
+              ))}
+            {outcome && outcome.cells.some((o) => o.result === 'failed') && (
+              <li className="host-outcome__item is-failed" style={{ borderColor: '#999' }}>
+                Tấn công thất bại (trả lời sai):{' '}
+                {outcome.cells.filter((o) => o.result === 'failed').flatMap((o) => o.attackers).sort((a, b) => a - b).map(teamName).join(', ')}
               </li>
-            ))}
+            )}
             {outcome?.cells.length === 0 && <li>Không nhóm nào tấn công lượt này.</li>}
             {outcome?.shieldsGranted.map((s) => (
               <li key={`${s.teamId}-${s.reason}`} className="host-outcome__item is-shield" style={{ borderColor: TEAM_COLORS[s.teamId] }}>
@@ -88,11 +105,18 @@ export function HostGame({
               </li>
             ))}
           </ul>
-          {standings}
+          <Standings
+            standings={board.standings}
+            shields={board.shields}
+            activeTeamIds={activeTeamIds}
+            deltas={outcome ? deltasOf(outcome) : undefined}
+          />
         </aside>
       </section>
     );
   }
+
+  if (phase === 'SUMMARY' && game.summaryView === 'lessons') return <HostLessons />;
 
   if (phase === 'SUMMARY') {
     const podium = board.standings.filter((s) => activeTeamIds.includes(s.teamId) || s.cells > 0).slice(0, 3);

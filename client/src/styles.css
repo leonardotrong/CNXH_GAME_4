@@ -320,3 +320,69 @@ body {
 .play-rules h2 { margin: 0 0 0.4rem; }
 .play-rules ul { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.4rem; }
 .play-rules__captain { font-weight: 800; color: #c53030; }
+
+/* ─── Giai đoạn 6: hiệu ứng, âm thanh, tổng kết ───────────────────────── */
+.sound-toggle { position: fixed; top: 0.5rem; right: 0.6rem; z-index: 11; border: 0; border-radius: 999px; padding: 0.35em 0.9em; font-size: clamp(0.9rem, 1.1vw, 1.3rem); font-weight: 700; background: #1a1a1a; color: #fff; cursor: pointer; opacity: 0.75; }
+.sound-toggle:hover { opacity: 1; }
+.sound-toggle.is-locked { background: #c53030; opacity: 1; animation: banner-blink 1.4s ease-in-out infinite; }
+
+/* Chiếm ô: ô "bật" lên rồi nhấp nháy */
+.hex { transform-box: fill-box; transform-origin: center; }
+.hex--captured { animation: hex-pop 0.7s cubic-bezier(0.3, 1.6, 0.5, 1) both; }
+@keyframes hex-pop { 0% { transform: scale(0.4); } 60% { transform: scale(1.18); } 100% { transform: scale(1); } }
+.hex--defended .hex__shape { animation: hex-defend 0.5s ease-in-out 3; }
+@keyframes hex-defend { 50% { stroke: #ffe082; stroke-width: 2.6; } }
+.hex--tie .hex__shape { stroke: #777; stroke-width: 1.6; stroke-dasharray: 1.5 1; }
+.hex--blasted { animation: hex-shake 0.4s ease-in-out 4; }
+@keyframes hex-shake { 25% { transform: translate(-1.2px, 0.6px) rotate(-4deg); } 75% { transform: translate(1.2px, -0.6px) rotate(4deg); } }
+
+/* Bảng điểm: +/− ô sau mỗi lượt */
+.standings__delta { margin-left: 0.3em; font-size: 0.6em; font-weight: 800; padding: 0 0.35em; border-radius: 6px; animation: delta-in 0.6s ease-out both; }
+.standings__delta.is-up { background: #2f855a; color: #fff; }
+.standings__delta.is-down { background: #c53030; color: #fff; }
+.standings li.is-loss { animation: row-shake 0.45s ease-in-out 2; background: #fdecec; }
+.standings li.is-gain { background: #e6f6ec; }
+@keyframes delta-in { from { transform: translateY(-0.6em) scale(1.6); opacity: 0; } }
+@keyframes row-shake { 25% { transform: translateX(-0.25em); } 75% { transform: translateX(0.25em); } }
+
+/* Nổ bom: chớp sáng toàn màn hình + rung */
+.host-game--explode { animation: screen-shake 0.5s ease-in-out 3; }
+@keyframes screen-shake { 20% { transform: translate(-12px, 6px); } 40% { transform: translate(10px, -8px); } 60% { transform: translate(-8px, -4px); } 80% { transform: translate(6px, 8px); } }
+.explode-overlay { position: fixed; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center; pointer-events: none; background: radial-gradient(circle, #fff7c2 0%, #ff9800 30%, rgb(197 48 48 / 0.85) 60%, transparent 85%); animation: explode-flash 1.8s ease-out forwards; }
+.explode-overlay span { font-size: 40vh; animation: explode-emoji 1.8s ease-out forwards; }
+@keyframes explode-flash { 0% { opacity: 0; } 8% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes explode-emoji { 0% { transform: scale(0.2); } 25% { transform: scale(1.2); } 100% { transform: scale(1.6); opacity: 0; } }
+
+/* Tổng kết 6 đặc điểm */
+.host-lessons { width: 100%; max-width: 110rem; text-align: left; }
+.host-lessons__title { margin: 0 0 0.4em; text-align: center; font-size: 1.35em; color: #b71c1c; }
+.host-lessons__grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0.45em 1em; }
+.host-lessons__grid li { display: flex; gap: 0.5em; align-items: flex-start; background: #fff; border-left: 10px solid #F4B400; border-radius: 12px; padding: 0.35em 0.6em; animation: lesson-in 0.6s ease-out both; }
+.host-lessons__num { flex: none; width: 1.6em; height: 1.6em; display: grid; place-items: center; border-radius: 50%; background: #b71c1c; color: #fff; font-weight: 900; }
+.host-lessons__grid b { font-size: 0.9em; }
+.host-lessons__grid p { margin: 0.1em 0 0; font-size: 0.66em; line-height: 1.3; }
+.host-lessons__map { margin: 0.6em 0 0; padding-left: 1.2em; font-size: 0.6em; color: #333; columns: 2; }
+@keyframes lesson-in { from { transform: translateY(0.8em); opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+}
+
+/* Sửa bố cục sau khi chụp màn hình 1080p / 360px */
+.sound-toggle { top: auto; bottom: 0.5rem; right: auto; left: 0.6rem; }
+.host-game--reveal .host-game__side { overflow-y: auto; }
+.host-game--reveal .host-answer { font-size: 0.6em; }
+.host-game--reveal .host-outcome { font-size: 0.52em; }
+.host-game--reveal .standings { font-size: 0.58em; }
+.page--play { gap: 0.7rem; padding: 0.8rem 0.75rem 1.5rem; }
+.page--play > h1 { margin: 0; font-size: 1.7rem; }
+.page--play > .badge { position: fixed; top: 0.4rem; right: 0.4rem; font-size: 0.75rem; z-index: 5; }
+.page--play > h2 { margin: 0.6rem 0 0; font-size: 1.1rem; }
+.play-members { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.25rem 0.8rem; font-size: 0.95rem; }
+@media (max-width: 380px) {
+  .option-btn { font-size: 1rem; padding: 0.45rem 0.6rem; }
+  .play-question__prompt { font-size: 1.1rem; }
+  .team-grid { gap: 0.45rem; }
+}
+.page--admin > .badge { align-self: center; }
+.host-lessons { font-size: 0.74em; } .host-lessons__title { font-size: 1.2em; }

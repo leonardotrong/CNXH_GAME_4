@@ -95,7 +95,10 @@ export function HostBomb({
 
   if (phase === 'BOMB_EXPLODE' && lastExplosion) {
     return (
-      <section className="host-game">
+      <section className="host-game host-game--explode">
+        <div className="explode-overlay" aria-hidden>
+          <span>💥</span>
+        </div>
         {head}
         <div className="host-game__main">{hexBoard}</div>
         <aside className="host-game__side">

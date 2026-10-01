@@ -9,6 +9,7 @@ export function Standings({
   activeTeamIds,
   highlight,
   lockedTeamIds,
+  deltas,
 }: {
   standings: readonly Standing[];
   shields?: readonly ShieldGrant[];
@@ -17,6 +18,8 @@ export function Standings({
   highlight?: number;
   /** Nhóm đã chốt trong pha hiện tại. */
   lockedTeamIds?: readonly number[];
+  /** Số ô được (+) / mất (−) trong lượt vừa xong. */
+  deltas?: Readonly<Record<number, number>>;
 }) {
   const rows = activeTeamIds ? standings.filter((s) => activeTeamIds.includes(s.teamId) || s.cells > 0) : standings;
   return (
@@ -26,7 +29,7 @@ export function Standings({
         return (
           <li
             key={s.teamId}
-            className={s.teamId === highlight ? 'is-me' : ''}
+            className={[s.teamId === highlight ? 'is-me' : '', deltas?.[s.teamId] ? (deltas[s.teamId]! > 0 ? 'is-gain' : 'is-loss') : ''].join(' ')}
             style={{ borderColor: TEAM_COLORS[s.teamId] }}
           >
             <span className="standings__rank">{s.rank}</span>
@@ -40,7 +43,14 @@ export function Standings({
               )}
               {lockedTeamIds?.includes(s.teamId) && <span className="standings__locked"> ✓</span>}
             </span>
-            <span className="standings__score">{s.score}</span>
+            <span className="standings__score">
+              {s.score}
+              {!!deltas?.[s.teamId] && (
+                <span className={`standings__delta ${deltas[s.teamId]! > 0 ? 'is-up' : 'is-down'}`}>
+                  {deltas[s.teamId]! > 0 ? `+${deltas[s.teamId]}` : `−${-deltas[s.teamId]!}`} ô
+                </span>
+              )}
+            </span>
             <span className="standings__meta">{s.correct} câu đúng</span>
           </li>
         );

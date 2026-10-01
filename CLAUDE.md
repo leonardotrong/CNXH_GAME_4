@@ -54,5 +54,5 @@ Cloud: hook `SessionStart` (`.claude/settings.json` → `scripts/claude-session-
 - [x] 3 — Bàn Cờ Quyền Lực
 - [x] 4 — Quả Bom Tham Nhũng (hết Bàn Cờ → BOMB_INTRO, admin bấm bắt đầu; ngòi chỉ nằm trong `Room` ở server)
 - [x] 5 — Admin & chế độ dự phòng (một timer/phòng theo `Room.nextDeadline()`; lưu `server/data/match.json`, khôi phục ở trạng thái tạm dừng; nhật ký chỉ gửi admin)
-- [ ] 6 — Giao diện & âm thanh
+- [x] 6 — Giao diện & âm thanh (âm thanh Web Audio chỉ trên host, `client/src/sound.ts`; tích tắc bom nhịp cố định 500 ms)
 - [ ] 7 — Test tải & deploy
