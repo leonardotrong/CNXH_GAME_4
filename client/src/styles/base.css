@@ -1,0 +1,324 @@
+/* ─── Nền tảng: token màu, phông, nền sân khấu ─────────────────────────────
+ * Host và điện thoại: "sân khấu" xanh đêm, chữ trắng, nhấn vàng Hiến pháp + đỏ.
+ * Admin: nền sáng (html[data-route='admin']), cùng bộ màu nhấn.
+ */
+:root {
+  --font: 'Be Vietnam Pro', system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', sans-serif;
+
+  --stage-0: #0a0f26;
+  --stage-1: #111a3e;
+  --stage-2: #19244f;
+  --stage-3: #24316a;
+  --glass: rgb(255 255 255 / 0.06);
+  --glass-2: rgb(255 255 255 / 0.1);
+  --line: rgb(255 255 255 / 0.13);
+  --text: #f4f6ff;
+  --muted: #b6c0e8;
+
+  --paper: #ffffff;
+  --paper-2: #f1f3fa;
+  --ink: #141a3a;
+  --ink-2: #4a5379;
+  --ink-3: #7c86ab;
+
+  --gold: #ffc83d;
+  --gold-2: #f4b400;
+  --gold-soft: #fff4d1;
+  --gold-ink: #4a3300;
+  --red: #e5383b;
+  --red-2: #b3121b;
+  --green: #1fae5b;
+  --green-2: #127a3e;
+  --green-soft: #e3f8eb;
+  --red-soft: #fdeaea;
+  --amber: #f59e0b;
+  --violet: #6d4bd8;
+
+  --hex-empty: rgb(255 255 255 / 0.09);
+  --hex-line: rgb(255 255 255 / 0.14);
+
+  --radius-sm: 10px;
+  --radius: 16px;
+  --radius-lg: 22px;
+  --shadow: 0 16px 36px -16px rgb(0 0 0 / 0.65);
+  --shadow-sm: 0 6px 16px -8px rgb(0 0 0 / 0.55);
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-spring: cubic-bezier(0.3, 1.6, 0.5, 1);
+
+  color-scheme: dark;
+  font-family: var(--font);
+  color: var(--text);
+  background: var(--stage-0);
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+html[data-route='admin'] {
+  color-scheme: light;
+  --text: var(--ink);
+  --muted: var(--ink-2);
+  --line: #dde2ef;
+  --glass: #f5f7fc;
+  --glass-2: #e9edf7;
+  --hex-empty: #dfe3ee;
+  --hex-line: #c6cde0;
+  background: #eef1f8;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ─── Trang + nền sân khấu (hai lớp để chuyển mượt sang "nguy hiểm" khi chơi Quả Bom) ── */
+.page {
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.25rem 1rem;
+  text-align: center;
+}
+
+/* Lớp nền phủ cả trang (absolute, không fixed: không hở nền khi cuộn trang dài hay khi thanh địa chỉ co giãn). */
+.page::before,
+.page::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  transition: opacity 1.2s ease;
+}
+
+.page::before {
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='69.28' height='120' viewBox='0 0 69.28 120'%3E%3Cpath d='M0 20 L34.64 0 L69.28 20 L69.28 60 L34.64 80 L0 60 Z M34.64 80 V120' fill='none' stroke='%23ffffff' stroke-opacity='0.05' stroke-width='1.4'/%3E%3C/svg%3E"),
+    radial-gradient(70vmax 55vmax at 6% -8%, rgb(255 200 61 / 0.14), transparent 70%),
+    radial-gradient(60vmax 60vmax at 108% 110%, rgb(229 56 59 / 0.17), transparent 70%),
+    linear-gradient(165deg, #131d47 0%, #0a0f26 58%, #070b1d 100%);
+}
+
+.page::after {
+  opacity: 0;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='69.28' height='120' viewBox='0 0 69.28 120'%3E%3Cpath d='M0 20 L34.64 0 L69.28 20 L69.28 60 L34.64 80 L0 60 Z M34.64 80 V120' fill='none' stroke='%23ffffff' stroke-opacity='0.045' stroke-width='1.4'/%3E%3C/svg%3E"),
+    radial-gradient(70vmax 50vmax at 50% -12%, rgb(229 56 59 / 0.32), transparent 70%),
+    radial-gradient(60vmax 50vmax at 100% 110%, rgb(255 145 0 / 0.16), transparent 70%),
+    linear-gradient(170deg, #2b0d1b 0%, #170812 58%, #0c0409 100%);
+}
+
+.page--danger::after {
+  opacity: 1;
+}
+
+html:has(.page--danger) {
+  background: #170812;
+}
+
+html[data-route='admin'] .page::before,
+html[data-route='admin'] .page::after {
+  display: none;
+}
+
+/* ─── Nút ────────────────────────────────────────────────────────────────── */
+.primary-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  min-height: 52px;
+  padding: 0.4em 1.4em;
+  border: 0;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #34469a, #1d2a63);
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.18) inset,
+    0 6px 16px -8px rgb(13 20 60 / 0.8);
+  transition:
+    transform 0.12s ease,
+    filter 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.primary-btn:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.primary-btn:active:not(:disabled) {
+  transform: translateY(1px) scale(0.99);
+}
+
+.primary-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+  box-shadow: none;
+}
+
+.primary-btn--danger {
+  background: linear-gradient(180deg, #f0514f, #c21f26);
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.22) inset,
+    0 6px 16px -8px rgb(150 10 20 / 0.8);
+}
+
+.primary-btn--gold {
+  background: linear-gradient(180deg, #ffd668, #f4b400);
+  color: var(--gold-ink);
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.5) inset,
+    0 8px 20px -8px rgb(244 180 0 / 0.65);
+}
+
+.primary-btn--ghost {
+  background: transparent;
+  color: inherit;
+  box-shadow: inset 0 0 0 2px var(--line);
+}
+
+/* ─── Ô nhập ─────────────────────────────────────────────────────────────── */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-weight: 700;
+  text-align: left;
+}
+
+.field input {
+  min-height: 56px;
+  padding: 0 1rem;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 1.2rem;
+  font-weight: 600;
+  box-shadow: 0 2px 0 rgb(0 0 0 / 0.08) inset;
+}
+
+.field input:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 4px rgb(255 200 61 / 0.3);
+}
+
+.form-error {
+  margin: 0;
+  padding: 0.6rem 0.9rem;
+  border-radius: 12px;
+  background: rgb(229 56 59 / 0.16);
+  color: #ffb4b4;
+  font-weight: 700;
+  text-align: left;
+}
+
+html[data-route='admin'] .form-error {
+  background: var(--red-soft);
+  color: var(--red-2);
+}
+
+/* Ba chấm "đang chờ" */
+.dots {
+  display: inline-flex;
+  gap: 0.25em;
+  margin-left: 0.35em;
+  vertical-align: middle;
+}
+
+.dots i {
+  width: 0.32em;
+  height: 0.32em;
+  border-radius: 50%;
+  background: currentColor;
+  animation: dot-bounce 1.2s ease-in-out infinite;
+}
+
+.dots i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.dots i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes dot-bounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  30% {
+    transform: translateY(-0.35em);
+    opacity: 1;
+  }
+}
+
+.is-offline {
+  opacity: 0.45;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,13 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import type { GameView, PublicQuestionView, TeamPassView, TeamQuestionView } from '@cnxh/shared';
 import { PHASE_LABELS, describeExplosion } from './boardText';
-import { useCountdown } from './clock';
+import { BombIcon } from './BombIcon';
+import { CountdownRing } from './Countdown';
 import { HexBoard } from './HexBoard';
 import { BOMB_RULES, BombBadge, PassArrow } from './HostBomb';
 import { PlayQuestion, VOTE_ERRORS } from './PlayQuestion';
 import { socket } from './socket';
 import { Standings } from './Standings';
-import { TEAM_COLORS, teamName } from './teams';
+import { teamName, teamStyle } from './teams';
+import { VoteStatus } from './VoteControls';
 
 /** Điện thoại trong Quả Bom (GAME_SPEC 4, 5.2): nhóm cầm bom trả lời/chuyền; nhóm khác chỉ xem. */
 export function PlayBomb({
@@ -37,21 +39,46 @@ export function PlayBomb({
     if (holding && phase === 'BOMB_QUESTION') navigator.vibrate?.([150, 80, 150]);
   }, [passKey, holding]);
 
+  const activeTeams = board.standings.filter((s) => s.cells > 0 || s.correct > 0).map((s) => s.teamId);
+
   return (
     <section className="play-board">
-      <p className="play-board__turn">
-        Quả bom {bomb.bombNumber}/{bomb.totalBombs} · {PHASE_LABELS[phase] ?? ''}
+      <p className="play-phase">
+        <span className="play-phase__badge play-phase__badge--bomb">
+          💣 Quả bom {bomb.bombNumber}/{bomb.totalBombs}
+        </span>
+        {PHASE_LABELS[phase] ?? ''}
       </p>
-      {phase !== 'BOMB_EXPLODE' && (
-        <p className="bomb-status">
-          {holding ? 'Nhóm bạn đang cầm bom! ' : 'Đang cầm bom: '}
-          <BombBadge bomb={bomb} />
-        </p>
-      )}
+      {phase !== 'BOMB_EXPLODE' &&
+        (holding ? (
+          <div className={`bomb-alert ${bomb.burning ? 'is-burning' : ''}`}>
+            <BombIcon burning={bomb.burning} />
+            <span>
+              <strong>Nhóm bạn đang cầm bom!</strong>
+              <span>
+                {phase === 'BOMB_PASS'
+                  ? 'Trả lời đúng rồi — chọn nhóm nhận bom.'
+                  : phase === 'BOMB_INTRO'
+                    ? 'Nhóm dẫn đầu cầm quả bom đầu tiên.'
+                    : 'Trả lời đúng để chuyền bom đi!'}
+              </span>
+            </span>
+          </div>
+        ) : (
+          <p className="bomb-watch">
+            <span>Đang cầm bom</span>
+            <BombBadge bomb={bomb} />
+          </p>
+        ))}
 
       {phase === 'BOMB_INTRO' && (
-        <ol className="bomb-rules">
-          {BOMB_RULES.map((r) => <li key={r}>{r}</li>)}
+        <ol className="play-bomb-rules">
+          {BOMB_RULES.map((r) => (
+            <li key={r.text}>
+              <span aria-hidden>{r.icon}</span>
+              <span>{r.text}</span>
+            </li>
+          ))}
         </ol>
       )}
 
@@ -64,12 +91,19 @@ export function PlayBomb({
         (holding ? (
           <PassVote game={game} teamPass={teamPass} playerId={playerId} />
         ) : (
-          <p className="play-board__target">{teamName(bomb.holder)} trả lời đúng và đang chọn nhóm nhận bom…</p>
+          <p className="play-note">
+            {teamName(bomb.holder)} trả lời đúng và đang chọn nhóm nhận bom
+            <span className="dots" aria-hidden>
+              <i />
+              <i />
+              <i />
+            </span>
+          </p>
         ))}
 
       {phase === 'BOMB_EXPLODE' && lastExplosion && (
-        <div className={`play-board__outcome ${lastExplosion.teamId === teamId ? 'is-wrong' : ''}`}>
-          <p className="bomb-explode">💥 BÙM!</p>
+        <div className={`play-explode ${lastExplosion.teamId === teamId ? 'is-mine' : ''}`} style={teamStyle(lastExplosion.teamId)}>
+          <p className="play-explode__boom">💥 BÙM!</p>
           <strong>{lastExplosion.teamId === teamId ? `Nhóm bạn mất ${lastExplosion.cells.length} ô!` : describeExplosion(lastExplosion)}</strong>
         </div>
       )}
@@ -81,13 +115,7 @@ export function PlayBomb({
         blasted={phase === 'BOMB_EXPLODE' ? lastExplosion?.cells : undefined}
         label="Bản đồ và nhóm cầm bom"
       />
-      {(phase === 'BOMB_INTRO' || phase === 'BOMB_EXPLODE') && (
-        <Standings
-          standings={board.standings}
-          highlight={teamId}
-          activeTeamIds={board.standings.filter((s) => s.cells > 0 || s.correct > 0).map((s) => s.teamId)}
-        />
-      )}
+      {(phase === 'BOMB_INTRO' || phase === 'BOMB_EXPLODE') && <Standings standings={board.standings} highlight={teamId} activeTeamIds={activeTeams} />}
     </section>
   );
 }
@@ -95,7 +123,6 @@ export function PlayBomb({
 /** Nhóm cầm bom biểu quyết chọn nhóm nhận bom. */
 function PassVote({ game, teamPass, playerId }: { game: GameView; teamPass: TeamPassView | null; playerId: string }) {
   const pass = game.bomb!.pass;
-  const left = useCountdown(game.phaseEndsAt);
   const [error, setError] = useState('');
   const mine = pass && teamPass?.roundId === pass.roundId ? teamPass : null;
   const open = pass?.status === 'open' && !!mine && !mine.locked;
@@ -106,38 +133,44 @@ function PassVote({ game, teamPass, playerId }: { game: GameView; teamPass: Team
 
   const vote = (to: number) =>
     socket.emit('player:vote', { roundId: pass!.roundId, option: to }, (res) => setError(res.ok ? '' : VOTE_ERRORS[res.error] ?? ''));
-  const lock = () =>
-    socket.emit('player:lock', { roundId: pass!.roundId }, (res) => setError(res.ok ? '' : VOTE_ERRORS[res.error] ?? ''));
+  const lock = () => socket.emit('player:lock', { roundId: pass!.roundId }, (res) => setError(res.ok ? '' : VOTE_ERRORS[res.error] ?? ''));
 
   return (
     <div className="play-select">
-      <div className="play-question__timer">{left} s</div>
-      <p className="play-select__note">Đúng rồi! Chọn nhóm nhận bom:</p>
+      <div className="play-task">
+        <CountdownRing endsAt={pass?.endsAt ?? game.phaseEndsAt} startedAt={pass?.startedAt} urgentAt={3} />
+        <span className="play-task__text">
+          <b>Chọn nhóm nhận bom</b>
+          <span>Không được chuyền ngược cho nhóm vừa chuyền cho mình.</span>
+        </span>
+      </div>
       <div className="bomb-targets">
         {(mine?.validTargets ?? pass?.validTargets ?? []).map((t) => {
-          const classes = ['option-btn'];
+          const classes = ['option-btn', 'option-btn--team'];
           if (myVote === t) classes.push('is-mine');
           if (mine?.locked && mine.choice === t) classes.push('is-chosen');
+          const share = mine && mine.onlineCount > 0 ? Math.min(100, ((mine.tally[t] ?? 0) / mine.onlineCount) * 100) : 0;
           return (
-            <button key={t} className={classes.join(' ')} disabled={!open} onClick={() => vote(t)} style={{ borderLeft: `12px solid ${TEAM_COLORS[t]}` }}>
-              <b>💣</b>
-              <span>{teamName(t)}</span>
+            <button
+              key={t}
+              className={classes.join(' ')}
+              disabled={!open}
+              onClick={() => vote(t)}
+              style={teamStyle(t, { '--votes': `${share}%` } as CSSProperties)}
+            >
+              <b className="option-btn__letter">{t}</b>
+              <span className="option-btn__text">💣 → {teamName(t)}</span>
               <span className="option-btn__count">{mine?.tally[t] ?? 0}</span>
             </button>
           );
         })}
       </div>
-      {mine && (
-        <p className="play-question__status">
-          {mine.locked ? 'Nhóm đã chốt!' : `${mine.votedOnlineCount}/${mine.onlineCount} thành viên online đã bỏ phiếu`}
+      {mine && <VoteStatus view={mine} lockedText="Nhóm đã chốt nhóm nhận bom!" showLock={isCaptain && open} onLock={lock} />}
+      {error && (
+        <p className="form-error" role="alert">
+          {error}
         </p>
       )}
-      {isCaptain && open && (
-        <button className="lock-btn" disabled={!mine?.canLock} onClick={lock}>
-          CHỐT
-        </button>
-      )}
-      {error && <p className="form-error" role="alert">{error}</p>}
     </div>
   );
 }

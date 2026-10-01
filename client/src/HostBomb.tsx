@@ -1,44 +1,51 @@
 import type { GameView, PublicBombView, PublicQuestionView } from '@cnxh/shared';
 import { PHASE_LABELS, describeExplosion } from './boardText';
-import { useCountdown } from './clock';
+import { BombIcon } from './BombIcon';
+import { CountdownRing } from './Countdown';
+import { AnswerCard, HostBar } from './HostParts';
 import { HexBoard } from './HexBoard';
-import { OPTION_LABELS, QuestionPanel } from './QuestionPanel';
+import { QuestionPanel } from './QuestionPanel';
 import { Standings } from './Standings';
-import { TEAM_COLORS, teamName } from './teams';
+import { TeamTag } from './TeamTag';
+import { teamName, teamStyle } from './teams';
 
 /**
- * Quả bom trên nhãn nhóm đang cầm. Client chỉ biết bom cháy hay dừng: nhịp tích tắc và dây cháy
+ * Quả bom trên nhãn nhóm đang cầm. Client chỉ biết bom cháy hay dừng: tia lửa và nhịp lắc
  * là hoạt ảnh CỐ ĐỊNH, không liên quan tới thời gian còn lại (server không bao giờ gửi).
  */
 export function BombBadge({ bomb }: { bomb: PublicBombView }) {
   return (
-    <span className={`bomb-badge ${bomb.burning ? 'is-burning' : ''}`} style={{ background: TEAM_COLORS[bomb.holder] }}>
-      <span className="bomb-badge__icon" aria-hidden>💣</span>
-      {teamName(bomb.holder)}
-      <span className="bomb-fuse" aria-label={bomb.burning ? 'Ngòi đang cháy' : 'Ngòi tạm dừng'} />
+    <span className={`bomb-badge ${bomb.burning ? 'is-burning' : ''}`} style={teamStyle(bomb.holder)}>
+      <BombIcon burning={bomb.burning} className="bomb-badge__icon" />
+      <span className="bomb-badge__team">{teamName(bomb.holder)}</span>
+      <span className="sr-only">{bomb.burning ? '(ngòi đang cháy)' : '(ngòi tạm dừng)'}</span>
     </span>
   );
 }
 
-/** Mũi tên chuyền bom gần nhất. */
+/** Mũi tên chuyền bom gần nhất (quả bom trượt dọc mũi tên, nhịp cố định). */
 export function PassArrow({ bomb }: { bomb: PublicBombView }) {
   const p = bomb.lastPass;
   if (!p) return null;
   return (
     <p className="bomb-pass">
-      <span style={{ color: TEAM_COLORS[p.from] }}>{teamName(p.from)}</span> 💣➜{' '}
-      <span style={{ color: TEAM_COLORS[p.to] }}>{teamName(p.to)}</span>
-      {p.random && ' (server chọn ngẫu nhiên)'}
+      <TeamTag teamId={p.from} />
+      <span className="bomb-pass__track" aria-hidden>
+        <span className="bomb-pass__bomb">💣</span>
+      </span>
+      <span className="sr-only">chuyền bom cho</span>
+      <TeamTag teamId={p.to} />
+      {p.random && <span className="bomb-pass__note">(server chọn ngẫu nhiên)</span>}
     </p>
   );
 }
 
-export const BOMB_RULES = [
-  'Chỉ nhóm cầm bom trả lời câu hỏi (12 giây). Các nhóm khác xem trên điện thoại.',
-  'Trả lời ĐÚNG → biểu quyết chuyền bom cho nhóm khác (không được chuyền ngược cho nhóm vừa chuyền cho mình).',
-  'Trả lời SAI hoặc hết giờ → câu mới, bom vẫn ở nhóm mình.',
-  'Ngòi bí mật 30–60 giây, chỉ cháy khi nhóm cầm bom đang trả lời. Không ai biết khi nào nổ!',
-  'Nổ → nhóm cầm bom mất 2 ô ngẫu nhiên (còn ≤ 2 ô thì mất hết).',
+export const BOMB_RULES: { icon: string; text: string }[] = [
+  { icon: '❓', text: 'Chỉ nhóm cầm bom trả lời câu hỏi (12 giây). Các nhóm khác xem trên điện thoại.' },
+  { icon: '✅', text: 'Trả lời ĐÚNG → biểu quyết chuyền bom cho nhóm khác (không được chuyền ngược cho nhóm vừa chuyền cho mình).' },
+  { icon: '🔁', text: 'Trả lời SAI hoặc hết giờ → câu mới, bom vẫn ở nhóm mình.' },
+  { icon: '🧨', text: 'Ngòi bí mật 30–60 giây, chỉ cháy khi nhóm cầm bom đang trả lời. Không ai biết khi nào nổ!' },
+  { icon: '💥', text: 'Nổ → nhóm cầm bom mất 2 ô ngẫu nhiên (còn ≤ 2 ô thì mất hết).' },
 ];
 
 /** Màn chiếu trong Quả Bom Tham Nhũng (GAME_SPEC 4, 5.1 BOMB). */
@@ -54,16 +61,12 @@ export function HostBomb({
   const board = game.board!;
   const bomb = game.bomb!;
   const { phase } = game;
-  const left = useCountdown(phase === 'BOMB_PASS' ? game.phaseEndsAt : null);
   const lastExplosion = bomb.explosions.at(-1);
 
-  const head = (
-    <header className="host-game__head">
-      <span>Quả bom {bomb.bombNumber}/{bomb.totalBombs}</span>
-      <span className="host-game__phase">{PHASE_LABELS[phase]}</span>
-      {phase !== 'BOMB_EXPLODE' && <BombBadge bomb={bomb} />}
-      {phase === 'BOMB_PASS' && <span className={`host-game__timer ${left <= 3 ? 'is-urgent' : ''}`}>{left}</span>}
-    </header>
+  const badge = (
+    <>
+      Quả bom <b>{bomb.bombNumber}</b>/{bomb.totalBombs}
+    </>
   );
   const standings = <Standings standings={board.standings} activeTeamIds={activeTeamIds} />;
   const hexBoard = (
@@ -74,57 +77,97 @@ export function HostBomb({
       label="Bàn cờ và nhóm cầm bom"
     />
   );
+  const bombLog = bomb.explosions.length > 0 && (
+    <ul className="bomb-log">
+      {bomb.explosions.map((e) => (
+        <li key={e.bombNumber}>
+          💥 Quả {e.bombNumber}: {describeExplosion(e)}
+        </li>
+      ))}
+    </ul>
+  );
 
   if (phase === 'BOMB_INTRO') {
     return (
-      <section className="host-game">
-        <header className="host-game__head">
-          <span>💣 Quả Bom Tham Nhũng</span>
-          <span className="host-game__phase">{bomb.totalBombs} quả bom, chơi trên chính bàn cờ</span>
-        </header>
-        <div className="host-game__main">
+      <section className="host-game host-game--bomb host-game--bomb-intro">
+        <HostBar badge="Phần 2" title="Quả Bom Tham Nhũng">
+          <span className="host-bar__info">
+            <b>{bomb.totalBombs}</b> quả bom · chơi trên chính bàn cờ
+          </span>
+        </HostBar>
+        <div className="host-game__main bomb-intro">
           <ol className="bomb-rules">
-            {BOMB_RULES.map((r) => <li key={r}>{r}</li>)}
+            {BOMB_RULES.map((r) => (
+              <li key={r.text}>
+                <span className="bomb-rules__icon" aria-hidden>
+                  {r.icon}
+                </span>
+                <span>{r.text}</span>
+              </li>
+            ))}
           </ol>
-          <p className="bomb-status">Nhóm dẫn đầu cầm quả bom đầu tiên: <BombBadge bomb={bomb} /></p>
+          <p className="bomb-first">
+            Nhóm dẫn đầu cầm quả bom đầu tiên <BombBadge bomb={bomb} />
+          </p>
         </div>
-        <aside className="host-game__side">{standings}</aside>
-      </section>
-    );
-  }
-
-  if (phase === 'BOMB_EXPLODE' && lastExplosion) {
-    return (
-      <section className="host-game host-game--explode">
-        <div className="explode-overlay" aria-hidden>
-          <span>💥</span>
-        </div>
-        {head}
-        <div className="host-game__main">{hexBoard}</div>
         <aside className="host-game__side">
-          <p className="bomb-explode">💥 BÙM!</p>
-          <p className="bomb-status" style={{ color: TEAM_COLORS[lastExplosion.teamId] }}>{describeExplosion(lastExplosion)}</p>
+          <BombIcon burning={false} className="bomb-intro__icon" />
           {standings}
         </aside>
       </section>
     );
   }
 
+  if (phase === 'BOMB_EXPLODE' && lastExplosion) {
+    return (
+      <section className="host-game host-game--bomb host-game--explode">
+        <div className="explode-overlay" aria-hidden>
+          <span className="explode-overlay__ring" />
+          <span className="explode-overlay__ring explode-overlay__ring--2" />
+          <span className="explode-overlay__text">BÙM!</span>
+        </div>
+        <HostBar badge={badge} title={PHASE_LABELS[phase]} />
+        <div className="host-game__main">{hexBoard}</div>
+        <aside className="host-game__side">
+          <div className="explode-card" style={teamStyle(lastExplosion.teamId)}>
+            <span className="explode-card__icon" aria-hidden>
+              💥
+            </span>
+            <p>{describeExplosion(lastExplosion)}</p>
+          </div>
+          {standings}
+        </aside>
+      </section>
+    );
+  }
+
+  const head = (
+    <HostBar badge={badge} title={PHASE_LABELS[phase]}>
+      {phase === 'BOMB_PASS' && <CountdownRing endsAt={bomb.pass?.endsAt ?? game.phaseEndsAt} startedAt={bomb.pass?.startedAt} urgentAt={3} />}
+      <BombBadge bomb={bomb} />
+    </HostBar>
+  );
+
   if (phase === 'BOMB_PASS') {
     const pass = bomb.pass;
     return (
-      <section className="host-game">
+      <section className="host-game host-game--bomb">
         {head}
         <div className="host-game__main">{hexBoard}</div>
         <aside className="host-game__side">
-          <p className="bomb-status">
-            {teamName(bomb.holder)} trả lời đúng! Đang chọn nhóm nhận bom
-            {pass?.locked ? ' — đã chốt' : '…'}
-          </p>
-          <p className="host-game__hint">
-            Có thể nhận: {pass?.validTargets.map(teamName).join(', ')}
-            {bomb.passedFrom !== null && !pass?.validTargets.includes(bomb.passedFrom) && ` · không chuyền ngược cho ${teamName(bomb.passedFrom)}`}
-          </p>
+          <div className="bomb-callout" style={teamStyle(bomb.holder)}>
+            <p className="bomb-callout__title">
+              <TeamTag teamId={bomb.holder} /> trả lời đúng!
+            </p>
+            <p>Đang chọn nhóm nhận bom{pass?.locked ? ' — đã chốt' : '…'}</p>
+          </div>
+          <div className="bomb-targets-host">
+            <p className="host-side__title">Có thể nhận bom</p>
+            <p className="bomb-targets-host__list">{pass?.validTargets.map((t) => <TeamTag key={t} teamId={t} />)}</p>
+            {bomb.passedFrom !== null && !pass?.validTargets.includes(bomb.passedFrom) && (
+              <p className="host-hint">Không chuyền ngược cho {teamName(bomb.passedFrom)}</p>
+            )}
+          </div>
           {standings}
         </aside>
       </section>
@@ -134,18 +177,14 @@ export function HostBomb({
   if (phase === 'BOMB_REVEAL' && question?.reveal) {
     const mine = question.reveal.results.find((r) => r.teamId === bomb.holder);
     return (
-      <section className="host-game">
+      <section className="host-game host-game--bomb">
         {head}
         <div className="host-game__main">{hexBoard}</div>
         <aside className="host-game__side">
-          <div className="host-answer">
-            <p className="host-answer__correct">
-              Đáp án: <b>{OPTION_LABELS[question.reveal.answerIndex]}.</b> {question.options[question.reveal.answerIndex]}
-            </p>
-            <p className="host-answer__explanation">{question.reveal.explanation}</p>
-          </div>
-          <p className="bomb-status">
-            {mine?.correct ? `${teamName(bomb.holder)} trả lời ĐÚNG → được chuyền bom!` : `${teamName(bomb.holder)} chưa đúng → câu mới, bom vẫn ở lại.`}
+          <AnswerCard question={question} />
+          <p className={`bomb-verdict ${mine?.correct ? 'is-correct' : 'is-wrong'}`}>
+            <TeamTag teamId={bomb.holder} />
+            {mine?.correct ? ' trả lời ĐÚNG → được chuyền bom!' : ' chưa đúng → câu mới, bom vẫn ở lại.'}
           </p>
           {standings}
         </aside>
@@ -153,21 +192,24 @@ export function HostBomb({
     );
   }
 
-  // BOMB_QUESTION (và REVEAL khi chưa nhận được câu hỏi)
+  // BOMB_QUESTION (và REVEAL khi chưa nhận được câu hỏi): quả bom lớn trên nhãn nhóm đang cầm
   return (
-    <section className="host-game host-game--question">
-      {head}
+    <section className="host-game host-game--bomb host-game--question">
+      <HostBar badge={badge} title={PHASE_LABELS[phase]} />
       <div className="host-game__main">
-        <PassArrow bomb={bomb} />
+        <div className="bomb-holder" style={teamStyle(bomb.holder)}>
+          <BombIcon burning={bomb.burning} className="bomb-holder__icon" />
+          <span className="bomb-holder__text">
+            <span className="bomb-holder__label">Đang cầm bom{bomb.burning ? '' : ' · ngòi tạm dừng'}</span>
+            <span className="bomb-holder__team">{teamName(bomb.holder)}</span>
+            <PassArrow bomb={bomb} />
+          </span>
+        </div>
         {question && question.status === 'open' && <QuestionPanel view={question} activeTeamIds={[bomb.holder]} />}
       </div>
       <aside className="host-game__side">
         {hexBoard}
-        {bomb.explosions.length > 0 && (
-          <ul className="bomb-log">
-            {bomb.explosions.map((e) => <li key={e.bombNumber}>Quả {e.bombNumber}: {describeExplosion(e)}</li>)}
-          </ul>
-        )}
+        {bombLog}
       </aside>
     </section>
   );

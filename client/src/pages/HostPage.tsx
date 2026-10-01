@@ -3,13 +3,14 @@ import QRCode from 'qrcode';
 import { ConnectionBadge } from '../ConnectionBadge';
 import { HostGame } from '../HostGame';
 import { HostRules } from '../HostRules';
+import { Logo } from '../Logo';
 import { SoundToggle } from '../SoundToggle';
 import { StatusBanner } from '../StatusBanner';
 import { unlockAudio } from '../sound';
 import { useHostSounds } from '../useHostSounds';
 import { QuestionPanel } from '../QuestionPanel';
 import { socket, useConnectionStatus, useGame, useQuestion, useRoomState } from '../socket';
-import { TEAM_COLORS, teamName } from '../teams';
+import { teamName, teamStyle } from '../teams';
 
 export function HostPage() {
   const status = useConnectionStatus();
@@ -40,7 +41,7 @@ export function HostPage() {
   const joinUrl = state ? `${(publicUrl ?? window.location.origin).replace(/\/$/, '')}/play?room=${state.code}` : '';
   useEffect(() => {
     if (!joinUrl) return;
-    QRCode.toString(joinUrl, { type: 'svg', margin: 1, width: 400 }).then(setQrSvg);
+    QRCode.toString(joinUrl, { type: 'svg', margin: 1, width: 400, color: { dark: '#0a0f26', light: '#ffffff' } }).then(setQrSvg);
   }, [joinUrl]);
 
   useHostSounds(game, question);
@@ -57,12 +58,15 @@ export function HostPage() {
   // Trong trận: màn Bàn Cờ. Câu thử (chỉ mở được ở LOBBY/SUMMARY) vẫn hiện như Giai đoạn 2.
   if (state && game?.board && game.phase !== 'LOBBY' && !(game.phase === 'SUMMARY' && question)) {
     return (
-      <main className="page page--host page--game" onPointerDown={unlockAudio}>
+      <main className={`page page--host page--game ${game.phase.startsWith('BOMB_') ? 'page--danger' : ''}`} onPointerDown={unlockAudio}>
         {chrome}
         <HostGame game={game} question={question} activeTeamIds={activeTeamIds} />
       </main>
     );
   }
+
+  const players = state?.teams.reduce((n, t) => n + t.players.length, 0) ?? 0;
+  const shortUrl = joinUrl.replace(/^https?:\/\//, '').replace(/\?.*/, '');
 
   return (
     <main className="page page--host" onPointerDown={unlockAudio}>
@@ -70,39 +74,73 @@ export function HostPage() {
       {game?.phase === 'RULES' && !question ? (
         <HostRules />
       ) : question ? (
-        <QuestionPanel view={question} activeTeamIds={activeTeamIds} />
+        <div className="host-solo">
+          <QuestionPanel view={question} activeTeamIds={activeTeamIds} />
+        </div>
       ) : !state ? (
-        <h1>{status === 'connected' ? 'Đang chờ người dẫn tạo phòng…' : 'Bàn Cờ Quyền Lực — Màn chiếu'}</h1>
+        <section className="host-waiting">
+          <Logo className="host-waiting__logo" />
+          <h1 className="host-title">
+            Bàn Cờ Quyền Lực <span>&amp; Quả Bom Tham Nhũng</span>
+          </h1>
+          <p className="host-waiting__note">
+            {status === 'connected' ? 'Đang chờ người dẫn tạo phòng' : 'Đang kết nối tới máy chủ'}
+            <span className="dots" aria-hidden>
+              <i />
+              <i />
+              <i />
+            </span>
+          </p>
+        </section>
       ) : (
-        <>
+        <div className="host-lobby">
           <section className="host-join">
             <div className="host-join__qr" dangerouslySetInnerHTML={{ __html: qrSvg }} />
-            <div>
-              <p>Quét mã QR hoặc vào</p>
-              <p className="host-join__url">{joinUrl.replace(/^https?:\/\//, '').replace(/\?.*/, '')}</p>
-              <p>Mã phòng</p>
-              <p className="host-join__code">{state.code}</p>
-              {!state.lobbyOpen && <p className="host-join__closed">Đã đóng cổng vào phòng</p>}
+            <div className="host-join__info">
+              <div className="host-join__brand">
+                <Logo className="host-join__logo" />
+                <h1 className="host-title">
+                  Bàn Cờ Quyền Lực <span>&amp; Quả Bom Tham Nhũng</span>
+                </h1>
+              </div>
+              <p className="host-join__label">Quét mã QR hoặc vào</p>
+              <p className="host-join__url">{shortUrl}</p>
+              <p className="host-join__label">Mã phòng</p>
+              <p className="host-join__code" aria-label={`Mã phòng ${state.code}`}>
+                {state.code.split('').map((d, i) => (
+                  <span key={i}>{d}</span>
+                ))}
+              </p>
+              <p className="host-join__count">
+                <b>{players}</b> người đã vào phòng
+                {!state.lobbyOpen && <span className="host-join__closed">Đã đóng cổng vào phòng</span>}
+              </p>
             </div>
           </section>
           <section className="host-teams">
             {state.teams.map((t) => (
-              <div key={t.id} className="host-team" style={{ borderColor: TEAM_COLORS[t.id] }}>
-                <h2 style={{ background: TEAM_COLORS[t.id] }}>
-                  {teamName(t.id)} <span>({t.players.length})</span>
+              <div key={t.id} className={`host-team ${t.players.length === 0 ? 'is-empty' : ''}`} style={teamStyle(t.id)}>
+                <h2>
+                  <span>{teamName(t.id)}</span>
+                  <span className="host-team__count">{t.players.length}</span>
                 </h2>
                 <ul>
                   {t.players.map((p) => (
                     <li key={p.id} className={p.online ? '' : 'is-offline'}>
-                      {p.isCaptain && <span title="Đội trưởng">★ </span>}
+                      {p.isCaptain && (
+                        <span className="captain-star" title="Đội trưởng">
+                          ★
+                        </span>
+                      )}
                       {p.name}
                     </li>
                   ))}
                 </ul>
+                {t.players.length === 0 && <p className="host-team__empty">Chưa có ai</p>}
               </div>
             ))}
           </section>
-        </>
+        </div>
       )}
     </main>
   );

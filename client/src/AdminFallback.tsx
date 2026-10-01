@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { cellLabel, validTargets, type FallbackAnswer, type GameView, type PublicQuestionView } from '@cnxh/shared';
 import { OPTION_LABELS } from './QuestionPanel';
 import { socket } from './socket';
-import { TEAM_COLORS, teamName } from './teams';
+import { TeamTag } from './TeamTag';
+import { teamName, teamStyle } from './teams';
 
 type Report = (what: string) => (res: { ok: boolean; error?: string }) => void;
 
@@ -28,8 +29,8 @@ export function AdminFallback({ game, question, report }: { game: GameView; ques
           {bomb.pass.validTargets.map((t) => (
             <button
               key={t}
-              className="primary-btn"
-              style={{ background: TEAM_COLORS[t] }}
+              className="primary-btn team-fill"
+              style={teamStyle(t)}
               onClick={() => socket.emit('admin:fallbackPass', { to: t }, report('Không chuyền được'))}
             >
               💣 → {teamName(t)}
@@ -61,8 +62,8 @@ function FallbackSelect({ game, report }: { game: GameView; report: Report }) {
       <p>Nhập ô mục tiêu từng nhóm (số ô hiện trên bản đồ admin). Để trống = theo điện thoại.</p>
       <div className="fallback__rows">
         {teams.map((t) => (
-          <label key={t} className="fallback__row" style={{ borderColor: TEAM_COLORS[t] }}>
-            <b style={{ color: TEAM_COLORS[t] }}>{teamName(t)}</b>
+          <label key={t} className="fallback__row" style={teamStyle(t)}>
+            <TeamTag teamId={t} />
             <select value={picks[t] ?? ''} onChange={(e) => setPicks({ ...picks, [t]: e.target.value })}>
               <option value="">(theo điện thoại)</option>
               <option value="skip">— bỏ lượt —</option>
@@ -106,8 +107,8 @@ function FallbackAnswers({ question, report }: { question: PublicQuestionView; r
         {question.teamIds.map((t) => {
           const e = entries[t];
           return (
-            <div key={t} className="fallback__row" style={{ borderColor: TEAM_COLORS[t] }}>
-              <b style={{ color: TEAM_COLORS[t] }}>{teamName(t)}</b>
+            <div key={t} className="fallback__row" style={teamStyle(t)}>
+              <TeamTag teamId={t} />
               <span className="fallback__cards">
                 {question.options.map((_, i) => (
                   <button key={i} className={e?.choice === i ? 'is-on' : ''} onClick={() => setChoice(t, i)}>

@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { MAX_NAME_LENGTH, TEAM_IDS, isRoomCode } from '@cnxh/shared';
 import { ConnectionBadge } from '../ConnectionBadge';
+import { Logo } from '../Logo';
 import { PlayBoard } from '../PlayBoard';
 import { PlayQuestion } from '../PlayQuestion';
 import { BOARD_RULES } from '../rules';
 import { StatusBanner } from '../StatusBanner';
 import { socket, useGame, useQuestion, useRoomState, useTeamPass, useTeamSelect, useTeamVotes } from '../socket';
-import { TEAM_COLORS, teamName } from '../teams';
+import { teamName, teamStyle } from '../teams';
 
 const STORAGE_KEY = 'cnxh.player';
 
@@ -91,12 +92,24 @@ export function PlayPage() {
 
   if (saved && me && state) {
     const inGame = !!game?.board && game.phase !== 'LOBBY' && !(game.phase === 'SUMMARY' && question);
+    const members = state.teams[me.teamId - 1]!.players;
+    const inLobby = state.lobbyOpen && !question && (game?.phase ?? 'LOBBY') === 'LOBBY';
     return (
-      <main className="page page--play">
-        <ConnectionBadge />
+      <main className={`page page--play ${inGame && game!.phase.startsWith('BOMB_') ? 'page--danger' : ''}`} style={teamStyle(me.teamId)}>
+        <header className="play-head">
+          <span className="play-head__badge" aria-hidden>
+            {me.teamId}
+          </span>
+          <span className="play-head__who">
+            <span className="play-head__name">{me.name}</span>
+            <span className="play-head__team">
+              {teamName(me.teamId)}
+              {me.isCaptain && <span className="play-head__captain">★ Đội trưởng</span>}
+            </span>
+          </span>
+          <ConnectionBadge />
+        </header>
         <StatusBanner game={game} audience="play" />
-        <h1 style={{ color: TEAM_COLORS[me.teamId] }}>{teamName(me.teamId)}</h1>
-        <p className="play-name">{me.name}{me.isCaptain && ' ★ Đội trưởng'}</p>
         {inGame ? (
           <PlayBoard
             game={game!}
@@ -111,80 +124,137 @@ export function PlayPage() {
           <PlayQuestion view={question} team={teamVotes} playerId={me.id} />
         ) : game?.phase === 'RULES' ? (
           <section className="play-rules">
-            <h2>Luật chơi</h2>
+            <h2 className="play-section-title">Luật chơi</h2>
             <ul>
               {BOARD_RULES.map((r) => (
                 <li key={r.title}>
-                  {r.icon} <b>{r.title}:</b> {r.text}
+                  <span className="play-rules__icon" aria-hidden>
+                    {r.icon}
+                  </span>
+                  <span>
+                    <b>{r.title}.</b> {r.text}
+                  </span>
                 </li>
               ))}
             </ul>
             {me.isCaptain && <p className="play-rules__captain">★ Bạn là đội trưởng: bạn có nút CHỐT.</p>}
           </section>
         ) : (
-          <p>Phòng {state.code} — chờ người dẫn bắt đầu…</p>
+          <section className="wait-card">
+            <span className="wait-card__icon" aria-hidden>
+              ⏳
+            </span>
+            <p className="wait-card__title">
+              Chờ người dẫn bắt đầu
+              <span className="dots" aria-hidden>
+                <i />
+                <i />
+                <i />
+              </span>
+            </p>
+            <p className="wait-card__room">
+              Phòng <b>{state.code}</b> · {members.length} người trong nhóm
+            </p>
+          </section>
         )}
-        {state.lobbyOpen && !question && (game?.phase ?? 'LOBBY') === 'LOBBY' && (
-          <div className="team-grid">
-            {TEAM_IDS.map((id) => (
-              <button
-                key={id}
-                className="team-btn"
-                style={{ background: TEAM_COLORS[id], opacity: id === me.teamId ? 1 : 0.55 }}
-                onClick={() => socket.emit('player:changeTeam', { teamId: id }, () => {})}
-              >
-                {teamName(id)}
-              </button>
+        {inLobby && (
+          <section className="play-switch">
+            <h2 className="play-section-title">Đổi nhóm</h2>
+            <div className="team-grid">
+              {TEAM_IDS.map((id) => (
+                <button
+                  key={id}
+                  className={`team-btn ${id === me.teamId ? 'is-selected' : 'is-dim'}`}
+                  style={teamStyle(id)}
+                  aria-pressed={id === me.teamId}
+                  onClick={() => socket.emit('player:changeTeam', { teamId: id }, () => {})}
+                >
+                  {teamName(id)}
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+        <section className="play-team">
+          <h2 className="play-section-title">
+            Nhóm của bạn <span>({members.length})</span>
+          </h2>
+          <ul className="play-members">
+            {members.map((p) => (
+              <li key={p.id} className={[p.online ? '' : 'is-offline', p.id === me.id ? 'is-me' : ''].join(' ')}>
+                {p.isCaptain && '★ '}
+                {p.name}
+              </li>
             ))}
-          </div>
-        )}
-        <h2>Nhóm của bạn</h2>
-        <ul className="play-members">
-          {state.teams[me.teamId - 1]!.players.map((p) => (
-            <li key={p.id} className={p.online ? '' : 'is-offline'}>{p.isCaptain && '★ '}{p.name}</li>
-          ))}
-        </ul>
+          </ul>
+        </section>
       </main>
     );
   }
 
   if (saved) {
     return (
-      <main className="page page--play">
+      <main className="page page--play page--center">
         <ConnectionBadge />
-        <p>Đang vào lại phòng…</p>
+        <section className="wait-card">
+          <Logo className="wait-card__logo" />
+          <p className="wait-card__title">
+            Đang vào lại phòng
+            <span className="dots" aria-hidden>
+              <i />
+              <i />
+              <i />
+            </span>
+          </p>
+        </section>
       </main>
     );
   }
 
   return (
-    <main className="page page--play">
-      <h1>Vào phòng</h1>
+    <main className="page page--play page--join">
       <ConnectionBadge />
-      <form className="join-form" onSubmit={submit}>
-        <label>
-          Mã phòng
-          <input inputMode="numeric" maxLength={4} value={roomCode} onChange={(e) => setRoomCode(e.target.value.replace(/\D/g, ''))} />
-        </label>
-        <label>
-          Tên của bạn
-          <input maxLength={MAX_NAME_LENGTH} value={name} onChange={(e) => setName(e.target.value)} />
-        </label>
-        <div className="team-grid">
-          {TEAM_IDS.map((id) => (
-            <button
-              type="button"
-              key={id}
-              className="team-btn"
-              style={{ background: TEAM_COLORS[id], outline: id === teamId ? '4px solid #1a1a1a' : 'none' }}
-              onClick={() => setTeamId(id)}
-            >
-              {teamName(id)}
-            </button>
-          ))}
+      <header className="join-brand">
+        <Logo />
+        <div>
+          <h1>Bàn Cờ Quyền Lực</h1>
+          <p>&amp; Quả Bom Tham Nhũng</p>
         </div>
-        {error && <p className="form-error" role="alert">{error}</p>}
-        <button type="submit" className="primary-btn">Vào chơi</button>
+      </header>
+      <form className="join-form" onSubmit={submit}>
+        <label className="field">
+          Mã phòng
+          <input inputMode="numeric" maxLength={4} placeholder="4 chữ số" value={roomCode} onChange={(e) => setRoomCode(e.target.value.replace(/\D/g, ''))} />
+        </label>
+        <label className="field">
+          Tên của bạn
+          <input maxLength={MAX_NAME_LENGTH} placeholder="Họ và tên" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} />
+        </label>
+        <fieldset className="join-teams">
+          <legend>Chọn nhóm</legend>
+          <div className="team-grid">
+            {TEAM_IDS.map((id) => (
+              <button
+                type="button"
+                key={id}
+                className={`team-btn ${id === teamId ? 'is-selected' : ''}`}
+                style={teamStyle(id)}
+                aria-pressed={id === teamId}
+                onClick={() => setTeamId(id)}
+              >
+                {teamName(id)}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+        {error && (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        )}
+        <button type="submit" className="primary-btn primary-btn--gold join-form__submit">
+          Vào chơi
+        </button>
       </form>
     </main>
   );

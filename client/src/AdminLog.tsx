@@ -15,10 +15,12 @@ function time(at: number): string {
 /** Nhật ký sự kiện để giải quyết tranh cãi (GAME_SPEC 5.3) — mới nhất ở trên. */
 export function AdminLog({ entries }: { entries: LogEntry[] }) {
   return (
-    <section className="admin-log">
-      <h2>Nhật ký sự kiện ({entries.length})</h2>
+    <section className="admin-card admin-log">
+      <h2>
+        Nhật ký sự kiện <span className="admin-count">{entries.length}</span>
+      </h2>
       {entries.length === 0 ? (
-        <p>Chưa có sự kiện.</p>
+        <p className="admin-muted">Chưa có sự kiện.</p>
       ) : (
         <ol>
           {[...entries].reverse().map((e) => (

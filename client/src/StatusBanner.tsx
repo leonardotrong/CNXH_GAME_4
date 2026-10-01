@@ -5,10 +5,14 @@ export function StatusBanner({ game, audience }: { game: GameView | null; audien
   if (!game) return null;
   return (
     <>
-      {game.pausedAt !== null && <div className="status-banner status-banner--paused" role="status">⏸ TẠM DỪNG</div>}
+      {game.pausedAt !== null && (
+        <div className="status-banner status-banner--paused" role="status">
+          ⏸️ TẠM DỪNG
+        </div>
+      )}
       {game.fallback && (
         <div className="status-banner status-banner--fallback" role="status">
-          {audience === 'host' ? 'Chế độ dự phòng — các nhóm giơ thẻ màu A/B/C/D' : 'Chế độ dự phòng — làm theo người dẫn'}
+          🃏 {audience === 'host' ? 'Chế độ dự phòng — các nhóm giơ thẻ màu A/B/C/D' : 'Chế độ dự phòng — làm theo người dẫn'}
         </div>
       )}
     </>

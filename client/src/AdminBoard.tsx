@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { CELLS, DEFAULT_BOARD_TURNS, DEFAULT_BOMB_COUNT, MAX_BOARD_TURNS, MAX_BOMB_COUNT, TEAM_IDS, cellLabel, type CellId, type GameView } from '@cnxh/shared';
 import { PHASE_LABELS, describeCell, describeExplosion, isBombPhase } from './boardText';
-import { TEAM_COLORS, teamName } from './teams';
+import { TeamTag } from './TeamTag';
+import { teamName, teamStyle } from './teams';
 import { useCountdown } from './clock';
 import { HexBoard } from './HexBoard';
 import { socket } from './socket';
@@ -28,8 +29,8 @@ export function AdminBoard({ game, onNotice }: { game: GameView | null; onNotice
   const report = (what: string) => (res: { ok: boolean; error?: string }) => onNotice(res.ok ? '' : `${what} (${res.error}).`);
 
   return (
-    <section className="admin-board">
-      <h2>{bombPhase ? 'Quả Bom Tham Nhũng' : 'Bàn Cờ Quyền Lực'}</h2>
+    <section className="admin-card admin-board">
+      <h2>{bombPhase ? '💣 Quả Bom Tham Nhũng' : 'Bàn Cờ Quyền Lực'}</h2>
       {game?.phase === 'BOMB_INTRO' ? (
         <div className="admin-actions">
           <label className="admin-inline">
@@ -42,12 +43,14 @@ export function AdminBoard({ game, onNotice }: { game: GameView | null; onNotice
           >
             Bắt đầu Quả Bom
           </button>
-          <span>Nhóm cầm bom đầu tiên: <b>{teamName(game.bomb!.holder)}</b></span>
+          <span>
+            Nhóm cầm bom đầu tiên: <TeamTag teamId={game.bomb!.holder} />
+          </span>
         </div>
       ) : bombPhase ? (
         <p className="admin-board__status">
           Quả <b>{game!.bomb!.bombNumber}/{game!.bomb!.totalBombs}</b> · {PHASE_LABELS[game!.phase]} · đang cầm:{' '}
-          <b>{teamName(game!.bomb!.holder)}</b> · bom {game!.bomb!.burning ? 'đang cháy' : 'tạm dừng'}
+          <TeamTag teamId={game!.bomb!.holder} /> · bom {game!.bomb!.burning ? 'đang cháy' : 'tạm dừng'}
           {game!.phaseEndsAt !== null && ` · pha còn ${left} s`}
           {/* Admin cũng không biết ngòi: server không gửi. */}
         </p>
@@ -138,7 +141,8 @@ export function AdminBoard({ game, onNotice }: { game: GameView | null; onNotice
                   {TEAM_IDS.map((t) => (
                     <button
                       key={t}
-                      style={{ background: TEAM_COLORS[t], color: '#fff' }}
+                      className="is-team"
+                      style={teamStyle(t)}
                       onClick={() => socket.emit('admin:setCellOwner', { cellId: focused, owner: t }, report('Không đổi được chủ ô'))}
                     >
                       {t}
@@ -147,7 +151,7 @@ export function AdminBoard({ game, onNotice }: { game: GameView | null; onNotice
                 </div>
               </div>
             )}
-            {editing && canEdit && focused === null && <p>Chạm vào một ô để đổi chủ.</p>}
+            {editing && canEdit && focused === null && <p className="admin-muted">Chạm vào một ô để đổi chủ.</p>}
           </div>
           <div>
             <Standings standings={board.standings} shields={board.shields} lockedTeamIds={game!.phase === 'BOARD_SELECT' ? board.select?.locked : undefined} />

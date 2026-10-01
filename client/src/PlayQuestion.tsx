@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import type { PublicQuestionView, TeamQuestionView } from '@cnxh/shared';
-import { useCountdown } from './clock';
+import { CountdownRing } from './Countdown';
 import { OPTION_LABELS } from './QuestionPanel';
 import { socket } from './socket';
+import { VoteStatus } from './VoteControls';
 
 export const VOTE_ERRORS: Record<string, string> = {
   NOT_ENOUGH_VOTES: 'Cần quá nửa thành viên online bỏ phiếu mới chốt được.',
@@ -24,7 +25,6 @@ export function PlayQuestion({
   /** Nhóm không trả lời câu này (Quả Bom: chỉ nhóm cầm bom trả lời) — chỉ xem. */
   readOnly?: boolean;
 }) {
-  const left = useCountdown(view.status === 'open' ? view.endsAt : null);
   const [error, setError] = useState('');
   const current = team?.roundId === view.roundId ? team : null;
   const myVote = current?.votes[playerId];
@@ -46,8 +46,28 @@ export function PlayQuestion({
   const myResult = reveal?.results.find((r) => r.teamId === current?.teamId);
 
   return (
-    <section className="play-question">
-      <div className="play-question__timer">{view.status === 'open' ? `${left} s` : 'Đáp án'}</div>
+    <section className={`play-question ${readOnly ? 'is-readonly' : ''}`}>
+      <div className="play-task">
+        {view.status === 'open' ? (
+          <CountdownRing endsAt={view.endsAt} startedAt={view.startedAt} />
+        ) : (
+          <span className="play-task__icon" aria-hidden>
+            💡
+          </span>
+        )}
+        <span className="play-task__text">
+          <b>{view.status === 'open' ? (view.pool === 'board' ? 'Câu hỏi Bàn Cờ' : 'Câu hỏi Bom') : 'Đáp án'}</b>
+          <span>
+            {readOnly && view.status === 'open'
+              ? 'Chỉ xem — nhóm khác đang trả lời.'
+              : open
+                ? 'Chạm để bỏ phiếu cho nhóm.'
+                : view.status === 'open'
+                  ? 'Nhóm đã chốt, chờ các nhóm khác…'
+                  : 'Xem giải thích bên dưới.'}
+          </span>
+        </span>
+      </div>
       <h2 className="play-question__prompt">{view.prompt}</h2>
       <div className="play-question__options">
         {view.options.map((opt, i) => {
@@ -55,37 +75,56 @@ export function PlayQuestion({
           if (myVote === i) classes.push('is-mine');
           if (current?.choice === i) classes.push('is-chosen');
           if (reveal) classes.push(i === reveal.answerIndex ? 'is-correct' : 'is-wrong');
+          const votes = current?.tally[i] ?? 0;
+          const share = current && current.onlineCount > 0 ? Math.min(100, (votes / current.onlineCount) * 100) : 0;
           return (
-            <button key={i} className={classes.join(' ')} disabled={!open} onClick={() => vote(i)}>
-              <b>{OPTION_LABELS[i]}</b>
-              <span>{opt}</span>
-              <span className="option-btn__count">{current?.tally[i] ?? 0}</span>
+            <button
+              key={i}
+              className={classes.join(' ')}
+              disabled={!open}
+              onClick={() => vote(i)}
+              style={{ '--votes': `${share}%` } as CSSProperties}
+            >
+              <b className="option-btn__letter">{OPTION_LABELS[i]}</b>
+              <span className="option-btn__text">{opt}</span>
+              {current && <span className="option-btn__count">{votes}</span>}
             </button>
           );
         })}
       </div>
 
-      {current && (
-        <p className="play-question__status">
-          {current.locked
-            ? `Nhóm đã chốt: ${current.choice === null ? 'không có lựa chọn' : OPTION_LABELS[current.choice]}`
-            : `${current.votedOnlineCount}/${current.onlineCount} thành viên online đã bỏ phiếu`}
+      {current && !reveal && (
+        <VoteStatus
+          view={current}
+          lockedText={`Nhóm đã chốt: ${current.choice === null ? 'không có lựa chọn' : OPTION_LABELS[current.choice]}`}
+          showLock={isCaptain && open}
+          onLock={lock}
+        />
+      )}
+      {error && (
+        <p className="form-error" role="alert">
+          {error}
         </p>
       )}
 
-      {isCaptain && open && (
-        <button className="lock-btn" disabled={!current?.canLock} onClick={lock}>
-          CHỐT
-        </button>
-      )}
-      {error && <p className="form-error" role="alert">{error}</p>}
-
-      {readOnly && view.status === 'open' && <p className="play-question__status">Chỉ xem — nhóm khác đang trả lời.</p>}
-      {reveal && readOnly && <p className="play-question__result">{reveal.explanation}</p>}
-      {reveal && !readOnly && (
-        <div className={`play-question__result ${myResult?.correct ? 'is-correct' : 'is-wrong'}`}>
-          <strong>{myResult?.correct ? 'Nhóm trả lời ĐÚNG!' : 'Nhóm trả lời chưa đúng'}</strong>
+      {reveal && readOnly && (
+        <div className="result-card">
+          <span className="result-card__icon" aria-hidden>
+            📖
+          </span>
           <p>{reveal.explanation}</p>
+        </div>
+      )}
+      {reveal && !readOnly && (
+        <div className={`result-card ${myResult?.correct ? 'is-correct' : 'is-wrong'}`}>
+          <span className="result-card__icon" aria-hidden>
+            {myResult?.correct ? '🎉' : '😕'}
+          </span>
+          <div>
+            <strong>{myResult?.correct ? 'Nhóm trả lời ĐÚNG!' : 'Nhóm trả lời chưa đúng'}</strong>
+            {current?.locked && current.choice !== null && <span className="result-card__sub">Nhóm đã chọn {OPTION_LABELS[current.choice]}</span>}
+            <p>{reveal.explanation}</p>
+          </div>
         </div>
       )}
     </section>

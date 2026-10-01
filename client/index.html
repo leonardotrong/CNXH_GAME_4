@@ -2,10 +2,14 @@
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#f6f4ef" />
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%AC%A2%3C/text%3E%3C/svg%3E" />
-    <title>Bàn Cờ Quyền Lực</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0a0f26" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpolygon points='50,4 89.8,27 89.8,73 50,96 10.2,73 10.2,27' fill='%23d12a2a' stroke='%23ffc83d' stroke-width='6' stroke-linejoin='round'/%3E%3Cpolygon points='50,28 55.9,44.9 73.8,45.3 59.5,56.1 64.7,73.2 50,63 35.3,73.2 40.5,56.1 26.2,45.3 44.1,44.9' fill='%23ffc83d'/%3E%3C/svg%3E" />
+    <title>Bàn Cờ Quyền Lực &amp; Quả Bom Tham Nhũng</title>
+    <script>
+      // Chọn bảng màu nền ngay khi tải (admin nền sáng, còn lại sân khấu tối) để không chớp màu trước khi React chạy.
+      document.documentElement.dataset.route = location.pathname.replace(/\/+$/, '').slice(1) || 'home';
+    </script>
   </head>
   <body>
     <div id="root"></div>
