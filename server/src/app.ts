@@ -73,7 +73,9 @@ export function createAppServer(options: AppServerOptions = {}): AppServer {
   }
 
   const httpServer = createServer(app);
-  const io: GameIo = new Server(httpServer);
+  // Nhịp tim ngắn hơn mặc định (25 s + 20 s): điện thoại khóa màn hình/mất sóng bị tính offline sau ≤ 20 s thay vì 45 s,
+  // để người đã rời máy không chặn "cả nhóm bầu xong là tự chốt" và mốc "quá nửa" của nút CHỐT.
+  const io: GameIo = new Server(httpServer, { pingInterval: 10_000, pingTimeout: 10_000 });
   const durations: RoomTiming = { ...DEFAULT_TIMING, ...options.durations };
   const registry = new RoomRegistry(Date.now, durations);
   const adminPassword = options.adminPassword ?? process.env.ADMIN_PASSWORD;
@@ -109,12 +111,13 @@ export function createAppServer(options: AppServerOptions = {}): AppServer {
   };
 
   // ─── Lưu trạng thái (GAME_SPEC 6): ghi gộp sau mỗi thay đổi, file chỉ nằm trên server ───
+  // Chỉ một file → chỉ lưu phòng mới nhất: điện thoại còn ở phòng cũ (vd. chơi thử) vào lại không được ghi đè phòng đang chơi.
   const stateFile = options.stateFile ?? null;
   const pendingSaves = new Map<string, NodeJS.Timeout>();
   const saveNow = (room: Room) => {
     clearTimeout(pendingSaves.get(room.code));
     pendingSaves.delete(room.code);
-    if (!stateFile) return;
+    if (!stateFile || registry.getLatest() !== room) return;
     try {
       writeSnapshot(stateFile, room.toSnapshot());
     } catch (err) {
@@ -122,7 +125,7 @@ export function createAppServer(options: AppServerOptions = {}): AppServer {
     }
   };
   const persist = (room: Room) => {
-    if (!stateFile || pendingSaves.has(room.code)) return;
+    if (!stateFile || registry.getLatest() !== room || pendingSaves.has(room.code)) return;
     const t = setTimeout(() => saveNow(room), SAVE_DEBOUNCE_MS);
     t.unref();
     pendingSaves.set(room.code, t);

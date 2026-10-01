@@ -1,5 +1,5 @@
 import { DEFAULT_BOARD_TURNS, DEFAULT_BOMB_COUNT, type GameView, type Phase, type PublicQuestionView } from '@cnxh/shared';
-import { socket } from './socket';
+import { ACK_TIMEOUT_MS, orNetworkError, socket } from './socket';
 
 /**
  * "Bước tiếp theo" của người dẫn (GAME_SPEC 5.3): một thao tác duy nhất cho mỗi lúc,
@@ -7,6 +7,9 @@ import { socket } from './socket';
  */
 
 type Done = (res: { ok: boolean; error?: string }) => void;
+
+/** Lệnh có hạn chờ: rớt mạng vẫn gọi `done` (NETWORK) để nút không kẹt ở trạng thái bận. */
+const send = () => socket.timeout(ACK_TIMEOUT_MS);
 
 export interface StepOptions {
   /** Số lượt Bàn Cờ khi bắt đầu. */
@@ -57,7 +60,7 @@ export function nextStep(hasRoom: boolean, game: GameView | null, question: Publ
     return {
       label: 'Tạo phòng',
       hint: 'Màn chiếu sẽ hiện mã QR để sinh viên quét.',
-      run: (_, done) => socket.emit('admin:createRoom', done),
+      run: (_, done) => send().emit('admin:createRoom', orNetworkError(done)),
     };
   }
   if (!game) return { label: 'Đang kết nối…', hint: '', run: null };
@@ -65,7 +68,7 @@ export function nextStep(hasRoom: boolean, game: GameView | null, question: Publ
     return {
       label: 'Tiếp tục trận',
       hint: 'Đồng hồ và bom chạy tiếp từ đúng chỗ đã dừng.',
-      run: (_, done) => socket.emit('admin:setPaused', { paused: false }, done),
+      run: (_, done) => send().emit('admin:setPaused', { paused: false }, orNetworkError(done)),
     };
   }
   const { phase } = game;
@@ -78,20 +81,20 @@ export function nextStep(hasRoom: boolean, game: GameView | null, question: Publ
       return {
         label: 'Hiện luật chơi',
         hint: 'Màn chiếu hiện luật tóm tắt. Sinh viên vào muộn vẫn vào được.',
-        run: (_, done) => socket.emit('admin:showRules', done),
+        run: (_, done) => send().emit('admin:showRules', orNetworkError(done)),
       };
     case 'RULES':
       return {
         label: 'Bắt đầu Bàn Cờ',
         hint: 'Mỗi lượt tự chạy khoảng 45 giây: chọn ô → trả lời → kết quả.',
-        run: (opts, done) => socket.emit('admin:startBoard', { totalTurns: opts.turns }, done),
+        run: (opts, done) => send().emit('admin:startBoard', { totalTurns: opts.turns }, orNetworkError(done)),
         setting: 'turns',
       };
     case 'BOMB_INTRO':
       return {
         label: 'Bắt đầu Quả Bom',
         hint: 'Nhóm đang dẫn đầu cầm quả bom đầu tiên.',
-        run: (opts, done) => socket.emit('admin:startBomb', { totalBombs: opts.bombs }, done),
+        run: (opts, done) => send().emit('admin:startBomb', { totalBombs: opts.bombs }, orNetworkError(done)),
         setting: 'bombs',
       };
     case 'SUMMARY':
@@ -99,12 +102,12 @@ export function nextStep(hasRoom: boolean, game: GameView | null, question: Publ
         ? {
             label: 'Hiện tổng kết bài học',
             hint: '6 đặc điểm của nhà nước pháp quyền XHCN Việt Nam.',
-            run: (_, done) => socket.emit('admin:setSummaryView', { view: 'lessons' }, done),
+            run: (_, done) => send().emit('admin:setSummaryView', { view: 'lessons' }, orNetworkError(done)),
           }
         : {
             label: 'Hiện lại bảng xếp hạng',
             hint: 'Buổi chơi đã xong. Muốn chơi lại: dùng "Chơi lại Bàn Cờ" bên dưới.',
-            run: (_, done) => socket.emit('admin:setSummaryView', { view: 'ranking' }, done),
+            run: (_, done) => send().emit('admin:setSummaryView', { view: 'ranking' }, orNetworkError(done)),
           };
     default:
       return {

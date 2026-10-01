@@ -38,7 +38,7 @@ function loadSaved(): Saved | null {
 
 const ERRORS: Record<string, string> = {
   ROOM_NOT_FOUND: 'Không tìm thấy phòng. Kiểm tra lại mã phòng.',
-  LOBBY_CLOSED: 'Phòng đã đóng cổng vào. Nhờ người dẫn chuyển bạn vào nhóm.',
+  LOBBY_CLOSED: 'Phòng đã đóng cổng vào. Nhờ người dẫn mở lại cổng vào phòng rồi thử lại.',
   BAD_REQUEST: 'Thông tin chưa hợp lệ.',
 };
 

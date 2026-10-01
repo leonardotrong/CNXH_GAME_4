@@ -6,7 +6,7 @@ import { Icon } from './Icon';
 import { PlayBomb } from './PlayBomb';
 import { HexBoard } from './HexBoard';
 import { PlayQuestion, VOTE_ERRORS } from './PlayQuestion';
-import { socket } from './socket';
+import { ACK_TIMEOUT_MS, orNetworkError, socket } from './socket';
 import { Standings } from './Standings';
 import { TerritoryBar } from './TerritoryBar';
 import { VoteStatus } from './VoteControls';
@@ -127,12 +127,19 @@ function PlaySelect({
   const vote = (cellId: CellId) => {
     navigator.vibrate?.(12);
     setPending(cellId);
-    socket.emit('player:vote', { roundId: select!.roundId, option: cellId }, (res) => {
-      if (!res.ok) setPending(null);
-      setError(res.ok ? '' : VOTE_ERRORS[res.error] ?? '');
-    });
+    socket.timeout(ACK_TIMEOUT_MS).emit(
+      'player:vote',
+      { roundId: select!.roundId, option: cellId },
+      orNetworkError((res) => {
+        if (!res.ok) setPending(null);
+        setError(res.ok ? '' : VOTE_ERRORS[res.error] ?? '');
+      }),
+    );
   };
-  const lock = () => socket.emit('player:lock', { roundId: select!.roundId }, (res) => setError(res.ok ? '' : VOTE_ERRORS[res.error] ?? ''));
+  const lock = () =>
+    socket
+      .timeout(ACK_TIMEOUT_MS)
+      .emit('player:lock', { roundId: select!.roundId }, orNetworkError((res) => setError(res.ok ? '' : VOTE_ERRORS[res.error] ?? '')));
 
   return (
     <div className="play-select">

@@ -18,6 +18,18 @@ export type ConnectionStatus = 'connecting' | 'connected' | 'disconnected';
 // Một kết nối duy nhất cho cả trang; cùng origin (dev: Vite proxy, production: server phục vụ client).
 export const socket: GameSocket = io({ autoConnect: false });
 
+/** Hạn chờ server trả lời một lệnh. */
+export const ACK_TIMEOUT_MS = 5000;
+
+/**
+ * Callback cho `socket.timeout(ACK_TIMEOUT_MS).emit(...)`: mất kết nối hoặc quá hạn → `{ ok: false, error: 'NETWORK' }`.
+ * Ack thường bị Socket.IO bỏ im lặng nếu rớt mạng trước khi server trả lời — giao diện đang chờ kết quả
+ * (phiếu vừa chạm, nút "Bước tiếp theo" đang bận) sẽ kẹt mãi.
+ */
+export function orNetworkError<R>(done: (res: R | { ok: false; error: 'NETWORK' }) => void): (err: Error | null, res: R) => void {
+  return (err, res) => done(err ? { ok: false, error: 'NETWORK' } : res);
+}
+
 export function useConnectionStatus(): ConnectionStatus {
   const [status, setStatus] = useState<ConnectionStatus>(socket.connected ? 'connected' : 'connecting');
 

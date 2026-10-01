@@ -7,7 +7,7 @@ import { Icon } from './Icon';
 import { HexBoard } from './HexBoard';
 import { BOMB_RULES, BombBadge, PassArrow } from './HostBomb';
 import { PlayQuestion, VOTE_ERRORS } from './PlayQuestion';
-import { socket } from './socket';
+import { ACK_TIMEOUT_MS, orNetworkError, socket } from './socket';
 import { Standings } from './Standings';
 import { TerritoryBar } from './TerritoryBar';
 import { Swatch } from './TeamTag';
@@ -142,12 +142,19 @@ function PassVote({ game, teamPass, playerId }: { game: GameView; teamPass: Team
   const vote = (to: number) => {
     navigator.vibrate?.(12);
     setPending(to);
-    socket.emit('player:vote', { roundId: pass!.roundId, option: to }, (res) => {
-      if (!res.ok) setPending(null);
-      setError(res.ok ? '' : VOTE_ERRORS[res.error] ?? '');
-    });
+    socket.timeout(ACK_TIMEOUT_MS).emit(
+      'player:vote',
+      { roundId: pass!.roundId, option: to },
+      orNetworkError((res) => {
+        if (!res.ok) setPending(null);
+        setError(res.ok ? '' : VOTE_ERRORS[res.error] ?? '');
+      }),
+    );
   };
-  const lock = () => socket.emit('player:lock', { roundId: pass!.roundId }, (res) => setError(res.ok ? '' : VOTE_ERRORS[res.error] ?? ''));
+  const lock = () =>
+    socket
+      .timeout(ACK_TIMEOUT_MS)
+      .emit('player:lock', { roundId: pass!.roundId }, orNetworkError((res) => setError(res.ok ? '' : VOTE_ERRORS[res.error] ?? '')));
 
   return (
     <div className="play-select">

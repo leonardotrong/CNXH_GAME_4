@@ -3,7 +3,7 @@ import type { PublicQuestionView, TeamQuestionView } from '@cnxh/shared';
 import { CountdownRing } from './Countdown';
 import { Icon } from './Icon';
 import { OPTION_LABELS } from './QuestionPanel';
-import { socket } from './socket';
+import { ACK_TIMEOUT_MS, orNetworkError, socket } from './socket';
 import { VoteStatus } from './VoteControls';
 
 export const VOTE_ERRORS: Record<string, string> = {
@@ -12,6 +12,8 @@ export const VOTE_ERRORS: Record<string, string> = {
   LOCKED: 'Nhóm đã chốt.',
   PAUSED: 'Trận đang tạm dừng.',
   CLOSED: 'Câu hỏi đã đóng.',
+  NETWORK: 'Mạng chập chờn — chưa gửi được, chạm lại.',
+  PLAYER_NOT_FOUND: 'Đang vào lại phòng — chạm lại sau giây lát.',
 };
 
 /** Biểu quyết trên điện thoại (GAME_SPEC 2.2, 5.2). */
@@ -49,13 +51,19 @@ export function PlayQuestion({
   const vote = (option: number) => {
     navigator.vibrate?.(12);
     setPending(option);
-    socket.emit('player:vote', { roundId: view.roundId, option }, (res) => {
-      if (!res.ok) setPending(null);
-      setError(res.ok ? '' : VOTE_ERRORS[res.error] ?? '');
-    });
+    socket.timeout(ACK_TIMEOUT_MS).emit(
+      'player:vote',
+      { roundId: view.roundId, option },
+      orNetworkError((res) => {
+        if (!res.ok) setPending(null);
+        setError(res.ok ? '' : VOTE_ERRORS[res.error] ?? '');
+      }),
+    );
   };
   const lock = () =>
-    socket.emit('player:lock', { roundId: view.roundId }, (res) => setError(res.ok ? '' : VOTE_ERRORS[res.error] ?? ''));
+    socket
+      .timeout(ACK_TIMEOUT_MS)
+      .emit('player:lock', { roundId: view.roundId }, orNetworkError((res) => setError(res.ok ? '' : VOTE_ERRORS[res.error] ?? '')));
 
   const reveal = view.reveal;
   const myResult = reveal?.results.find((r) => r.teamId === current?.teamId);

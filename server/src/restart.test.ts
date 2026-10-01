@@ -116,6 +116,28 @@ describe('Lưu trạng thái + khôi phục qua Socket.IO', () => {
     expect(r.board!.standings.find((s) => s.teamId === 1)!.correct).toBe(1);
     await stop(b.server);
   });
+
+  it('tạo phòng mới: điện thoại còn ở phòng cũ vào lại không ghi đè file — khởi động lại khôi phục phòng mới', async () => {
+    const a = await start();
+    const admin = client(a.url);
+    await call(admin, 'admin:login', { password: 'pw' });
+    const { code: oldCode } = (await call(admin, 'admin:createRoom')) as unknown as { code: string };
+    const phone = client(a.url);
+    const j = await call(phone, 'player:join', { roomCode: oldCode, name: 'An', teamId: 1 });
+    // Buổi học thật: người dẫn tạo phòng mới (vd. sau khi chơi thử).
+    const { code: newCode } = (await call(admin, 'admin:createRoom')) as unknown as { code: string };
+    // Điện thoại chơi thử mở lại màn hình → tự vào lại phòng cũ.
+    phone.disconnect();
+    const phone2 = client(a.url);
+    expect(await call(phone2, 'player:join', { roomCode: oldCode, playerId: j['playerId'] })).toMatchObject({ ok: true });
+    await stop(a.server);
+    expect(readSnapshot(stateFile)?.code).toBe(newCode);
+
+    const b = await start();
+    const host = client(b.url);
+    expect(await call(host, 'host:watch', {})).toMatchObject({ ok: true, code: newCode });
+    await stop(b.server);
+  });
 });
 
 describe('Admin qua Socket.IO: tạm dừng, nhật ký, dự phòng', () => {

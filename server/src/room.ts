@@ -210,6 +210,15 @@ export class Room {
     this.timing = { ...DEFAULT_TIMING, ...timing };
   }
 
+  /**
+   * Giờ của trận: đứng yên ở `pausedAt` khi tạm dừng (GAME_SPEC 5.3 — mọi đồng hồ đứng yên). Mốc tạo ra trong lúc dừng
+   * (admin đổi câu lỗi, nhập dự phòng…) vì thế cũng được `resume()` dời đúng bằng thời gian dừng như mọi mốc khác.
+   * Giờ thật `now()` chỉ dùng cho nhật ký, mất kết nối/đội trưởng tạm thời, tạm dừng và lưu file.
+   */
+  private clock(): number {
+    return this.pausedAt ?? this.now();
+  }
+
   private addLog(kind: LogEntry['kind'], text: string): void {
     this.eventLog.push({ id: ++this.logSeq, at: this.now(), kind, text });
     if (this.eventLog.length > MAX_LOG) this.eventLog.splice(0, this.eventLog.length - MAX_LOG);
@@ -350,7 +359,7 @@ export class Room {
       roundId: ++this.roundSeq,
       question: presentQuestion(q, opts.rng),
       teamIds,
-      now: this.now(),
+      now: this.clock(),
       durationMs: opts.durationMs ?? QUESTION_DURATION_MS[pool],
     });
     return { ok: true, round: this.question };
@@ -391,21 +400,21 @@ export class Room {
     const ctx = this.teamContext(teamId);
     const select = this.selectRound(roundId);
     if (select) {
-      const res = castTarget(select, teamId, playerId, option, this.now(), ctx);
+      const res = castTarget(select, teamId, playerId, option, this.clock(), ctx);
       if (!res.ok) return res;
       this.select = res.round;
       return { ok: true, teamId, kind: 'select', locked: res.round.teams[teamId]!.lockedAt !== null };
     }
     const pass = this.passRound(roundId);
     if (pass) {
-      const res = castPass(pass, teamId, playerId, option, this.now(), ctx);
+      const res = castPass(pass, teamId, playerId, option, this.clock(), ctx);
       if (!res.ok) return res;
       this.pass = res.round;
       return { ok: true, teamId, kind: 'pass', locked: res.round.teams[teamId]!.lockedAt !== null };
     }
     const r = this.playerRound(playerId, roundId);
     if (!r.ok) return r;
-    const res = this.applyRound(castVote(r.round, r.teamId, playerId, option, this.now(), ctx), r.teamId);
+    const res = this.applyRound(castVote(r.round, r.teamId, playerId, option, this.clock(), ctx), r.teamId);
     return res.ok ? { ...res, kind: 'question', locked: this.question!.teams[r.teamId]!.lockedAt !== null } : res;
   }
 
@@ -415,21 +424,21 @@ export class Room {
     if (this.pausedAt !== null) return PAUSED;
     const select = this.selectRound(roundId);
     if (select) {
-      const res = lockTarget(select, teamId, playerId, this.teamContext(teamId), this.now());
+      const res = lockTarget(select, teamId, playerId, this.teamContext(teamId), this.clock());
       if (!res.ok) return res;
       this.select = res.round;
       return { ok: true, teamId, kind: 'select' };
     }
     const pass = this.passRound(roundId);
     if (pass) {
-      const res = lockPass(pass, teamId, playerId, this.teamContext(teamId), this.now());
+      const res = lockPass(pass, teamId, playerId, this.teamContext(teamId), this.clock());
       if (!res.ok) return res;
       this.pass = res.round;
       return { ok: true, teamId, kind: 'pass' };
     }
     const r = this.playerRound(playerId, roundId);
     if (!r.ok) return r;
-    const res = this.applyRound(lockTeam(r.round, r.teamId, playerId, this.teamContext(r.teamId), this.now()), r.teamId);
+    const res = this.applyRound(lockTeam(r.round, r.teamId, playerId, this.teamContext(r.teamId), this.clock()), r.teamId);
     return res.ok ? { ...res, kind: 'question' } : res;
   }
 
@@ -458,7 +467,7 @@ export class Room {
   }
 
   /** Đóng câu hỏi (hết giờ hoặc mọi nhóm đã chốt): tự chốt nhóm còn lại. */
-  closeQuestion(at: number = this.now()): void {
+  closeQuestion(at: number = this.clock()): void {
     if (this.question?.status === 'open') this.question = closeRound(this.question, this.contexts(), at);
   }
 
@@ -471,7 +480,7 @@ export class Room {
   closeTestQuestion(): RoomResult {
     if (this.question?.status !== 'open' || this.inMatch()) return WRONG_PHASE;
     this.closeQuestion();
-    this.revealEndsAt = this.now() + this.timing.reveal;
+    this.revealEndsAt = this.clock() + this.timing.reveal;
     return { ok: true };
   }
 
@@ -524,7 +533,7 @@ export class Room {
       roundId: ++this.roundSeq,
       board: this.match!.board,
       teamIds: TEAM_IDS,
-      now: this.now(),
+      now: this.clock(),
       durationMs: this.timing.select,
     });
     this.question = null;
@@ -535,7 +544,7 @@ export class Room {
   /** SELECT kết thúc (hết giờ hoặc mọi nhóm đã chốt): lật mục tiêu, mở câu hỏi của lượt. */
   endSelect(bank: readonly Question[], rng?: Rng): RoomResult<{ round: QuestionRound }> {
     if (this.phase !== 'BOARD_SELECT' || !this.match || !this.select) return WRONG_PHASE;
-    this.select = closeSelectRound(this.select, this.contexts(), this.now());
+    this.select = closeSelectRound(this.select, this.contexts(), this.clock());
     this.match = withTargets(this.match, selectedTargets(this.select));
     const active = this.activeTeamIds();
     const picks = Object.entries(this.match.targets ?? {})
@@ -557,7 +566,7 @@ export class Room {
   }
 
   /** Câu hỏi của lượt đóng (hết giờ hoặc mọi nhóm đã chốt): giải quyết lượt, sang REVEAL. */
-  endBoardQuestion(closeAt: number = this.now()): RoomResult {
+  endBoardQuestion(closeAt: number = this.clock()): RoomResult {
     if (this.phase !== 'BOARD_QUESTION' || !this.match || !this.question) return WRONG_PHASE;
     this.closeQuestion(closeAt);
     this.match = applyTurn(this.match, this.question);
@@ -567,7 +576,7 @@ export class Room {
     for (const x of outcome.ignored) this.addLog('turn', `Lượt ${this.match.turn}: ${describeIgnored(x)}`);
     for (const sh of outcome.shieldsGranted) this.addLog('turn', `Lượt ${this.match.turn}: ${describeShield(sh)}`);
     this.phase = 'BOARD_REVEAL';
-    this.revealEndsAt = this.now() + this.timing.boardReveal;
+    this.revealEndsAt = this.clock() + this.timing.boardReveal;
     return { ok: true };
   }
 
@@ -664,9 +673,9 @@ export class Room {
    * Câu bom đóng (nhóm chốt, hết giờ, hoặc timer ngòi). Hết ngòi tại thời điểm đóng → nổ (hủy câu);
    * còn lại → ngòi dừng, sang REVEAL.
    */
-  endBombQuestion(rng?: Rng, votesCloseAt: number = this.now()): RoomResult<{ exploded: boolean }> {
+  endBombQuestion(rng?: Rng, votesCloseAt: number = this.clock()): RoomResult<{ exploded: boolean }> {
     if (this.phase !== 'BOMB_QUESTION' || !this.bomb || !this.match || this.question?.status !== 'open') return WRONG_PHASE;
-    const closeAt = Math.min(this.now(), this.question.endsAt);
+    const closeAt = Math.min(this.clock(), this.question.endsAt);
     if (isFuseSpent(this.bomb.fuse, closeAt)) {
       this.explode(rng);
       return { ok: true, exploded: true };
@@ -675,7 +684,7 @@ export class Room {
     this.bomb = { ...this.bomb, fuse: pauseFuse(this.bomb.fuse, closeAt) };
     this.match = { ...this.match, stats: recordAnswers(this.match.stats, this.question) };
     this.logAnswers(`Quả ${this.bomb.bombNumber}`);
-    this.revealEndsAt = this.now() + this.timing.bombReveal;
+    this.revealEndsAt = this.clock() + this.timing.bombReveal;
     this.enterBomb('BOMB_REVEAL');
     return { ok: true, exploded: false };
   }
@@ -685,12 +694,12 @@ export class Room {
     const bomb = this.bomb!;
     const { board, lost } = explodeCells(this.match!.board, bomb.holder, rng);
     this.match = { ...this.match!, board };
-    this.bomb = recordExplosion({ ...bomb, fuse: pauseFuse(bomb.fuse, this.now()) }, lost);
+    this.bomb = recordExplosion({ ...bomb, fuse: pauseFuse(bomb.fuse, this.clock()) }, lost);
     const e = this.bomb.explosions.at(-1)!;
     this.addLog('bomb', `Quả ${e.bombNumber}: ${describeExplosion(e)}${lost.length ? ` [${lost.map(cellLabel).join(', ')}]` : ''} — câu đang mở bị hủy`);
     this.question = null;
     this.pass = null;
-    this.revealEndsAt = this.now() + this.timing.bombExplode;
+    this.revealEndsAt = this.clock() + this.timing.bombExplode;
     this.enterBomb('BOMB_EXPLODE');
   }
 
@@ -703,7 +712,7 @@ export class Room {
     if (targets.length === 0) return this.beginBombQuestion(bank, rng);
     this.question = null;
     this.revealEndsAt = null;
-    this.pass = openPassRound({ roundId: ++this.roundSeq, holder, targets, now: this.now(), durationMs: this.timing.bombPass });
+    this.pass = openPassRound({ roundId: ++this.roundSeq, holder, targets, now: this.clock(), durationMs: this.timing.bombPass });
     this.enterBomb('BOMB_PASS');
     return { ok: true };
   }
@@ -716,7 +725,7 @@ export class Room {
   /** PASS kết thúc (chốt hoặc hết giờ): bom sang nhóm nhận, câu mới cho nhóm đó. */
   endPass(bank: readonly Question[], rng?: Rng): RoomResult {
     if (this.phase !== 'BOMB_PASS' || !this.bomb || !this.pass) return WRONG_PHASE;
-    const pass = closePassRound(this.pass, this.contexts(), this.now(), rng);
+    const pass = closePassRound(this.pass, this.contexts(), this.clock(), rng);
     const to = passChoice(pass);
     if (to !== null) {
       const by = pass.randomPick ? ' (không có phiếu — server chọn ngẫu nhiên)' : pass.teams[pass.holder]?.lockedBy === 'admin' ? ' (nhập tay)' : '';
@@ -922,7 +931,7 @@ export class Room {
   fallbackSelect(bank: readonly Question[], targets: unknown, rng?: Rng): RoomResult {
     if (this.phase !== 'BOARD_SELECT' || !this.select || this.select.status !== 'open') return WRONG_PHASE;
     if (typeof targets !== 'object' || targets === null) return { ok: false, error: 'BAD_REQUEST' };
-    const now = this.now();
+    const now = this.clock();
     const select = this.select;
     const entries = Object.entries(targets as Record<string, unknown>)
       .map(([t, cell]) => ({ teamId: Number(t), choice: cell === null ? null : (cell as number), lockedAt: now }))
@@ -956,7 +965,7 @@ export class Room {
       default:
         if (this.inMatch()) return WRONG_PHASE;
         this.closeQuestion(q.endsAt);
-        this.revealEndsAt = this.now() + this.timing.reveal;
+        this.revealEndsAt = this.clock() + this.timing.reveal;
         return { ok: true };
     }
   }
@@ -966,7 +975,7 @@ export class Room {
     if (this.phase !== 'BOMB_PASS' || !this.pass || this.pass.status !== 'open') return WRONG_PHASE;
     const pass = this.pass;
     if (typeof to !== 'number' || !pass.validTargets.includes(to)) return { ok: false, error: 'BAD_OPTION' };
-    const res = forceChoices(pass, [{ teamId: pass.holder, choice: to, lockedAt: this.now() }], (t) => pass.validTargets.includes(t));
+    const res = forceChoices(pass, [{ teamId: pass.holder, choice: to, lockedAt: this.clock() }], (t) => pass.validTargets.includes(t));
     if (!res.ok) return res;
     this.pass = res.round;
     return this.endPass(bank, rng);

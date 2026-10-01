@@ -32,10 +32,18 @@ export function AdminNext({
 
   const go = () => {
     if (!step.run || busy) return;
+    // Đang mất kết nối: không xếp hàng lệnh — lúc kết nối lại, lệnh sẽ tới trước khi kịp đăng nhập lại và bị từ chối.
+    if (!socket.connected) return onNotice('Đang mất kết nối tới máy chủ — chờ kết nối lại rồi bấm.');
     setBusy(true);
     step.run(opts, (res) => {
       setBusy(false);
-      onNotice(res.ok ? '' : `Không thực hiện được "${step.label}" (${res.error}).`);
+      onNotice(
+        res.ok
+          ? ''
+          : res.error === 'NETWORK'
+            ? `Mạng chập chờn khi gửi "${step.label}" — xem màn chiếu, chưa đổi thì bấm lại.`
+            : `Không thực hiện được "${step.label}" (${res.error}).`,
+      );
     });
   };
 

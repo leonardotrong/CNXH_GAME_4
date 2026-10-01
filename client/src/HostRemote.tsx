@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { GameView, PublicQuestionView } from '@cnxh/shared';
 import { Icon } from './Icon';
 import { DEFAULT_STEP_OPTIONS, nextStep } from './nextStep';
-import { socket } from './socket';
+import { ACK_TIMEOUT_MS, orNetworkError, socket } from './socket';
 import { isMuted, setMuted, unlockAudio } from './sound';
 
 /** Dùng chung khóa với /admin: đăng nhập một lần mỗi tab, tải lại trang không phải nhập lại. */
@@ -22,6 +22,8 @@ export function HostRemote({ hasRoom, game, question }: { hasRoom: boolean; game
   const [toast, setToast] = useState<{ text: string; bad?: boolean; id: number } | null>(null);
   const [hintVisible, setHintVisible] = useState(false);
   const hintTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  /** Đang chờ server trả lời một lệnh: bấm thêm thì bỏ qua (phím nảy/bấm đúp không nhảy hai bước). */
+  const sending = useRef(false);
 
   // Giá trị mới nhất cho trình nghe phím (đăng ký một lần).
   const latest = useRef({ hasRoom, game, question, authed });
@@ -78,6 +80,11 @@ export function HostRemote({ hasRoom, game, question }: { hasRoom: boolean; game
       unlockAudio();
       const { hasRoom, game, question, authed } = latest.current;
       const key = e.key.toLowerCase();
+      // Giữ phím thì trình duyệt lặp keydown: không lặp lệnh (giữ Space lâu sẽ nhảy qua nhiều bước, vd. bỏ qua màn luật).
+      if (e.repeat) {
+        if (key === ' ') e.preventDefault();
+        return;
+      }
       if (key === 'f') {
         e.preventDefault();
         if (document.fullscreenElement) void document.exitFullscreen();
@@ -96,6 +103,15 @@ export function HostRemote({ hasRoom, game, question }: { hasRoom: boolean; game
         return;
       }
       if (!authed) return;
+      /** Gửi được lệnh chưa: lệnh trước còn chờ kết quả (phím nảy, bấm đúp) hoặc đang mất kết nối thì thôi. */
+      const ready = () => {
+        if (sending.current) return false;
+        if (socket.connected) return true;
+        showToast('Mất kết nối — chờ kết nối lại rồi bấm', true);
+        return false;
+      };
+      const failed = (what: string, error?: string) =>
+        error === 'NETWORK' ? 'Mạng chập chờn — xem màn hình, chưa đổi thì bấm lại' : `Không được: ${what} (${error})`;
       if (key === ' ' || key === 'arrowright' || key === 'enter') {
         e.preventDefault();
         const step = nextStep(hasRoom, game, question);
@@ -103,17 +119,29 @@ export function HostRemote({ hasRoom, game, question }: { hasRoom: boolean; game
           showToast(step.label);
           return;
         }
+        if (!ready()) return;
         // Tạo phòng mới khi đang có trận chỉ làm ở /admin (tránh bấm nhầm).
-        step.run(DEFAULT_STEP_OPTIONS, (res) => showToast(res.ok ? step.label : `Không được: ${step.label} (${res.error})`, !res.ok));
+        sending.current = true;
+        step.run(DEFAULT_STEP_OPTIONS, (res) => {
+          sending.current = false;
+          showToast(res.ok ? step.label : failed(step.label, res.error), !res.ok);
+        });
         showHint();
         return;
       }
       if (key === 'p') {
         e.preventDefault();
         if (!game || game.phase === 'LOBBY' || game.phase === 'RULES' || game.phase === 'SUMMARY') return;
+        if (!ready()) return;
         const paused = game.pausedAt === null;
-        socket.emit('admin:setPaused', { paused }, (res) =>
-          showToast(res.ok ? (paused ? 'Đã tạm dừng' : 'Tiếp tục') : `Không đổi được tạm dừng (${res.error})`, !res.ok),
+        sending.current = true;
+        socket.timeout(ACK_TIMEOUT_MS).emit(
+          'admin:setPaused',
+          { paused },
+          orNetworkError((res) => {
+            sending.current = false;
+            showToast(res.ok ? (paused ? 'Đã tạm dừng' : 'Tiếp tục') : failed('tạm dừng', res.error), !res.ok);
+          }),
         );
       }
     };

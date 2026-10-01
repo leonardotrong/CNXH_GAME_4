@@ -130,6 +130,60 @@ describe('Room — tạm dừng toàn cục', () => {
     tick();
     expect(room.phase).toBe('BOMB_EXPLODE');
   });
+
+  // Thao tác của người dẫn trong lúc dừng: đồng hồ trận đứng yên, mốc mới tính từ lúc tiếp tục.
+  it('đổi câu lỗi khi đang dừng: câu mới đủ 20 s tính từ lúc tiếp tục, thời gian chốt không âm', () => {
+    must(room.startBoard(BANK, 2));
+    tick(); // SELECT hết giờ → câu hỏi
+    time += 5_000;
+    must(room.pause());
+    time += 30_000;
+    must(room.replaceBoardQuestion(BANK));
+    time += 30_000;
+    must(room.resume());
+    const q = room.question!;
+    expect(room.nextDeadline()).toBe(time + 20_000);
+    time += 2_000;
+    must(room.vote(ids['An']!, q.roundId, answer()));
+    lockIfOpen('An', q.roundId);
+    tick(); // nhóm 2 chưa chốt → hết giờ
+    const results = room.publicQuestion()!.reveal!.results;
+    expect(results.find((r) => r.teamId === 1)).toMatchObject({ correct: true, lockedAfterMs: 2_000 });
+    expect(room.match!.stats[1]).toEqual({ correct: 1, correctLockMs: 2_000 });
+  });
+
+  it('nhập kết quả dự phòng khi đang dừng: REVEAL đủ 10 s tính từ lúc tiếp tục', () => {
+    must(room.startBoard(BANK, 2));
+    tick(); // → câu hỏi
+    time += 5_000;
+    must(room.pause());
+    time += 30_000;
+    must(room.fallbackAnswers([{ teamId: 1, choice: answer(), rank: 1 }]));
+    expect(room.phase).toBe('BOARD_REVEAL');
+    expect(room.nextDeadline()).toBeNull();
+    time += 30_000;
+    must(room.resume());
+    expect(room.nextDeadline()).toBe(time + 10_000);
+  });
+
+  it('đổi câu bom khi đang dừng: câu mới đủ 12 s sau khi tiếp tục, ngòi không cháy lúc dừng', () => {
+    must(room.startBoard(BANK, 1));
+    tick(); // → câu hỏi
+    tick(); // → REVEAL
+    tick(); // → BOMB_INTRO
+    must(room.startBombs(BANK, 1));
+    time += 10_000; // ngòi 30 s đã cháy 10 s
+    must(room.pause());
+    time += 100_000;
+    must(room.replaceBombQuestion(BANK));
+    time += 100_000;
+    must(room.resume());
+    expect(room.publicGame().phaseEndsAt).toBe(time + 12_000);
+    expect(room.nextDeadline()).toBe(time + 12_000); // ngòi còn 20 s
+    tick(); // hết giờ → REVEAL: ngòi đã cháy 22 s
+    tick(); // sai → câu mới
+    expect(room.nextDeadline()).toBe(time + 8_000); // còn 8 s ngòi
+  });
 });
 
 describe('Room — chế độ dự phòng (không cần điện thoại)', () => {
