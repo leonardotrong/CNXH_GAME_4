@@ -7,7 +7,7 @@ Một service duy nhất: server Node (Express + Socket.IO) phục vụ luôn b�
 ### Cách 1 — Blueprint (nhanh nhất)
 1. Đẩy code lên GitHub.
 2. Render Dashboard → **New → Blueprint** → chọn repo. Render đọc `render.yaml`.
-3. Nhập `ADMIN_PASSWORD` khi được hỏi (bắt buộc — không có thì không ai vào được `/admin`). `PUBLIC_URL` để trống cũng được.
+3. Nhập `ADMIN_PASSWORD` khi được hỏi (bắt buộc — không có thì không ai vào được `/admin`). `PUBLIC_URL` để trống: QR tự lấy địa chỉ `https://<tên-app>.onrender.com` của trang `/host`.
 4. Chờ build xong, mở `https://<tên-app>.onrender.com/admin`.
 
 ### Cách 2 — Tạo Web Service thủ công
@@ -35,7 +35,9 @@ Một service duy nhất: server Node (Express + Socket.IO) phục vụ luôn b�
 | `PORT` | Không | Render tự đặt |
 
 ### Lưu trạng thái trên Render
-Server lưu trận vào `server/data/match.json` và tự khôi phục khi khởi động lại (trận ở trạng thái **tạm dừng** — bấm "Tiếp tục" trên `/admin` khi mọi người đã vào lại). Trên gói miễn phí, ổ đĩa bị xóa khi **deploy lại** hoặc khi Render chuyển máy; tiến trình bị khởi động lại trên cùng máy thì vẫn khôi phục được. Muốn chắc chắn: gói trả phí + Persistent Disk gắn vào `/opt/render/project/src/server/data`. **Đừng deploy trong giờ học.**
+Server lưu trận vào `server/data/match.json` và tự khôi phục khi khởi động lại (trận ở trạng thái **tạm dừng** — bấm "Tiếp tục" trên `/admin` khi mọi người đã vào lại). Nhưng trên Render, ổ đĩa không bền: file này **mất mỗi lần service deploy lại, khởi động lại hoặc ngủ**, và Render có thể khởi động lại service gói miễn phí bất cứ lúc nào ([render.com/docs/free](https://render.com/docs/free)). Nghĩa là trên gói miễn phí, server sập giữa trận thì mất trận. Muốn khôi phục được: gói trả phí + Persistent Disk gắn vào `/opt/render/project/src/server/data`.
+
+**Đừng deploy trong giờ học.** Render tự deploy lại mỗi lần có push lên `main`, nên hôm học không ai push lên `main` (hoặc tắt Auto-Deploy trong Settings của service).
 
 ## Railway
 1. New Project → Deploy from GitHub repo.

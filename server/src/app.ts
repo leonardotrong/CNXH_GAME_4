@@ -79,7 +79,8 @@ export function createAppServer(options: AppServerOptions = {}): AppServer {
   const durations: RoomTiming = { ...DEFAULT_TIMING, ...options.durations };
   const registry = new RoomRegistry(Date.now, durations);
   const adminPassword = options.adminPassword ?? process.env.ADMIN_PASSWORD;
-  const publicUrl = options.publicUrl ?? process.env.PUBLIC_URL ?? null;
+  // Rỗng coi như không đặt (vd. ô để trống trên dashboard Render); nếu không, QR thành "/play?room=…" và điện thoại không mở được.
+  const publicUrl = (options.publicUrl ?? process.env.PUBLIC_URL)?.trim() || null;
 
   const questions = options.questions ?? loadQuestionBank();
 

@@ -129,7 +129,7 @@ Các nút dùng được bất cứ lúc nào:
   </tr>
 </table>
 
-Server sập giữa trận? Khởi động lại server là trận được **khôi phục ở trạng thái tạm dừng** (nếu file lưu mới hơn 3 giờ). Người chơi tải lại trang sẽ vào lại đúng nhóm, sau đó người dẫn bấm **TIẾP TỤC**.
+Server sập giữa trận? Khởi động lại server là trận được **khôi phục ở trạng thái tạm dừng** (nếu file lưu mới hơn 3 giờ). Người chơi tải lại trang sẽ vào lại đúng nhóm, sau đó người dẫn bấm **TIẾP TỤC**. (Trên Render gói miễn phí thì không khôi phục được, vì file lưu mất mỗi lần khởi động lại; xem [docs/DEPLOY.md](docs/DEPLOY.md#lưu-trạng-thái-trên-render).)
 
 ---
 
@@ -489,7 +489,7 @@ Sửa **hàm view** tương ứng trong `shared/` (ví dụ `publicBoardView`, `
 ## 7. Test
 
 ```bash
-npm test                 # toàn bộ: 24 file, 246 test (khoảng 10 giây)
+npm test                 # toàn bộ: 24 file, 252 test (khoảng 10 giây)
 npm run test:watch       # chạy lại khi lưu file
 npx vitest run resolveTurn    # chỉ chạy file khớp tên
 ```

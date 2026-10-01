@@ -2,7 +2,7 @@ import type { AddressInfo } from 'node:net';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { io as connect, type Socket } from 'socket.io-client';
 import type { ClientToServerEvents, HelloPayload, RoomState, ServerToClientEvents } from '@cnxh/shared';
-import { createAppServer } from './app';
+import { createAppServer, type AppServerOptions } from './app';
 
 describe('server Socket.IO', () => {
   const { httpServer, io } = createAppServer();
@@ -96,5 +96,39 @@ describe('phòng chơi qua Socket.IO', () => {
     expect(await call(p1b, 'player:join', { roomCode: code, playerId: j1.playerId })).toMatchObject({ ok: true, teamId: 1 });
 
     expect(await call(p1b, 'player:join', { roomCode: '0000x', name: 'X', teamId: 1 })).toEqual({ ok: false, error: 'BAD_REQUEST' });
+  });
+});
+
+describe('PUBLIC_URL cho mã QR', () => {
+  /** Tạo phòng trên một server riêng rồi trả về ack của host:watch (chứa publicUrl dùng để vẽ QR). */
+  const hostWatch = async (options: AppServerOptions) => {
+    const { httpServer, io } = createAppServer({ adminPassword: 'secret', ...options });
+    await new Promise<void>((resolve) => httpServer.listen(0, resolve));
+    const s = connect(`http://localhost:${(httpServer.address() as AddressInfo).port}`, { transports: ['websocket'] });
+    const call = (event: string, ...args: unknown[]) =>
+      new Promise<unknown>((resolve) => (s as Socket<any, any>).emit(event, ...args, resolve));
+    try {
+      await call('admin:login', { password: 'secret' });
+      await call('admin:createRoom');
+      return await call('host:watch', {});
+    } finally {
+      s.disconnect();
+      await new Promise<void>((resolve) => io.close(() => resolve()));
+    }
+  };
+
+  it('PUBLIC_URL rỗng (vd. ô để trống trên dashboard Render) coi như không đặt → host dùng địa chỉ trang đang mở', async () => {
+    const saved = process.env.PUBLIC_URL;
+    process.env.PUBLIC_URL = '';
+    try {
+      expect(await hostWatch({})).toMatchObject({ ok: true, publicUrl: null });
+    } finally {
+      if (saved === undefined) delete process.env.PUBLIC_URL;
+      else process.env.PUBLIC_URL = saved;
+    }
+  });
+
+  it('có PUBLIC_URL thì gửi nguyên cho host', async () => {
+    expect(await hostWatch({ publicUrl: 'http://192.168.1.3:5173' })).toMatchObject({ ok: true, publicUrl: 'http://192.168.1.3:5173' });
   });
 });
