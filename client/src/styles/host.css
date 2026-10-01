@@ -451,6 +451,8 @@
 
 .host-game__side {
   justify-content: center;
+  /* "safe": nếu nội dung cao hơn cột thì dồn lên đầu, không bị cắt mất phần trên */
+  justify-content: safe center;
   overflow: hidden;
   font-size: calc(var(--u) * 1.8);
 }
@@ -518,8 +520,10 @@
   mask-image: linear-gradient(180deg, #000 calc(100% - 2.2em), transparent);
 }
 
-/* Bảng điểm 2 cột (đọc theo cột: hạng 1–4 bên trái) để dành chỗ cho kết quả từng ô */
-.host-game--reveal .standings {
+/* Bảng điểm 2 cột (đọc theo cột: hạng 1–4 bên trái) để dành chỗ cho nội dung phía trên:
+ * kết quả từng ô (REVEAL) hoặc đáp án / nhóm nhận bom (--stacked, Quả Bom) */
+.host-game--reveal .standings,
+.host-game--stacked .standings {
   flex: none;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -529,12 +533,27 @@
   font-size: calc(var(--u) * 1.16);
 }
 
-.host-game--reveal .standings__row {
+.host-game--stacked .standings {
+  font-size: calc(var(--u) * 1.32);
+}
+
+/* Cột hẹp: khoảng cách nhỏ hơn để tên nhóm không bị cắt */
+.host-game--reveal .standings__row,
+.host-game--stacked .standings__row {
+  gap: 0.45em;
   padding-block: 0.3em;
 }
 
-.host-game--reveal .standings__row:last-child {
+.host-game--reveal .standings__row:last-child,
+.host-game--stacked .standings__row:last-child {
   border-bottom: 1.5px solid var(--line);
+}
+
+.host-game--stacked .answer__explanation {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
 }
 
 /* ─── SUMMARY: bục vinh danh ───────────────────────────────────────────── */

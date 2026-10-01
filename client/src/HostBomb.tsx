@@ -135,7 +135,7 @@ export function HostBomb({
   if (phase === 'BOMB_PASS') {
     const pass = bomb.pass;
     return (
-      <section className="host-game host-game--bomb">
+      <section className="host-game host-game--bomb host-game--stacked">
         {head}
         <div className="host-game__main">{hexBoard}</div>
         <aside className="host-game__side">
@@ -161,7 +161,7 @@ export function HostBomb({
   if (phase === 'BOMB_REVEAL' && question?.reveal) {
     const mine = question.reveal.results.find((r) => r.teamId === bomb.holder);
     return (
-      <section className="host-game host-game--bomb">
+      <section className="host-game host-game--bomb host-game--stacked">
         {head}
         <div className="host-game__main">{hexBoard}</div>
         <aside className="host-game__side">
