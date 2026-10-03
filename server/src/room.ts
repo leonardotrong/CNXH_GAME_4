@@ -40,6 +40,7 @@ import {
   castTarget,
   closeSelectRound,
   isFinalTurn,
+  isStarTurn,
   lockTarget,
   nextTurn,
   openSelectRound,
@@ -85,6 +86,7 @@ import {
   describeExplosion,
   describeIgnored,
   describeShield,
+  describeStar,
   forceChoices,
   isCellId,
   rankToLockedAt,
@@ -585,7 +587,7 @@ export class Room {
     if (this.phase !== 'BOARD_REVEAL' || !this.match) return WRONG_PHASE;
     if (isFinalTurn(this.match)) {
       // Khiên chỉ có nghĩa trong Bàn Cờ.
-      this.match = { ...this.match, targets: null, outcome: null, board: { ...this.match.board, shields: [] } };
+      this.match = { ...this.match, targets: null, outcome: null, newStar: null, board: { ...this.match.board, shields: [] } };
       this.select = null;
       this.question = null;
       this.revealEndsAt = null;
@@ -593,7 +595,11 @@ export class Room {
       this.addLog('phase', `Kết thúc Bàn Cờ sau lượt ${this.match.turn}${this.bomb ? ` — ${teamName(this.bomb.holder)} cầm quả bom đầu` : ''}`);
       this.enterBomb(this.bomb ? 'BOMB_INTRO' : 'SUMMARY');
     } else {
-      this.match = nextTurn(this.match);
+      // Lượt chia hết cho 3: server đặt ★ Lòng dân mới (GAME_SPEC 3.7).
+      this.match = nextTurn(this.match, { activeTeamIds: this.activeTeamIds(), rng: rng ?? Math.random });
+      const star = this.match.newStar;
+      if (star !== null) this.addLog('turn', `Lượt ${this.match.turn}: ${describeStar(star, this.match.board.owners[star] ?? null)}`);
+      else if (isStarTurn(this.match.turn)) this.addLog('turn', `Lượt ${this.match.turn}: không còn ô phù hợp để đặt ★ Lòng dân`);
       this.beginSelect();
     }
     return { ok: true };
@@ -1021,7 +1027,8 @@ export class Room {
     room.seq = data.seq;
     room.lobbyOpen = data.lobbyOpen;
     room.phase = data.phase;
-    room.match = data.match;
+    // File lưu từ trước khi có ★ Lòng dân (GAME_SPEC 3.7): coi như chưa có sao.
+    room.match = data.match && { ...data.match, newStar: data.match.newStar ?? null, board: { ...data.match.board, stars: data.match.board.stars ?? [] } };
     room.select = data.select;
     room.revealEndsAt = data.revealEndsAt;
     room.bomb = data.bomb;

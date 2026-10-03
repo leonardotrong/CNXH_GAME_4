@@ -50,6 +50,8 @@ Giao diện: phong cách game chiếm lãnh thổ di động (kiểu State.io/Ri
 
 Điều khiển người dẫn: `client/src/nextStep.ts` là nguồn duy nhất cho "Bước tiếp theo" ở mỗi pha — dùng chung cho nút lớn `/admin` (`AdminNext`) và phím tắt trên `/host` (`HostRemote`: K đăng nhập, Space bước tiếp, P tạm dừng, M âm thanh, F toàn màn hình). Thêm pha cần người dẫn bấm thì sửa ở đó. Biểu quyết: nhóm tự chốt khi mọi thành viên online đã bầu (`castBallot` nhận `TeamContext`, nguồn chốt `'auto'`); đội trưởng vẫn CHỐT sớm được khi quá nửa. Đội trưởng: mặc định người vào nhóm đầu tiên; người dẫn đặt theo danh sách nhóm trưởng thực tế trên `/admin` (`client/src/AdminRoster.tsx`, danh sách lưu `localStorage` `cnxh.captainRoster`, không gửi lên server; khớp tên là hàm thuần trong `shared/src/roster.ts`) — server chỉ nhận lệnh `admin:setCaptain` như chọn tay.
 
+Bản đồ (GAME_SPEC 3.7): 4 ô Cơ quan cố định (`ORGANS` trong `shared/src/board.ts`, 2 điểm) và ★ Lòng dân (`shared/src/stars.ts`): `nextTurn(match, { activeTeamIds, rng })` đặt sao khi vào lượt chia hết cho 3, sao nằm trong `BoardState.stars` (công khai), `BoardMatch.newStar` cho màn chiếu báo. Điểm luôn tính qua `cellPoints`/`scoreOf`, đừng đếm ô.
+
 Cloud: hook `SessionStart` (`.claude/settings.json` → `scripts/claude-session-start.sh`) tự `npm ci` khi chạy trên Claude Code on the web; ở máy local thì bỏ qua. GitHub Actions (`.github/workflows/ci.yml`) chạy typecheck + test + build cho mỗi push/PR.
 
 ## Trạng thái (cập nhật khi xong mỗi giai đoạn)

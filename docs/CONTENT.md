@@ -55,4 +55,5 @@ Luôn đối chiếu với giáo trình/slide giảng viên đang dùng. Nếu c
 - Biểu quyết đa số, CHỐT cần quá nửa, hòa thì đội trưởng quyết → nguyên tắc tập trung dân chủ.
 - Ô Hiến pháp trao khiên → pháp luật giữ vị trí tối thượng.
 - Quả Bom Tham Nhũng → quyền lực cần được kiểm soát, phòng chống tham nhũng.
-- Câu hỏi về Quốc hội, Chính phủ, Tòa án, Viện kiểm sát → quyền lực thống nhất, có phân công, phối hợp, kiểm soát.
+- 4 ô Cơ quan (Quốc hội, Chính phủ, Tòa án, Viện kiểm sát) quây quanh một ô Hiến pháp, cùng các câu hỏi về bốn cơ quan này → quyền lực nhà nước thống nhất, có phân công, phối hợp, kiểm soát (nói "phân công", không nói "tam quyền phân lập").
+- ★ Lòng dân: nhóm phải giành được và giữ được ô mới có điểm → Nhà nước của dân, do dân, vì dân; lòng tin của nhân dân phải giành bằng việc làm.

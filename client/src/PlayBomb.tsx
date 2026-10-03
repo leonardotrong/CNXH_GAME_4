@@ -112,6 +112,7 @@ export function PlayBomb({
       <HexBoard
         className="hex-board--mini"
         owners={board.owners}
+        stars={board.stars}
         bombTeam={phase === 'BOMB_EXPLODE' ? null : bomb.holder}
         blasted={phase === 'BOMB_EXPLODE' ? lastExplosion?.cells : undefined}
         label="Bản đồ và nhóm cầm bom"

@@ -64,6 +64,7 @@ export function AdminBoard({ game, onNotice }: { game: GameView | null; onNotice
             <HexBoard
               owners={board.owners}
               shields={board.shields}
+              stars={board.stars}
               targets={board.targets}
               outcome={board.outcome}
               bombTeam={game?.bomb && game.phase.startsWith('BOMB_') && game.phase !== 'BOMB_EXPLODE' ? game.bomb.holder : null}

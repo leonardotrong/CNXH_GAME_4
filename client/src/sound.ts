@@ -150,6 +150,10 @@ export const sounds = {
     noise(0, 1.6, { gain: 0.9, from: 5000, to: 80 });
     tone(110, 0, 1.2, { type: 'sine', gain: 0.6, slideTo: 35 });
   },
+  /** ★ Lòng dân xuất hiện: tiếng lấp lánh. */
+  star() {
+    [1047, 1319, 1568, 2093, 1568, 2093].forEach((f, i) => tone(f, i * 0.07, 0.22, { type: 'sine', gain: 0.18 }));
+  },
   /** Chuyền bom. */
   whoosh() {
     noise(0, 0.45, { gain: 0.35, from: 600, to: 4000 });

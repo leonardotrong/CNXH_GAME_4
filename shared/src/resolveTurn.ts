@@ -70,6 +70,8 @@ export interface CellOutcome {
   marginMs: number | null;
   /** Kẻ tấn công + chủ ô: trả lời đúng trước (theo thời điểm chốt), sai sau (theo số nhóm). */
   contenders: Contender[];
+  /** Ô có ★ Lòng dân lúc đầu lượt (GAME_SPEC 3.7). */
+  star: boolean;
 }
 
 export interface IgnoredTarget {
@@ -117,7 +119,7 @@ function resolveCell(
   if (previousOwner !== null) contenders.push(contender(previousOwner, 'defender', answers[previousOwner]));
   contenders.sort(byContenderOrder);
 
-  const base = { cellId, previousOwner, attackers, contenders };
+  const base = { cellId, previousOwner, attackers, contenders, star: board.stars.includes(cellId) };
   const unchanged = (result: CellResult, winner: TeamId | null = null, marginMs: number | null = null): CellOutcome => ({
     ...base, newOwner: previousOwner, result, winner, marginMs,
   });
@@ -177,7 +179,8 @@ export function resolveTurn(input: TurnInput): { board: BoardState; outcome: Tur
   shields.sort((a, b) => a.teamId - b.teamId || SHIELD_ORDER[a.reason] - SHIELD_ORDER[b.reason]);
 
   return {
-    board: { owners, shields },
+    // ★ (và mọi thuộc tính khác của bàn cờ) giữ nguyên; chỉ chủ ô và khiên đổi.
+    board: { ...board, owners, shields },
     outcome: { cells, ignored, losses, gains, shieldsGranted: shields.map((s) => ({ ...s })) },
   };
 }

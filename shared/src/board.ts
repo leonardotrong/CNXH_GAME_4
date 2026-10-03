@@ -75,6 +75,36 @@ export const CONSTITUTION_CELL: CellId = cellAt(0, 0)!;
 /** Ô Hiến pháp tính 3 điểm. */
 export const CONSTITUTION_POINTS = 3;
 
+export type OrganId = 'assembly' | 'government' | 'court' | 'procuracy';
+
+export interface Organ {
+  id: OrganId;
+  cell: CellId;
+  name: string;
+  /** Nhãn ngắn vẽ trên ô. */
+  short: string;
+}
+
+/**
+ * 4 ô Cơ quan nhà nước quanh ô Hiến pháp (GAME_SPEC 3.7), mỗi ô 2 điểm. Cách đặt duy nhất để từ ô xuất phát,
+ * mỗi nhóm cách đúng một ô Cơ quan 2 bước (Nhóm 1 → QH; 2, 3 → CP; 4, 5 → TA; 6, 7 → VKS).
+ */
+export const ORGANS: readonly Organ[] = [
+  { id: 'assembly', cell: cellAt(0, -1)!, name: 'Quốc hội', short: 'QH' },
+  { id: 'government', cell: cellAt(1, -1)!, name: 'Chính phủ', short: 'CP' },
+  { id: 'court', cell: cellAt(0, 1)!, name: 'Tòa án', short: 'TA' },
+  { id: 'procuracy', cell: cellAt(-1, 0)!, name: 'Viện kiểm sát', short: 'VKS' },
+];
+export const ORGAN_POINTS = 2;
+/** Ô có ★ Lòng dân tính 2 điểm cho nhóm đang giữ ô. */
+export const STAR_POINTS = 2;
+
+const organByCell = new Map(ORGANS.map((o) => [o.cell, o]));
+
+export function organAt(id: CellId): Organ | null {
+  return organByCell.get(id) ?? null;
+}
+
 /**
  * Vòng ngoài cùng, đánh số 0–17 theo chiều kim đồng hồ trên màn hình, bắt đầu từ góc (0,-3):
  * (0,-3) → (3,-3) → (3,0) → (0,3) → (-3,3) → (-3,0) → (0,-3).
@@ -120,13 +150,15 @@ export interface BoardState {
   owners: (TeamId | null)[];
   /** Khiên có hiệu lực trong lượt đang chơi (trao ở lượt trước, hết hạn khi lượt này giải quyết xong). */
   shields: ShieldGrant[];
+  /** Ô có ★ Lòng dân (GAME_SPEC 3.7), theo thứ tự xuất hiện; sao ở yên trên ô đến hết trận. */
+  stars: CellId[];
 }
 
 /** Bàn cờ đầu trận: nhóm có thành viên nhận ô xuất phát (GAME_SPEC 3.1). */
 export function initialBoard(activeTeamIds: readonly TeamId[]): BoardState {
   const owners: (TeamId | null)[] = new Array(CELL_COUNT).fill(null);
   for (const t of TEAM_IDS) if (activeTeamIds.includes(t)) owners[startCell(t)] = t;
-  return { owners, shields: [] };
+  return { owners, shields: [], stars: [] };
 }
 
 export function isShielded(board: BoardState, teamId: TeamId): boolean {
@@ -165,7 +197,14 @@ export function validTargets(board: BoardState, teamId: TeamId): CellId[] {
   return CELLS.filter((c) => targetError(board, teamId, c.id) === null).map((c) => c.id);
 }
 
-/** Điểm = số ô sở hữu, ô Hiến pháp tính 3 (GAME_SPEC 3.6). */
+/** Giá trị một ô (GAME_SPEC 3.6, 3.7): ô Hiến pháp 3, ô Cơ quan 2, ô có ★ 2, ô thường 1. */
+export function cellPoints(board: BoardState, id: CellId): number {
+  if (id === CONSTITUTION_CELL) return CONSTITUTION_POINTS;
+  if (organAt(id)) return ORGAN_POINTS;
+  return board.stars.includes(id) ? STAR_POINTS : 1;
+}
+
+/** Điểm = tổng giá trị các ô sở hữu (GAME_SPEC 3.6). */
 export function scoreOf(board: BoardState, teamId: TeamId): number {
-  return cellsOf(board, teamId).reduce((sum, id) => sum + (id === CONSTITUTION_CELL ? CONSTITUTION_POINTS : 1), 0);
+  return cellsOf(board, teamId).reduce((sum, id) => sum + cellPoints(board, id), 0);
 }

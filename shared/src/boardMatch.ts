@@ -8,8 +8,10 @@ import { initialBoard } from './board';
 import { TEAM_IDS, type TeamId } from './lobby';
 import type { Phase } from './phases';
 import type { QuestionRound } from './questionRound';
+import type { Rng } from './questions';
 import { resolveTurn, type TurnOutcome } from './resolveTurn';
 import type { PublicSelectView } from './selectRound';
+import { isStarTurn, pickStarCell, withStar } from './stars';
 import { answersFromRound, emptyStats, rankTeams, recordAnswers, type MatchStats, type Standing } from './standings';
 
 export const DEFAULT_BOARD_TURNS = 14;
@@ -30,6 +32,8 @@ export interface BoardMatch {
   targets: Record<TeamId, CellId | null> | null;
   /** Kết quả lượt vừa giải quyết (chỉ có trong REVEAL). */
   outcome: TurnOutcome | null;
+  /** ★ Lòng dân vừa xuất hiện khi bắt đầu lượt hiện tại (null nếu lượt này không có sao mới). */
+  newStar: CellId | null;
 }
 
 export function clampTurns(totalTurns: unknown, minimum = 1): number {
@@ -46,6 +50,7 @@ export function startMatch(activeTeamIds: readonly TeamId[], totalTurns: unknown
     stats: emptyStats(),
     targets: null,
     outcome: null,
+    newStar: null,
   };
 }
 
@@ -69,8 +74,18 @@ export function isFinalTurn(match: BoardMatch): boolean {
   return match.endAfterThisTurn || match.turn >= match.totalTurns;
 }
 
-export function nextTurn(match: BoardMatch): BoardMatch {
-  return { ...match, turn: match.turn + 1, targets: null, outcome: null };
+/** Bối cảnh server cung cấp khi sang lượt mới: nhóm đang chơi và nguồn ngẫu nhiên (đặt ★ Lòng dân). */
+export interface TurnContext {
+  activeTeamIds: readonly TeamId[];
+  rng: Rng;
+}
+
+/** Sang lượt kế; lượt chia hết cho 3 thì đặt một ★ Lòng dân mới (GAME_SPEC 3.7). */
+export function nextTurn(match: BoardMatch, ctx: TurnContext): BoardMatch {
+  const turn = match.turn + 1;
+  const star = isStarTurn(turn) ? pickStarCell(match.board, ctx.activeTeamIds, ctx.rng) : null;
+  const board = star === null ? match.board : withStar(match.board, star);
+  return { ...match, turn, board, targets: null, outcome: null, newStar: star };
 }
 
 /** Admin chỉnh số lượt: không nhỏ hơn lượt đang chơi. */
@@ -86,6 +101,10 @@ export interface PublicBoardView {
   endAfterThisTurn: boolean;
   owners: (TeamId | null)[];
   shields: ShieldGrant[];
+  /** Ô có ★ Lòng dân (GAME_SPEC 3.7). */
+  stars: CellId[];
+  /** ★ vừa xuất hiện khi bắt đầu lượt này (để màn chiếu báo và làm hiệu ứng). */
+  newStar: CellId | null;
   standings: Standing[];
   /** Pha SELECT (khi còn mở: không có mục tiêu). */
   select: PublicSelectView | null;
@@ -102,6 +121,8 @@ export function publicBoardView(match: BoardMatch, select: PublicSelectView | nu
     endAfterThisTurn: match.endAfterThisTurn,
     owners: [...match.board.owners],
     shields: match.board.shields.map((s) => ({ ...s })),
+    stars: [...match.board.stars],
+    newStar: match.newStar,
     standings: rankTeams(match.board, match.stats, TEAM_IDS),
     select,
     targets: match.targets && { ...match.targets },

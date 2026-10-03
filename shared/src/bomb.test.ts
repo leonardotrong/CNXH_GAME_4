@@ -265,3 +265,12 @@ describe('bàn cờ đầu trận vẫn dùng được', () => {
     expect(firstHolder(initialBoard(TEAM_IDS), emptyStats(), TEAM_IDS)).toBe(1);
   });
 });
+
+describe('nổ trên bản đồ có ô đặc biệt (GAME_SPEC 3.7)', () => {
+  it('★ ở yên trên ô (ô thành ô trống vẫn là ô ★); nhóm mất luôn điểm của ô', () => {
+    const board = { ...mk([[0, -2, 1], [0, -1, 1]]), stars: [c(0, -2)] };
+    const { board: after } = explodeCells(board, 1, seq(0, 0));
+    expect(after.stars).toEqual([c(0, -2)]);
+    expect(cellsOf(after, 1)).toEqual([]);
+  });
+});

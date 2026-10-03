@@ -67,6 +67,7 @@ export function HostBomb({
   const hexBoard = (
     <HexBoard
       owners={board.owners}
+      stars={board.stars}
       bombTeam={phase === 'BOMB_EXPLODE' ? null : bomb.holder}
       blasted={phase === 'BOMB_EXPLODE' ? lastExplosion?.cells : undefined}
       label="Bàn cờ và nhóm cầm bom"

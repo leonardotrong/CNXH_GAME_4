@@ -13,5 +13,5 @@ export const c = (q: number, r: number): number => {
 export function mk(cells: [number, number, TeamId][], shields: ShieldGrant[] = []): BoardState {
   const owners: (TeamId | null)[] = new Array(CELL_COUNT).fill(null);
   for (const [q, r, t] of cells) owners[c(q, r)] = t;
-  return { owners, shields };
+  return { owners, shields, stars: [] };
 }

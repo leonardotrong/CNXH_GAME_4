@@ -18,7 +18,10 @@ export function useHostSounds(game: GameView | null, question: PublicQuestionVie
     const entered = (phase: GameView['phase']) => game.phase === phase && p.game?.phase !== phase;
 
     if (question?.status === 'open' && p.question?.roundId !== question.roundId) sounds.newQuestion();
-    if (entered('BOARD_SELECT')) sounds.newQuestion();
+    if (entered('BOARD_SELECT')) {
+      sounds.newQuestion();
+      if (game.board?.newStar != null) setTimeout(() => sounds.star(), 450);
+    }
     if (entered('BOARD_REVEAL') && game.board?.outcome) {
       const cells = game.board.outcome.cells;
       const captured = cells.filter((c) => c.result === 'captured');

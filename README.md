@@ -172,6 +172,9 @@ Server sập giữa trận? Khởi động lại server là trận được **kh
 
 ### Bàn Cờ Quyền Lực ([§3](docs/GAME_SPEC.md#3-bàn-cờ-quyền-lực))
 - Lưới lục giác bán kính 3, tức **37 ô**. Ô giữa là **ô Hiến pháp** (tính 3 điểm). Mỗi nhóm có người được 1 ô xuất phát ở vòng ngoài.
+- **Ô đặc biệt** ([§3.7](docs/GAME_SPEC.md#37-ô-cơ-quan-và--lòng-dân)), lấy cảm hứng từ ô "vương miện" của Kingdomino và ngôi sao của Mario Party:
+  - **4 ô Cơ quan** quanh ô Hiến pháp: Quốc hội, Chính phủ, Tòa án, Viện kiểm sát (nhãn QH/CP/TA/VKS), mỗi ô **2 điểm**. Đặt sao cho mỗi nhóm cách đúng một ô Cơ quan 2 bước từ ô xuất phát, nên không nhóm nào lợi thế.
+  - **★ Lòng dân**: đầu lượt 3, 6, 9, 12, server thả một ngôi sao xuống một ô bất ngờ (màn chiếu báo kèm âm thanh). Ô có ★ được **2 điểm** cho nhóm đang giữ ô, cướp qua cướp lại được. Sao không rơi vào ô của nhóm dẫn đầu và ưu tiên ô mà ít nhất 2 nhóm khác cùng tới được.
 - Một lượt gồm 3 pha:
   - **SELECT** (15 s): chọn 1 ô mục tiêu kề lãnh thổ mình.
   - **QUESTION** (20 s): cả 7 nhóm trả lời cùng một câu trắc nghiệm.
@@ -180,7 +183,7 @@ Server sập giữa trận? Khởi động lại server là trận được **kh
 - **Khiên** (miễn bị tấn công trong 1 lượt) có hai loại:
   - *Khiên Hiến pháp*: vừa chiếm được ô Hiến pháp.
   - *Khiên bảo hộ*: mất ≥ 2 ô trong một lượt.
-- Điểm = số ô sở hữu (ô Hiến pháp tính 3). Hòa điểm thì xét số câu đúng cả trận, rồi đến tổng thời gian chốt các câu đúng (ít hơn xếp trên).
+- Điểm = tổng giá trị các ô sở hữu: ô Hiến pháp 3, ô Cơ quan 2, ô có ★ 2, ô thường 1. Hòa điểm thì xét số câu đúng cả trận, rồi đến tổng thời gian chốt các câu đúng (ít hơn xếp trên).
 
 **Một lượt qua hình ảnh** (lượt 3 của trận chơi thử: Nhóm 3 nhắm ô Hiến pháp).
 
@@ -384,13 +387,14 @@ Xuất qua [index.ts](shared/src/index.ts). Mỗi module đi kèm một file `*.
 | [events.ts](shared/src/events.ts) | **Hợp đồng Socket.IO**: mọi sự kiện, payload, mã lỗi, `LogEntry` | |
 | [lobby.ts](shared/src/lobby.ts) | Hằng số 7 nhóm, mã phòng 4 số, chuẩn hóa tên, kiểu `RoomState` | §2.1 |
 | [captain.ts](shared/src/captain.ts) | Chọn đội trưởng, chuyển quyền tạm sau 10 s mất kết nối | §2.1 |
+| [stars.ts](shared/src/stars.ts) | ★ Lòng dân: lượt có sao (`isStarTurn`), chọn ô cho sao (`pickStarCell`: tránh nhóm dẫn đầu, ưu tiên ô ≥ 2 nhóm tới được) | §3.7 |
 | [roster.ts](shared/src/roster.ts) | Danh sách nhóm trưởng thực tế: khớp tên có/không dấu, gõ tắt, tên bị cắt ở 20 ký tự (`matchName`, `findRosterCaptain`), tình trạng từng nhóm (`rosterStatus`, `rosterChanges`), đọc danh sách dán từ Excel (`parseRosterText`) | §2.1 |
 | [voting.ts](shared/src/voting.ts) | Đếm phiếu, `canLock` (quá nửa), `resolveTeamChoice` (đa số / đội trưởng / sớm nhất) | §2.2 |
 | [voteRound.ts](shared/src/voteRound.ts) | **Vòng biểu quyết dùng chung** cho câu hỏi, SELECT, PASS: bỏ phiếu, chốt, tự chốt khi cả nhóm đã bầu (test: `autoLock.test.ts`), đóng, tự chốt khi hết giờ, dời mốc khi tạm dừng, nhập tay (dự phòng) | §2.2 |
 | [questions.ts](shared/src/questions.ts) | Kiểu `Question`, kiểm tra ngân hàng câu hỏi, trộn phương án, chọn câu không lặp | §2.3 |
 | [questionRound.ts](shared/src/questionRound.ts) | Vòng câu hỏi (dựa trên `voteRound`) + view công khai / view của nhóm | §2.3–2.4 |
 | [clock.ts](shared/src/clock.ts) | Ước lượng lệch đồng hồ client–server, số giây còn lại | §2.4 |
-| [board.ts](shared/src/board.ts) | Lưới lục giác 37 ô, ô kề, vòng ngoài, ô xuất phát, ô Hiến pháp, `validTargets`, `scoreOf` | §3.1 |
+| [board.ts](shared/src/board.ts) | Lưới lục giác 37 ô, ô kề, vòng ngoài, ô xuất phát, ô Hiến pháp, 4 ô Cơ quan (`ORGANS`), `validTargets`, `cellPoints`/`scoreOf` | §3.1, §3.7 |
 | [selectRound.ts](shared/src/selectRound.ts) | Vòng SELECT chọn ô mục tiêu; mục tiêu chỉ lộ khi đóng | §3.2 |
 | [resolveTurn.ts](shared/src/resolveTurn.ts) | **Giải quyết một lượt**: tranh chấp, phòng thủ, khiên. Có 45 test. | §3.3–3.5 |
 | [standings.ts](shared/src/standings.ts) | Thống kê câu đúng / thời gian chốt, xếp hạng với tiêu chí phụ | §3.6 |

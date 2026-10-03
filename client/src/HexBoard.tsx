@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { CELLS, CONSTITUTION_CELL, type CellId, type ShieldGrant, type TurnOutcome } from '@cnxh/shared';
+import { CELLS, CONSTITUTION_CELL, organAt, type CellId, type ShieldGrant, type TurnOutcome } from '@cnxh/shared';
 import { TEAM_COLORS, TEAM_SHADES } from './teams';
 
 /**
@@ -12,10 +12,29 @@ const SIZE = 10;
 const SQRT3 = Math.sqrt(3);
 const GOLD = '#FFC83D';
 const GOLD_DARK = '#D69A00';
+/** Ô Cơ quan còn trống: xanh nhạt (khác ô trống thường và ô Hiến pháp vàng). */
+const ORGAN_EMPTY = '#DCE7FF';
+const ORGAN_EMPTY_SIDE = '#9DB4E3';
+/** Ô ★ còn trống: vàng rất nhạt. */
+const STAR_EMPTY = '#FFF3C9';
+const STAR_EMPTY_SIDE = '#E2C46A';
 /** Độ dày mặt bên (ô nổi khối kiểu board game). */
 const DEPTH = 1.7;
 /** Hình nổ (ô vừa mất do bom), tâm (0,0). */
 const BURST = 'M0-5.2 1.3-1.8 4.8-2.6 2.5.2 4.3 3.4.7 2.2-1 5.2-1.6 1.8-5 2.6-2.5-.2-4.3-3.4-.7-2.2z';
+
+/** Ngôi sao 5 cánh bán kính `r`, tâm (0,0). */
+function starPath(r: number): string {
+  const pts = Array.from({ length: 10 }, (_, i) => {
+    const a = -Math.PI / 2 + (i * Math.PI) / 5;
+    const rr = i % 2 === 0 ? r : r * 0.45;
+    return `${(Math.cos(a) * rr).toFixed(2)},${(Math.sin(a) * rr).toFixed(2)}`;
+  });
+  return `M${pts.join('L')}Z`;
+}
+/** ★ Lòng dân: to ở giữa ô trống, nhỏ bên trái ô có chủ (không che số nhóm, huy hiệu mục tiêu, số phiếu). */
+const STAR_BIG = starPath(5);
+const STAR_SMALL = starPath(2.9);
 
 export interface HexBoardProps {
   owners: readonly (number | null)[];
@@ -32,6 +51,10 @@ export interface HexBoardProps {
   targets?: Readonly<Record<number, CellId | null>> | null;
   /** Kết quả lượt: tô nổi ô đổi chủ / phòng thủ. */
   outcome?: TurnOutcome | null;
+  /** Ô có ★ Lòng dân (GAME_SPEC 3.7). */
+  stars?: readonly CellId[];
+  /** ★ vừa xuất hiện lượt này (hiệu ứng rơi xuống). */
+  newStar?: CellId | null;
   /** Ô vừa bị bom nổ (đã thành ô trống). */
   blasted?: readonly CellId[];
   /** Nhóm đang cầm bom: ô của nhóm nhấp nháy đỏ. */
@@ -98,6 +121,8 @@ export const HexBoard = memo(function HexBoard({
   chosen = null,
   targets,
   outcome,
+  stars,
+  newStar = null,
   blasted,
   bombTeam = null,
   onCellClick,
@@ -110,6 +135,7 @@ export const HexBoard = memo(function HexBoard({
   const selectableSet = selectable ? new Set(selectable) : null;
   const results = new Map((outcome?.cells ?? []).map((c) => [c.cellId, c.result]));
   const blastedSet = new Set(blasted ?? []);
+  const starSet = new Set(stars ?? []);
 
   const attackersByCell = new Map<CellId, number[]>();
   for (const [team, cell] of Object.entries(targets ?? {})) {
@@ -130,9 +156,14 @@ export const HexBoard = memo(function HexBoard({
       {GEOMETRY.map(({ cell, cx, cy, shape }) => {
         const owner = owners[cell.id] ?? null;
         const isConstitution = cell.id === CONSTITUTION_CELL;
+        const organ = organAt(cell.id);
+        const isStar = starSet.has(cell.id);
         const canPick = selectableSet?.has(cell.id) ?? false;
         const classes = ['hex', owner !== null ? 'hex--owned' : isConstitution ? 'hex--gold' : 'hex--empty'];
         if (isConstitution) classes.push('hex--constitution');
+        if (organ) classes.push('hex--organ');
+        if (isStar) classes.push('hex--star');
+        if (isStar && cell.id === newStar) classes.push('hex--new-star');
         if (owner !== null && shielded.has(owner)) classes.push('hex--shielded');
         if (selectableSet) classes.push(canPick ? 'hex--selectable' : 'hex--disabled');
         if (cell.id === mine) classes.push('hex--mine');
@@ -145,8 +176,12 @@ export const HexBoard = memo(function HexBoard({
         if (isBlasted) classes.push('hex--blasted');
         const vote = counts?.[cell.id] ?? 0;
         const attackers = attackersByCell.get(cell.id) ?? [];
-        const fill = owner !== null ? TEAM_COLORS[owner] : isConstitution ? GOLD : undefined;
-        const side = owner !== null ? TEAM_SHADES[owner] : isConstitution ? GOLD_DARK : undefined;
+        const fill = owner !== null ? TEAM_COLORS[owner] : isConstitution ? GOLD : organ ? ORGAN_EMPTY : isStar ? STAR_EMPTY : undefined;
+        const side = owner !== null ? TEAM_SHADES[owner] : isConstitution ? GOLD_DARK : organ ? ORGAN_EMPTY_SIDE : isStar ? STAR_EMPTY_SIDE : undefined;
+        // Ô Cơ quan có chủ: số nhóm lên trên, nhãn cơ quan ở dưới (như ô Hiến pháp); có huy hiệu mục tiêu ở trên
+        // thì hạ cả hai xuống (trừ bàn cờ admin — đáy ô dành cho số ô).
+        const crowded = attackers.length > 0 && !showIds;
+        const ownerY = isConstitution ? cy - 2.2 : organ ? (crowded ? cy + 1.1 : cy - 2.2) : attackers.length > 0 ? cy + 2 : cy;
         return (
           <g
             key={cell.id}
@@ -158,12 +193,29 @@ export const HexBoard = memo(function HexBoard({
             <path className="hex__side" d={shape} transform={`translate(0 ${DEPTH})`} style={side ? { fill: side } : undefined} />
             <path className="hex__shape" d={shape} style={fill ? { fill } : undefined} />
             {isConstitution && <ConstitutionIcon cx={cx} cy={owner !== null ? cy + 4 : cy} small={owner !== null} />}
+            {organ && (
+              <text
+                className={`hex__organ ${owner !== null ? 'is-owned' : ''}`}
+                x={cx}
+                y={owner === null ? cy : crowded ? cy + 5.7 : cy + 4.1}
+                dominantBaseline="central"
+                textAnchor="middle"
+              >
+                {organ.short}
+              </text>
+            )}
+            {isStar && (
+              // Vị trí ở <g>; hiệu ứng (CSS transform) ở <path> để không đè mất vị trí.
+              <g transform={`translate(${owner !== null ? cx - 5.1 : cx} ${cy})`}>
+                <path className="hex__star" d={owner !== null ? STAR_SMALL : STAR_BIG} />
+              </g>
+            )}
             {owner !== null && (
               <text
                 className="hex__owner"
                 x={cx}
                 // Chừa chỗ phía trên cho huy hiệu mục tiêu.
-                y={isConstitution ? cy - 2.2 : attackers.length > 0 ? cy + 2 : cy}
+                y={ownerY}
                 dominantBaseline="central"
                 textAnchor="middle"
               >
@@ -179,7 +231,7 @@ export const HexBoard = memo(function HexBoard({
               </g>
             )}
             {showIds && (
-              <text className="hex__id" x={cx} y={cy + SIZE * 0.6} dominantBaseline="central" textAnchor="middle">
+              <text className="hex__id" x={cx} y={organ ? cy + 7.6 : cy + SIZE * 0.6} dominantBaseline="central" textAnchor="middle">
                 {cell.id}
               </text>
             )}
