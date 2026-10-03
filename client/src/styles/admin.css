@@ -966,6 +966,147 @@
   color: var(--red-dark);
 }
 
+.mini-btn--primary {
+  border-color: var(--blue);
+  background: var(--blue);
+  color: #fff;
+}
+
+.mini-btn--primary:hover:not(:disabled) {
+  border-color: var(--blue-dark);
+  background: var(--blue-dark);
+}
+
+/* ─── Đội trưởng theo danh sách nhóm trưởng thực tế (GAME_SPEC 2.1) ───── */
+.roster-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.7rem;
+  margin-bottom: 0.8rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  font-size: 0.9rem;
+}
+
+.roster-bar__title {
+  font-weight: 800;
+}
+
+.roster-editor {
+  margin-bottom: 0.9rem;
+  animation: fade-in 0.2s var(--ease);
+}
+
+.roster-editor__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  gap: 0.5rem;
+}
+
+.roster-field {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.3rem 0.4rem 0.3rem 0.7rem;
+  border-left: 4px solid var(--team);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+
+.roster-field span {
+  flex: none;
+  width: 4rem;
+  color: var(--team-dark);
+  font-weight: 800;
+}
+
+.roster-field input {
+  flex: 1;
+  min-width: 0;
+  min-height: 38px;
+  padding: 0 0.6rem;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  font: inherit;
+  font-weight: 600;
+}
+
+.roster-field input:focus {
+  border-color: var(--team);
+  outline: none;
+}
+
+.roster-editor__note {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.team-captain {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+
+.team-captain .mini-select {
+  min-width: 0;
+  max-width: 100%;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.roster-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.5rem;
+  margin-bottom: 0.45rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.roster-line .icon {
+  width: 1em;
+  height: 1em;
+}
+
+.roster-line.is-ok {
+  color: var(--green-dark);
+}
+
+.roster-line.is-pending {
+  color: var(--text-2);
+}
+
+.roster-line.is-warn {
+  color: #b45309;
+}
+
+/* Nhắc ngay dưới nút "Bước tiếp theo" khi còn nhóm lệch danh sách (phòng chờ / xem luật). */
+.admin-callout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem 1rem;
+  padding: 0.7rem 1rem;
+  border: 2px solid var(--gold);
+  border-radius: var(--radius);
+  background: #fff8e1;
+  color: var(--gold-ink);
+  font-weight: 700;
+  animation: fade-in 0.2s var(--ease);
+}
+
+.admin-callout .primary-btn {
+  min-height: 42px;
+  font-size: 0.95rem;
+}
+
 .admin-trial h2 {
   display: flex;
   align-items: center;

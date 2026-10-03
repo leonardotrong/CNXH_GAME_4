@@ -1,14 +1,17 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { rosterChanges, rosterStatus } from '@cnxh/shared';
 import { AdminBoard } from '../AdminBoard';
 import { AdminFallback } from '../AdminFallback';
 import { AdminLog } from '../AdminLog';
 import { AdminNext } from '../AdminNext';
 import { AdminPlayers } from '../AdminPlayers';
+import { applyRoster, useCaptainRoster } from '../AdminRoster';
 import { ConnectionBadge } from '../ConnectionBadge';
 import { Icon } from '../Icon';
 import { Logo } from '../Logo';
 import { QuestionPanel } from '../QuestionPanel';
 import { socket, useAdminLog, useGame, useQuestion, useRoomState } from '../socket';
+import { teamName } from '../teams';
 
 const PW_KEY = 'cnxh.adminPassword';
 
@@ -21,6 +24,13 @@ export function AdminPage() {
   const [password, setPassword] = useState('');
   const [authed, setAuthed] = useState(false);
   const [error, setError] = useState('');
+  const [roster, setRoster] = useCaptainRoster();
+  const rosterView = useMemo(() => (state ? rosterStatus(roster, state) : []), [roster, state]);
+  // Ai sẽ được đặt khi bấm "Đặt theo danh sách" — liệt kê ngay trên thanh nhắc để người dẫn thấy trước.
+  const rosterPlan = rosterChanges(rosterView).map((c) => ({
+    ...c,
+    name: state?.teams.flatMap((t) => t.players).find((p) => p.id === c.playerId)?.name ?? '?',
+  }));
 
   const login = (pw: string) =>
     socket.emit('admin:login', { password: pw }, (res) => {
@@ -104,6 +114,23 @@ export function AdminPage() {
         <ConnectionBadge />
       </header>
       <AdminNext hasRoom={!!state} game={game} question={question} onNotice={setNotice} />
+      {/* Trước khi bắt đầu Bàn Cờ: nhắc đặt đội trưởng theo danh sách nhóm trưởng (GAME_SPEC 2.1). */}
+      {rosterPlan.length > 0 && (game?.phase === 'LOBBY' || game?.phase === 'RULES') && (
+        <div className="admin-callout" role="status">
+          <span>
+            <span className="captain-star">★</span> Đặt đội trưởng theo danh sách nhóm trưởng:{' '}
+            {rosterPlan.map((c, i) => (
+              <span key={c.teamId}>
+                {i > 0 && ' · '}
+                {teamName(c.teamId)} → <b>{c.name}</b>
+              </span>
+            ))}
+          </span>
+          <button className="primary-btn primary-btn--gold" onClick={() => applyRoster(rosterView, setNotice)}>
+            Đặt theo danh sách
+          </button>
+        </div>
+      )}
       {notice && (
         <p className="form-error" role="alert">
           {notice}
@@ -140,7 +167,7 @@ export function AdminPage() {
               <AdminLog entries={log} />
             </div>
           </div>
-          <AdminPlayers state={state} />
+          <AdminPlayers state={state} roster={roster} onRosterChange={setRoster} statuses={rosterView} onNotice={setNotice} />
           <section className="admin-card admin-tools">
             <h2>Công cụ khác</h2>
             <div className="admin-actions">

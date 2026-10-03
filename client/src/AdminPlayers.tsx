@@ -1,17 +1,37 @@
 import { useState } from 'react';
-import { TEAM_IDS, type RoomState } from '@cnxh/shared';
+import { TEAM_IDS, rosterChanges, type CaptainRoster, type RoomState, type RosterTeamStatus } from '@cnxh/shared';
+import { RosterEditor, RosterStatusLine, applyRoster, setCaptain } from './AdminRoster';
 import { socket } from './socket';
 import { teamName, teamStyle } from './teams';
 
 /**
  * Người chơi theo nhóm, dạng gọn: mỗi người một "chip" tên; chạm vào tên mới hiện thao tác
  * (làm đội trưởng, chuyển nhóm — GAME_SPEC 5.3) để 60 người vẫn vừa một màn hình.
+ * Mỗi nhóm có ô "★ Đội trưởng" và dòng so với danh sách nhóm trưởng thực tế (GAME_SPEC 2.1).
  */
-export function AdminPlayers({ state }: { state: RoomState }) {
+export function AdminPlayers({
+  state,
+  roster,
+  onRosterChange,
+  statuses,
+  onNotice,
+}: {
+  state: RoomState;
+  roster: CaptainRoster;
+  onRosterChange: (next: CaptainRoster) => void;
+  /** `rosterStatus(roster, state)` — tính một lần ở AdminPage. */
+  statuses: readonly RosterTeamStatus[];
+  onNotice: (msg: string) => void;
+}) {
   const [openId, setOpenId] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
   const total = state.teams.reduce((n, t) => n + t.players.length, 0);
   const online = state.teams.reduce((n, t) => n + t.players.filter((p) => p.online).length, 0);
-  const selected = state.teams.flatMap((t) => t.players.map((p) => ({ ...p, teamId: t.id }))).find((p) => p.id === openId);
+  const all = state.teams.flatMap((t) => t.players.map((p) => ({ ...p, teamId: t.id })));
+  const selected = all.find((p) => p.id === openId);
+  const nameOf = (id: string) => all.find((p) => p.id === id)?.name ?? '?';
+  const changes = rosterChanges(statuses);
+  const applied = statuses.filter((s) => s.applied).length;
 
   return (
     <section className="admin-card admin-players">
@@ -19,33 +39,79 @@ export function AdminPlayers({ state }: { state: RoomState }) {
         Người chơi <span className="admin-count">{online}/{total} online</span>
         <span className="admin-muted admin-players__tip">Chạm vào tên để đổi đội trưởng hoặc chuyển nhóm</span>
       </h2>
+      <div className="roster-bar">
+        <b className="roster-bar__title">
+          <span className="captain-star">★</span> Nhóm trưởng thực tế
+        </b>
+        <span className="admin-muted">
+          {statuses.length > 0
+            ? `${applied}/${statuses.length} nhóm có đội trưởng đúng danh sách`
+            : 'Nhập họ tên nhóm trưởng của các nhóm một lần — lần sau mở /admin trên máy này là có sẵn.'}
+        </span>
+        <span className="admin-controls__spacer" />
+        {statuses.length > 0 && (
+          <button className="mini-btn mini-btn--primary" disabled={changes.length === 0} onClick={() => applyRoster(statuses, onNotice)}>
+            ★ Đặt theo danh sách{changes.length > 0 && ` (${changes.length} nhóm)`}
+          </button>
+        )}
+        <button className="mini-btn" aria-expanded={editing} onClick={() => setEditing(!editing)}>
+          {editing ? 'Xong' : statuses.length > 0 ? 'Sửa danh sách' : 'Nhập danh sách nhóm trưởng'}
+        </button>
+      </div>
+      {editing && <RosterEditor roster={roster} onChange={onRosterChange} />}
       <div className="admin-teams">
-        {state.teams.map((t) => (
-          <section key={t.id} className="admin-team" style={teamStyle(t.id)}>
-            <h3>
-              {teamName(t.id)} <span>{t.players.length}</span>
-            </h3>
-            {t.players.length === 0 ? (
-              <p className="admin-muted">Chưa có ai.</p>
-            ) : (
-              <ul className="player-chips">
-                {t.players.map((p) => (
-                  <li key={p.id}>
-                    <button
-                      className={['player-chip', p.online ? '' : 'is-offline', p.id === openId ? 'is-open' : ''].join(' ')}
-                      onClick={() => setOpenId(p.id === openId ? null : p.id)}
-                      title={p.online ? 'Đang online' : 'Mất kết nối'}
-                    >
-                      {p.isDesignatedCaptain && <span className="captain-star">★</span>}
-                      {p.name}
-                      {p.isCaptain && !p.isDesignatedCaptain && <em> (tạm)</em>}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        ))}
+        {state.teams.map((t) => {
+          const captain = t.players.find((p) => p.isDesignatedCaptain);
+          const status = statuses.find((s) => s.teamId === t.id);
+          return (
+            <section key={t.id} className="admin-team" style={teamStyle(t.id)}>
+              <h3>
+                {teamName(t.id)} <span>{t.players.length}</span>
+              </h3>
+              {t.players.length > 0 && (
+                <label className="team-captain">
+                  <span className="captain-star" aria-hidden>
+                    ★
+                  </span>
+                  <select
+                    className="mini-select"
+                    aria-label={`Đội trưởng ${teamName(t.id)}`}
+                    value={captain?.id ?? ''}
+                    onChange={(e) => setCaptain(e.target.value, onNotice)}
+                  >
+                    {!captain && <option value="">—</option>}
+                    {t.players.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                        {p.online ? '' : ' (mất kết nối)'}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              {status && <RosterStatusLine status={status} nameOf={nameOf} onNotice={onNotice} />}
+              {t.players.length === 0 ? (
+                !status && <p className="admin-muted">Chưa có ai.</p>
+              ) : (
+                <ul className="player-chips">
+                  {t.players.map((p) => (
+                    <li key={p.id}>
+                      <button
+                        className={['player-chip', p.online ? '' : 'is-offline', p.id === openId ? 'is-open' : ''].join(' ')}
+                        onClick={() => setOpenId(p.id === openId ? null : p.id)}
+                        title={p.online ? 'Đang online' : 'Mất kết nối'}
+                      >
+                        {p.isDesignatedCaptain && <span className="captain-star">★</span>}
+                        {p.name}
+                        {p.isCaptain && !p.isDesignatedCaptain && <em> (tạm)</em>}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          );
+        })}
       </div>
       {selected && (
         <div className="player-menu" style={teamStyle(selected.teamId)}>
@@ -54,7 +120,7 @@ export function AdminPlayers({ state }: { state: RoomState }) {
           <button
             className="mini-btn"
             disabled={selected.isDesignatedCaptain}
-            onClick={() => socket.emit('admin:setCaptain', { playerId: selected.id }, () => {})}
+            onClick={() => setCaptain(selected.id, onNotice)}
           >
             {selected.isDesignatedCaptain ? '★ Đang là đội trưởng' : 'Làm đội trưởng'}
           </button>

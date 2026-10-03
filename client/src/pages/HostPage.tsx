@@ -121,17 +121,19 @@ export function HostPage() {
                   <span className="host-team__count">{t.players.length}</span>
                 </h2>
                 <ul>
-                  {t.players.map((p) => (
-                    <li key={p.id} className={p.online ? '' : 'is-offline'}>
-                      {p.name}
-                      {p.isCaptain && (
-                        <span className="captain-star" title="Đội trưởng">
-                          {' '}
-                          ★
-                        </span>
-                      )}
-                    </li>
-                  ))}
+                  {/* Đội trưởng (người dẫn đặt theo danh sách nhóm trưởng, hoặc người vào đầu) đứng đầu cột. */}
+                  {[...t.players]
+                    .sort((a, b) => Number(b.isDesignatedCaptain) - Number(a.isDesignatedCaptain))
+                    .map((p) => (
+                      <li key={p.id} className={p.online ? '' : 'is-offline'}>
+                        {p.isDesignatedCaptain && (
+                          <span className="captain-star" title="Đội trưởng">
+                            ★{' '}
+                          </span>
+                        )}
+                        {p.name}
+                      </li>
+                    ))}
                 </ul>
               </div>
             ))}
