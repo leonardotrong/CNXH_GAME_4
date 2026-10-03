@@ -55,6 +55,7 @@ export function PlayBoard({
             className="hex-board--mini"
             owners={board.owners}
             shields={board.shields}
+            stars={board.stars}
             targets={board.targets}
             chosen={board.targets?.[teamId] ?? null}
             outcome={board.outcome}
@@ -66,7 +67,7 @@ export function PlayBoard({
         <>
           <FinalCard game={game} teamId={teamId} />
           <Standings standings={board.standings} highlight={teamId} activeTeamIds={activeTeams} />
-          <HexBoard className="hex-board--mini" owners={board.owners} />
+          <HexBoard className="hex-board--mini" owners={board.owners} stars={board.stars} />
         </>
       )}
     </section>
@@ -156,6 +157,11 @@ function PlaySelect({
           </span>
         </span>
       </div>
+      {board.newStar !== null && (
+        <p className="play-note play-note--star">
+          <Icon name="star" /> ★ Lòng dân vừa xuất hiện: ô có ★ được 2 điểm — nhanh tay giành lấy!
+        </p>
+      )}
       {myShield.length > 0 && (
         <p className="play-note play-note--shield">
           <Icon name="shield" /> Nhóm đang có {myShield.map((s) => shieldName(s.reason)).join(' + ')}: không ai tấn công được ô của nhóm lượt này.
@@ -165,6 +171,8 @@ function PlaySelect({
         className="hex-board--mini"
         owners={board.owners}
         shields={board.shields}
+        stars={board.stars}
+        newStar={board.newStar}
         selectable={open ? mine!.validTargets : undefined}
         counts={mine?.tally}
         mine={pending ?? mine?.votes[playerId] ?? null}

@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react';
-import { CONSTITUTION_CELL, formatSeconds, type CellOutcome, type ShieldGrant, type TurnOutcome } from '@cnxh/shared';
+import { CONSTITUTION_CELL, formatSeconds, organAt, type CellOutcome, type ShieldGrant, type TurnOutcome } from '@cnxh/shared';
 import { shieldName } from './boardText';
 import { Icon, type IconName } from './Icon';
 import { TeamTag } from './TeamTag';
@@ -13,13 +13,15 @@ const OUTCOME_ICONS: Record<CellOutcome['result'], IconName> = {
   failed: 'x',
 };
 
+/** Tên ô (cùng nội dung với `cellName` trong shared/src/describe.ts): ô Hiến pháp, ô Quốc hội, ô ★, ô trống… */
 function CellName({ o }: { o: CellOutcome }) {
   if (o.cellId === CONSTITUTION_CELL) return <b>ô Hiến pháp</b>;
-  return o.previousOwner === null ? (
-    <>ô trống</>
-  ) : (
+  const organ = organAt(o.cellId);
+  const special = organ ? <b>ô {organ.name}</b> : o.star ? <b>ô ★</b> : null;
+  if (o.previousOwner === null) return special ?? <>ô trống</>;
+  return (
     <>
-      ô của <TeamTag teamId={o.previousOwner} />
+      {special ?? 'ô'} của <TeamTag teamId={o.previousOwner} />
     </>
   );
 }
@@ -108,7 +110,12 @@ export function OutcomeList({ outcome }: { outcome: TurnOutcome | null }) {
   const failed = outcome.cells.filter((o) => o.result === 'failed');
   // Chiếm ô trống không ai tranh: gộp một dòng cho gọn (nội dung như describeCell, không có chênh lệch ms).
   const isPlainGrab = (o: CellOutcome) =>
-    o.result === 'captured' && o.previousOwner === null && o.cellId !== CONSTITUTION_CELL && !o.contenders[1]?.correct;
+    o.result === 'captured' &&
+    o.previousOwner === null &&
+    o.cellId !== CONSTITUTION_CELL &&
+    !organAt(o.cellId) &&
+    !o.star &&
+    !o.contenders[1]?.correct;
   const grabs = outcome.cells.filter(isPlainGrab);
   const shieldGroups = (['constitution', 'protection'] as ShieldGrant['reason'][])
     .map((reason) => ({ reason, teams: outcome.shieldsGranted.filter((s) => s.reason === reason).map((s) => s.teamId) }))

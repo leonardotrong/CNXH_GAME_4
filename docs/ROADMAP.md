@@ -60,7 +60,7 @@ Nếu một lỗi logic khó (đồng bộ, timer, tranh chấp) sửa hai lần
 ---
 
 ## Checklist tổng duyệt trước buổi học
-- Mở link deploy trước giờ học khoảng 15 phút (gói miễn phí của Render có thể "ngủ" khi không có truy cập).
+- Mở link deploy (https://cnxh-game.onrender.com/host) trước giờ học khoảng 15 phút (gói miễn phí của Render có thể "ngủ" khi không có truy cập).
 - Chơi thử một trận đầy đủ với vài bạn cùng lớp.
 - In sẵn mã QR cỡ lớn, chuẩn bị 7 bộ thẻ màu A/B/C/D cho chế độ dự phòng.
 - Kiểm tra máy chiếu (độ phân giải, tỉ lệ) và loa.

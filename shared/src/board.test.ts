@@ -4,20 +4,66 @@ import {
   CELLS,
   CELL_COUNT,
   CONSTITUTION_CELL,
+  ORGANS,
   OUTER_RING,
   START_RING_INDICES,
   cellAt,
+  cellPoints,
   cellsOf,
   hexDistance,
   initialBoard,
   isShielded,
   neighbors,
+  organAt,
   scoreOf,
   startCell,
   targetError,
   validTargets,
 } from './board';
 import { c, mk } from './boardFixtures';
+
+describe('ô Cơ quan (GAME_SPEC 3.7)', () => {
+  it('4 ô ở vòng trong, kề ô Hiến pháp: Quốc hội, Chính phủ, Tòa án, Viện kiểm sát', () => {
+    expect(ORGANS.map((o) => [o.short, CELLS[o.cell]!.q, CELLS[o.cell]!.r])).toEqual([
+      ['QH', 0, -1],
+      ['CP', 1, -1],
+      ['TA', 0, 1],
+      ['VKS', -1, 0],
+    ]);
+    for (const o of ORGANS) {
+      expect(CELLS[o.cell]!.ring).toBe(1);
+      expect(neighbors(o.cell)).toContain(CONSTITUTION_CELL);
+      expect(organAt(o.cell)).toBe(o);
+    }
+    expect(organAt(CONSTITUTION_CELL)).toBeNull();
+    expect(organAt(c(1, 0))).toBeNull();
+  });
+
+  it('công bằng: từ ô xuất phát, mỗi nhóm cách đúng một ô Cơ quan 2 bước, các ô Cơ quan khác xa hơn', () => {
+    for (const t of TEAM_IDS) {
+      const d = ORGANS.map((o) => hexDistance(CELLS[startCell(t)]!, CELLS[o.cell]!));
+      expect(Math.min(...d)).toBe(2);
+      expect(d.filter((x) => x === 2)).toHaveLength(1);
+    }
+  });
+});
+
+describe('cellPoints / scoreOf', () => {
+  it('Hiến pháp 3, ô Cơ quan 2, ô có ★ 2, ô thường 1', () => {
+    const b = { ...mk([[0, 0, 1], [0, -1, 1], [2, -1, 1], [3, -3, 2]]), stars: [c(2, -1)] };
+    expect(cellPoints(b, CONSTITUTION_CELL)).toBe(3);
+    expect(cellPoints(b, c(0, -1))).toBe(2);
+    expect(cellPoints(b, c(2, -1))).toBe(2);
+    expect(cellPoints(b, c(3, -3))).toBe(1);
+    expect(scoreOf(b, 1)).toBe(3 + 2 + 2);
+    expect(scoreOf(b, 2)).toBe(1);
+  });
+
+  it('ô đặc biệt còn trống không tính cho ai; bàn cờ đầu trận chưa có ★', () => {
+    expect(scoreOf({ ...mk([]), stars: [c(2, -1)] }, 1)).toBe(0);
+    expect(initialBoard(TEAM_IDS).stars).toEqual([]);
+  });
+});
 import { TEAM_IDS } from './lobby';
 
 describe('lưới lục giác (3.1)', () => {
@@ -185,8 +231,8 @@ describe('mục tiêu hợp lệ (3.2)', () => {
 });
 
 describe('điểm (3.6)', () => {
-  it('điểm = số ô, ô Hiến pháp tính 3', () => {
-    const b = mk([[0, -1, 1], [1, -1, 1], [0, 0, 2], [0, 1, 2]]);
+  it('điểm = số ô thường, ô Hiến pháp tính 3', () => {
+    const b = mk([[1, 0, 1], [-1, 1, 1], [0, 0, 2], [2, -1, 2]]);
     expect(scoreOf(b, 1)).toBe(2);
     expect(scoreOf(b, 2)).toBe(4);
     expect(scoreOf(b, 3)).toBe(0);

@@ -11,7 +11,7 @@ export function HostRules() {
       </header>
       <ol className="host-rules__list">
         {BOARD_RULES.map((r, i) => (
-          <li key={r.title} className={r.icon === 'bomb' ? 'is-bomb' : ''} style={{ animationDelay: `${i * 0.06}s` }}>
+          <li key={r.title} className={r.icon === 'bomb' ? 'is-bomb' : r.icon === 'star' ? 'is-star' : ''} style={{ animationDelay: `${i * 0.06}s` }}>
             <Icon name={r.icon} className="host-rules__icon" />
             <div>
               <b className="host-rules__name">{r.title}</b>

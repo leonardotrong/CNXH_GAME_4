@@ -400,6 +400,16 @@
   color: var(--gold-dark);
 }
 
+.play-note--star {
+  background: #fff5d6;
+  color: var(--gold-ink);
+}
+
+.play-note--star .icon {
+  color: #6b4e00;
+  fill: #ffd21f;
+}
+
 .hex-board--mini {
   width: 100%;
   max-width: 26rem;

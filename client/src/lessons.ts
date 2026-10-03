@@ -22,5 +22,6 @@ export const GAME_LESSONS: { game: string; lesson: string }[] = [
   { game: 'Biểu quyết đa số, CHỐT cần quá nửa, hòa thì đội trưởng quyết', lesson: 'nguyên tắc tập trung dân chủ' },
   { game: 'Ô Hiến pháp trao khiên', lesson: 'pháp luật giữ vị trí tối thượng' },
   { game: 'Quả Bom Tham Nhũng', lesson: 'quyền lực cần được kiểm soát, phòng chống tham nhũng' },
-  { game: 'Câu hỏi về Quốc hội, Chính phủ, Tòa án, Viện kiểm sát', lesson: 'quyền lực thống nhất, có phân công, phối hợp, kiểm soát' },
+  { game: '4 ô Cơ quan quanh ô Hiến pháp, câu hỏi về Quốc hội, Chính phủ, Tòa án, Viện kiểm sát', lesson: 'quyền lực thống nhất, có phân công, phối hợp, kiểm soát' },
+  { game: '★ Lòng dân: phải giành được và giữ được mới có điểm', lesson: 'Nhà nước của dân, do dân, vì dân' },
 ];

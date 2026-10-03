@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mk } from './boardFixtures';
+import { c, mk } from './boardFixtures';
 import { castVote, closeRound, lockTeam, openRound } from './questionRound';
 import type { TeamContext } from './voteRound';
 import type { PresentedQuestion } from './questions';
@@ -62,13 +62,22 @@ describe('recordAnswers', () => {
 
 describe('rankTeams (3.6)', () => {
   it('xếp theo điểm (ô Hiến pháp = 3) giảm dần', () => {
-    const board = mk([[0, 0, 2], [0, -1, 1], [1, -1, 1], [-1, 0, 3]]);
+    const board = mk([[0, 0, 2], [1, 0, 1], [-1, 1, 1], [2, -1, 3]]);
     const s = rankTeams(board, emptyStats(), [1, 2, 3, 4]);
     expect(s.map((x) => [x.teamId, x.score, x.cells, x.rank])).toEqual([
       [2, 3, 1, 1],
       [1, 2, 2, 2],
       [3, 1, 1, 3],
       [4, 0, 0, 4],
+    ]);
+  });
+
+  it('ô Cơ quan và ô có ★ tính 2 điểm (GAME_SPEC 3.7)', () => {
+    const board = { ...mk([[0, -1, 1], [2, -2, 2], [3, -3, 2]]), stars: [c(2, -2)] };
+    const s = rankTeams(board, emptyStats(), [1, 2]);
+    expect(s.map((x) => [x.teamId, x.score, x.cells])).toEqual([
+      [2, 3, 2],
+      [1, 2, 1],
     ]);
   });
 

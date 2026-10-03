@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { cellLabel, validTargets, type FallbackAnswer, type GameView, type PublicQuestionView } from '@cnxh/shared';
+import { cellLabel, organAt, validTargets, type FallbackAnswer, type GameView, type PublicQuestionView } from '@cnxh/shared';
 import { Icon } from './Icon';
 import { OPTION_LABELS } from './QuestionPanel';
 import { socket } from './socket';
@@ -47,7 +47,7 @@ export function AdminFallback({ game, question, report }: { game: GameView; ques
 /** '' = theo điện thoại, 'skip' = bỏ lượt, còn lại = id ô. */
 function FallbackSelect({ game, report }: { game: GameView; report: Report }) {
   const board = game.board!;
-  const state = { owners: board.owners, shields: board.shields };
+  const state = { owners: board.owners, shields: board.shields, stars: board.stars };
   const teams = board.select!.teamIds;
   const [picks, setPicks] = useState<Record<number, string>>({});
   const submit = () => {
@@ -69,7 +69,10 @@ function FallbackSelect({ game, report }: { game: GameView; report: Report }) {
               <option value="">(theo điện thoại)</option>
               <option value="skip">— bỏ lượt —</option>
               {validTargets(state, t).map((id) => (
-                <option key={id} value={id}>{cellLabel(id)}</option>
+                <option key={id} value={id}>
+                  {cellLabel(id)}
+                  {organAt(id) ? ` — ${organAt(id)!.name}` : board.stars.includes(id) ? ' — ★' : ''}
+                </option>
               ))}
             </select>
           </label>

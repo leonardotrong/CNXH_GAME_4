@@ -2,6 +2,8 @@
 
 Web app trò chơi cho lớp **Chủ nghĩa xã hội khoa học** (~60 sinh viên, 7 nhóm, ~30 phút trên lớp). Chủ đề: nhà nước, nhà nước XHCN, đặc điểm nhà nước pháp quyền XHCN Việt Nam.
 
+> **▶ Chơi ngay trên web (không cần cài gì): https://cnxh-game.onrender.com/** — xem [cách dùng bản web](#cách-1--dùng-bản-web-trên-render-không-cần-cài-gì).
+
 Hai trò chơi nối tiếp nhau trên **cùng một bàn cờ lục giác**:
 1. **Bàn Cờ Quyền Lực**: các nhóm biểu quyết chọn ô, trả lời câu hỏi và chiếm lãnh thổ.
 2. **Quả Bom Tham Nhũng**: nhóm cầm bom trả lời đúng thì được chuyền bom đi; bom nổ ở nhóm nào thì nhóm đó mất ô.
@@ -10,7 +12,7 @@ Hai trò chơi nối tiếp nhau trên **cùng một bàn cờ lục giác**:
   <img src="docs/images/host-reveal.webp" alt="Màn chiếu: kết quả một lượt Bàn Cờ, Nhóm 3 chiếm ô Hiến pháp" width="70%" align="top">
   <img src="docs/images/play-select.webp" alt="Điện thoại: cả nhóm biểu quyết chọn ô mục tiêu" width="25%">
 </p>
-<p align="center"><sub>Màn chiếu (trái) và điện thoại của một sinh viên (phải). Mọi hình trong file này là ảnh chụp app thật, trong một trận chơi thử với người chơi giả lập. Xem đủ từng màn hình ở <a href="#3-luật-chơi-và-cách-chơi">mục 3</a>.</sub></p>
+<p align="center"><sub>Màn chiếu (trái) và điện thoại của một sinh viên (phải). Mọi hình trong file này là ảnh chụp app thật, trong một trận chơi thử với người chơi giả lập (chụp lại bằng <code>npm run screenshots</code>, xem <a href="#chụp-lại-ảnh-readme-npm-run-screenshots">mục 6</a>). Xem đủ từng màn hình ở <a href="#3-luật-chơi-và-cách-chơi">mục 3</a>.</sub></p>
 
 | Màn hình | Ai dùng | Thiết bị |
 |---|---|---|
@@ -23,7 +25,7 @@ Hai trò chơi nối tiếp nhau trên **cùng một bàn cờ lục giác**:
 ---
 
 ## Mục lục
-1. [Cài đặt và chạy thử trong 5 phút](#1-cài-đặt-và-chạy-thử-trong-5-phút)
+1. [Bắt đầu: dùng bản web hoặc chạy trên máy](#1-bắt-đầu-dùng-bản-web-hoặc-chạy-trên-máy)
 2. [Cách tổ chức một buổi chơi](#2-cách-tổ-chức-một-buổi-chơi)
 3. [Luật chơi và cách chơi](#3-luật-chơi-và-cách-chơi) (có hình từng màn hình)
 4. [Kiến trúc](#4-kiến-trúc)
@@ -37,13 +39,40 @@ Hai trò chơi nối tiếp nhau trên **cùng một bàn cờ lục giác**:
 
 ---
 
-## 1. Cài đặt và chạy thử trong 5 phút
+## 1. Bắt đầu: dùng bản web hoặc chạy trên máy
 
-### Yêu cầu
+Có hai cách dùng. **Đồng đội chỉ cần tổ chức buổi chơi thì dùng Cách 1** (bản web đã deploy, không cần cài gì). Cách 2 dành cho người sửa code hoặc khi cần chạy không có Internet.
+
+### Cách 1 — Dùng bản web trên Render (không cần cài gì)
+
+| Mở trang | Ai dùng | Ghi chú |
+|---|---|---|
+| https://cnxh-game.onrender.com/ | Mọi người | Trang chủ: 3 nút Màn chiếu / Người chơi / Người dẫn |
+| https://cnxh-game.onrender.com/host | Máy chiếu | QR, bàn cờ, câu hỏi, bảng điểm. Điều khiển bằng phím được (bấm `K`, xem [mục 2](#2-cách-tổ-chức-một-buổi-chơi)) |
+| https://cnxh-game.onrender.com/admin | Người dẫn | Cần **mật khẩu admin** — hỏi người quản lý bản deploy (đặt ở biến `ADMIN_PASSWORD` trên Render; không ghi vào README vì repo công khai) |
+| https://cnxh-game.onrender.com/play | Sinh viên | Thường không cần gõ: quét QR trên màn chiếu là vào thẳng phòng |
+
+**Một buổi học với bản web:**
+1. **Khoảng 15 phút trước giờ học**, mở `/host` trên máy tính nối máy chiếu và để nguyên tab. Gói miễn phí của Render "ngủ" sau ~15 phút không ai dùng; lần mở đầu mất 30–60 giây để thức dậy.
+2. Trên laptop (hoặc điện thoại) của người dẫn, mở `/admin`, nhập mật khẩu, bấm **Tạo phòng**. Màn chiếu tự hiện mã QR và mã phòng 4 chữ số.
+3. Sinh viên quét QR, nhập tên, chọn nhóm. Người dẫn bấm **Đặt theo danh sách** để chọn nhóm trưởng thực tế làm đội trưởng (nếu đã nhập danh sách — xem [mục 2](#2-cách-tổ-chức-một-buổi-chơi)).
+4. Từ đó chỉ cần bấm nút xanh **Bước tiếp theo** (hoặc phím `Space` trên màn chiếu) theo [kịch bản 30 phút](#2-cách-tổ-chức-một-buổi-chơi).
+
+**Chơi thử trước buổi học:** mở `/admin` tạo phòng, rồi mở vài **tab ẩn danh** `https://cnxh-game.onrender.com/play?room=XXXX` (mỗi tab là một người chơi), hoặc nhờ vài bạn dùng điện thoại.
+
+**Lưu ý khi dùng bản web:**
+- Bản web tự cập nhật mỗi khi có code mới được merge vào nhánh `main` (Render tự deploy lại, mất vài phút). **Hôm học đừng merge/push gì lên `main`**, vì server khởi động lại thì trận đang chơi bị mất.
+- Gói miễn phí không giữ được trận nếu server khởi động lại giữa chừng; khi đó bấm **Tạo phòng mới** và chơi tiếp từ đầu (hoặc dùng [chế độ dự phòng](#2-cách-tổ-chức-một-buổi-chơi) nếu mất mạng).
+- Điện thoại dùng Chrome hoặc Safari bản mới. Mất mạng hay khóa màn hình thì mở lại trang là vào lại đúng nhóm.
+- Người quản lý deploy (đổi mật khẩu, xem log, tắt Auto-Deploy): xem [docs/DEPLOY.md](docs/DEPLOY.md).
+
+### Cách 2 — Chạy trên máy (thủ công)
+
+#### Yêu cầu
 - **Node.js ≥ 20** (khuyên dùng 24, đúng với [.nvmrc](.nvmrc); có `nvm` thì gõ `nvm use`)
 - npm (đi kèm Node). Repo dùng **npm workspaces**, không dùng yarn/pnpm.
 
-### Cài và chạy
+#### Cài và chạy
 ```bash
 git clone https://github.com/leonardotrong/CNXH_GAME_4.git
 cd CNXH_GAME_4
@@ -65,7 +94,7 @@ ADMIN_PASSWORD=admin PUBLIC_URL=http://192.168.1.3:5173 npm run dev
 
 Muốn xem **cả trận chạy tự động** mà không phải bấm tay: `npm run simulate -- --turns 3 --bombs 1`. Lệnh này cho 63 bot chơi trên một server riêng trong tiến trình, không dính tới server dev.
 
-### Tất cả các lệnh
+#### Tất cả các lệnh
 | Lệnh | Việc |
 |---|---|
 | `npm run dev` | Chạy song song server (`tsx watch`, cổng 3000) và client (Vite, cổng 5173). Vite proxy `/socket.io` và `/api` sang server. |
@@ -74,8 +103,9 @@ Muốn xem **cả trận chạy tự động** mà không phải bấm tay: `npm
 | `npm run build` | Chạy typecheck rồi build client ra `client/dist` |
 | `npm start` | Server production (`NODE_ENV=production`), phục vụ luôn `client/dist` ở cổng `PORT` (mặc định 3000) |
 | `npm run simulate` | Giả lập 63 bot chơi trọn một trận (xem [mục 7](#giả-lập-tải-npm-run-simulate)) |
+| `npm run screenshots` | Chụp lại toàn bộ ảnh minh họa của README vào `docs/images/` (cần Chrome; xem [mục 6](#chụp-lại-ảnh-readme-npm-run-screenshots)) |
 
-### Biến môi trường
+#### Biến môi trường
 | Biến | Mặc định | Ý nghĩa |
 |---|---|---|
 | `ADMIN_PASSWORD` | (không có) | Mật khẩu vào `/admin`. **Không đặt thì không ai đăng nhập được.** |
@@ -131,7 +161,7 @@ Các nút dùng được bất cứ lúc nào:
     <td width="50%"><img src="docs/images/admin-fallback.webp" alt="/admin ở chế độ dự phòng"></td>
   </tr>
   <tr>
-    <td><sub>Trong trận: lượt, pha và đồng hồ; nút <b>Tạm dừng</b>; số lượt và <b>Kết thúc sau lượt này</b>; bàn cờ có số ô để chỉnh tay; câu hỏi đang chạy và nhật ký sự kiện.</sub></td>
+    <td><sub>Trong trận: lượt, pha và đồng hồ; nút <b>Tạm dừng</b>; số lượt và <b>Kết thúc sau lượt này</b>; bàn cờ có số ô để chỉnh tay; câu hỏi của lượt (câu đóng rồi mới hiện đáp án, lựa chọn và thời gian chốt của từng nhóm) và nhật ký sự kiện.</sub></td>
     <td><sub>Chế độ dự phòng: bấm thẻ mỗi nhóm giơ theo thứ tự nhanh → chậm (hạng tự tăng, sửa được), rồi bấm <b>Chốt đáp án các nhóm</b>. Màn chiếu hiện băng-rôn "Chế độ dự phòng".</sub></td>
   </tr>
 </table>
@@ -172,6 +202,9 @@ Server sập giữa trận? Khởi động lại server là trận được **kh
 
 ### Bàn Cờ Quyền Lực ([§3](docs/GAME_SPEC.md#3-bàn-cờ-quyền-lực))
 - Lưới lục giác bán kính 3, tức **37 ô**. Ô giữa là **ô Hiến pháp** (tính 3 điểm). Mỗi nhóm có người được 1 ô xuất phát ở vòng ngoài.
+- **Ô đặc biệt** ([§3.7](docs/GAME_SPEC.md#37-ô-cơ-quan-và--lòng-dân)), lấy cảm hứng từ ô "vương miện" của Kingdomino và ngôi sao của Mario Party:
+  - **4 ô Cơ quan** quanh ô Hiến pháp: Quốc hội, Chính phủ, Tòa án, Viện kiểm sát (nhãn QH/CP/TA/VKS), mỗi ô **2 điểm**. Đặt sao cho mỗi nhóm cách đúng một ô Cơ quan 2 bước từ ô xuất phát, nên không nhóm nào lợi thế.
+  - **★ Lòng dân**: đầu lượt 3, 6, 9, 12, server thả một ngôi sao xuống một ô bất ngờ (màn chiếu báo kèm âm thanh). Ô có ★ được **2 điểm** cho nhóm đang giữ ô, cướp qua cướp lại được. Sao không rơi vào ô của nhóm dẫn đầu và ưu tiên ô mà ít nhất 2 nhóm khác cùng tới được.
 - Một lượt gồm 3 pha:
   - **SELECT** (15 s): chọn 1 ô mục tiêu kề lãnh thổ mình.
   - **QUESTION** (20 s): cả 7 nhóm trả lời cùng một câu trắc nghiệm.
@@ -180,11 +213,11 @@ Server sập giữa trận? Khởi động lại server là trận được **kh
 - **Khiên** (miễn bị tấn công trong 1 lượt) có hai loại:
   - *Khiên Hiến pháp*: vừa chiếm được ô Hiến pháp.
   - *Khiên bảo hộ*: mất ≥ 2 ô trong một lượt.
-- Điểm = số ô sở hữu (ô Hiến pháp tính 3). Hòa điểm thì xét số câu đúng cả trận, rồi đến tổng thời gian chốt các câu đúng (ít hơn xếp trên).
+- Điểm = tổng giá trị các ô sở hữu: ô Hiến pháp 3, ô Cơ quan 2, ô có ★ 2, ô thường 1. Hòa điểm thì xét số câu đúng cả trận, rồi đến tổng thời gian chốt các câu đúng (ít hơn xếp trên).
 
 **Một lượt qua hình ảnh** (lượt 3 của trận chơi thử: Nhóm 3 nhắm ô Hiến pháp).
 
-**① Chọn ô — 15 giây.** Trên điện thoại, các ô nhóm được nhắm sáng viền xanh; số trên ô là số phiếu của nhóm mình (ở đây 4 phiếu cho ô Hiến pháp, 1 phiếu cho ô khác). Màn chiếu chỉ cho biết bao nhiêu nhóm đã chốt (✓ trong bảng điểm), **chưa lộ mục tiêu** của nhóm nào.
+**① Chọn ô — 15 giây.** Trên điện thoại, các ô nhóm được nhắm sáng viền xanh, ô khác mờ đi; số trên ô là số phiếu của nhóm mình (ở đây 4 phiếu cho ô Hiến pháp, 1 phiếu cho ô khác). Màn chiếu chỉ cho biết bao nhiêu nhóm đã chốt (✓ trong bảng điểm), **chưa lộ mục tiêu** của nhóm nào. Lượt 3 cũng là lượt ★ Lòng dân rơi xuống: màn chiếu có băng-rôn vàng, điện thoại có dòng nhắc.
 
 <p align="center">
   <img src="docs/images/host-select.webp" alt="Màn chiếu: pha chọn ô, 5/7 nhóm đã chốt" width="66%" align="top">
@@ -195,10 +228,10 @@ Server sập giữa trận? Khởi động lại server là trận được **kh
 
 <p align="center">
   <img src="docs/images/host-question.webp" alt="Màn chiếu: câu hỏi Bàn Cờ, mục tiêu đã lật và thứ tự chốt" width="66%" align="top">
-  <img src="docs/images/play-question-locked.webp" alt="Điện thoại: nhóm đã chốt đáp án A" width="29%">
+  <img src="docs/images/play-question-locked.webp" alt="Điện thoại: đội trưởng đã chốt đáp án cho cả nhóm" width="29%">
 </p>
 
-**③ Kết quả — 10 giây.** Ô đổi chủ, đáp án kèm giải thích (lúc học), và mỗi tranh chấp ghi rõ ai thắng, nhanh hơn bao nhiêu giây. Ở đây Nhóm 3 trả lời đúng nên chiếm được ô Hiến pháp và nhận **Khiên Hiến pháp**; Nhóm 5 chiếm ô của Nhóm 4 vì cả hai cùng đúng nhưng Nhóm 5 chốt sớm hơn 2,060 s.
+**③ Kết quả — 10 giây.** Ô đổi chủ, đáp án kèm giải thích (lúc học), và mỗi tranh chấp ghi rõ ai thắng, nhanh hơn bao nhiêu giây. Ở đây Nhóm 3 và Nhóm 4 cùng nhắm ô Hiến pháp và cùng trả lời đúng; Nhóm 3 chốt sớm hơn nên chiếm được ô và nhận **Khiên Hiến pháp**, còn nhóm trả lời sai thì tấn công thất bại.
 
 <p align="center">
   <img src="docs/images/host-reveal.webp" alt="Màn chiếu: kết quả lượt, đáp án và các tranh chấp" width="66%" align="top">
@@ -225,7 +258,7 @@ Lượt sau, ô của nhóm có khiên phát sáng viền vàng trên màn chi�
   <img src="docs/images/play-bomb-question.webp" alt="Điện thoại: Nhóm bạn đang cầm bom" width="29%">
 </p>
 
-**Đúng → chuyền bom (10 giây).** Cả nhóm biểu quyết chọn nhóm nhận. Không được chuyền ngược cho nhóm vừa chuyền cho mình (ở đây Nhóm 7 không có trong danh sách).
+**Đúng → chuyền bom (10 giây).** Cả nhóm biểu quyết chọn nhóm nhận (ở đây 4/7 phiếu cho Nhóm 5). Không được chuyền ngược cho nhóm vừa chuyền cho mình: nhóm đó không có trong danh sách (ảnh dưới là lần chuyền đầu tiên nên cả 6 nhóm còn lại đều nhận được).
 
 <p align="center">
   <img src="docs/images/host-bomb-pass.webp" alt="Màn chiếu: Nhóm 3 đang chọn nhóm nhận bom" width="66%" align="top">
@@ -367,7 +400,7 @@ Mỗi phòng có một channel `room:<code>`, còn admin có thêm channel riên
 ├── shared/src/          Luật chơi (hàm thuần) + kiểu dữ liệu — import qua "@cnxh/shared"
 ├── server/src/          Room (máy trạng thái), app.ts (Socket.IO, timer), lưu file
 ├── client/src/          React: pages/ (3 màn hình) + component + styles/
-├── scripts/             simulate.ts (giả lập tải), claude-session-start.sh
+├── scripts/             simulate.ts (giả lập tải), screenshots.ts (chụp ảnh README), claude-session-start.sh
 ├── data/questions.json  Ngân hàng câu hỏi
 ├── docs/                GAME_SPEC (luật), ROADMAP, CONTENT (kiến thức), DEPLOY
 ├── CLAUDE.md            Hướng dẫn cho Claude Code (cũng hữu ích cho người)
@@ -384,15 +417,16 @@ Xuất qua [index.ts](shared/src/index.ts). Mỗi module đi kèm một file `*.
 | [events.ts](shared/src/events.ts) | **Hợp đồng Socket.IO**: mọi sự kiện, payload, mã lỗi, `LogEntry` | |
 | [lobby.ts](shared/src/lobby.ts) | Hằng số 7 nhóm, mã phòng 4 số, chuẩn hóa tên, kiểu `RoomState` | §2.1 |
 | [captain.ts](shared/src/captain.ts) | Chọn đội trưởng, chuyển quyền tạm sau 10 s mất kết nối | §2.1 |
+| [stars.ts](shared/src/stars.ts) | ★ Lòng dân: lượt có sao (`isStarTurn`), chọn ô cho sao (`pickStarCell`: tránh nhóm dẫn đầu, ưu tiên ô ≥ 2 nhóm tới được) | §3.7 |
 | [roster.ts](shared/src/roster.ts) | Danh sách nhóm trưởng thực tế: khớp tên có/không dấu, gõ tắt, tên bị cắt ở 20 ký tự (`matchName`, `findRosterCaptain`), tình trạng từng nhóm (`rosterStatus`, `rosterChanges`), đọc danh sách dán từ Excel (`parseRosterText`) | §2.1 |
 | [voting.ts](shared/src/voting.ts) | Đếm phiếu, `canLock` (quá nửa), `resolveTeamChoice` (đa số / đội trưởng / sớm nhất) | §2.2 |
 | [voteRound.ts](shared/src/voteRound.ts) | **Vòng biểu quyết dùng chung** cho câu hỏi, SELECT, PASS: bỏ phiếu, chốt, tự chốt khi cả nhóm đã bầu (test: `autoLock.test.ts`), đóng, tự chốt khi hết giờ, dời mốc khi tạm dừng, nhập tay (dự phòng) | §2.2 |
 | [questions.ts](shared/src/questions.ts) | Kiểu `Question`, kiểm tra ngân hàng câu hỏi, trộn phương án, chọn câu không lặp | §2.3 |
 | [questionRound.ts](shared/src/questionRound.ts) | Vòng câu hỏi (dựa trên `voteRound`) + view công khai / view của nhóm | §2.3–2.4 |
 | [clock.ts](shared/src/clock.ts) | Ước lượng lệch đồng hồ client–server, số giây còn lại | §2.4 |
-| [board.ts](shared/src/board.ts) | Lưới lục giác 37 ô, ô kề, vòng ngoài, ô xuất phát, ô Hiến pháp, `validTargets`, `scoreOf` | §3.1 |
+| [board.ts](shared/src/board.ts) | Lưới lục giác 37 ô, ô kề, vòng ngoài, ô xuất phát, ô Hiến pháp, 4 ô Cơ quan (`ORGANS`), `validTargets`, `cellPoints`/`scoreOf` | §3.1, §3.7 |
 | [selectRound.ts](shared/src/selectRound.ts) | Vòng SELECT chọn ô mục tiêu; mục tiêu chỉ lộ khi đóng | §3.2 |
-| [resolveTurn.ts](shared/src/resolveTurn.ts) | **Giải quyết một lượt**: tranh chấp, phòng thủ, khiên. Có 45 test. | §3.3–3.5 |
+| [resolveTurn.ts](shared/src/resolveTurn.ts) | **Giải quyết một lượt**: tranh chấp, phòng thủ, khiên. Có 47 test. | §3.3–3.5 |
 | [standings.ts](shared/src/standings.ts) | Thống kê câu đúng / thời gian chốt, xếp hạng với tiêu chí phụ | §3.6 |
 | [boardMatch.ts](shared/src/boardMatch.ts) | Trận Bàn Cờ (lượt, số lượt N), `GameView` gửi client | §3 |
 | [bomb.ts](shared/src/bomb.ts) | Ngòi (chỉ server), ai cầm bom đầu, nhóm được nhận, nổ, vòng PASS, `publicBombView` | §4 |
@@ -490,14 +524,28 @@ Sửa **hàm view** tương ứng trong `shared/` (ví dụ `publicBoardView`, `
 - Màn chiếu: dùng đơn vị `calc(var(--u) * …)` thay cho `px`, để hiển thị đúng trên mọi máy chiếu.
 - Điện thoại: nút cao ≥ 56 px, thử ở chiều rộng khoảng 360 px.
 - Mọi chữ hiển thị đều bằng **tiếng Việt có dấu**. Tên biến, hàm, file bằng tiếng Anh.
-- Ảnh minh họa trong file này nằm ở `docs/images/` (WebP, chụp từ app thật). Đổi giao diện một màn hình thì nên chụp lại ảnh tương ứng.
+- Bàn cờ (`HexBoard`, SVG 37 ô): **đừng đặt `opacity` cho cả nhóm `<g>` của từng ô, và đừng cho hoạt ảnh lặp vô hạn trên nhiều ô cùng lúc**. Trên Chrome Android, bàn cờ sẽ bị vẽ vỡ thành sọc, mép các ô chồng nhau lộ dải sáng tối. Muốn làm mờ ô thì dùng lớp phủ `.hex__dim` (xem comment trong `board.css`).
+- Ảnh minh họa trong file này nằm ở `docs/images/` (WebP, chụp từ app thật). Đổi giao diện thì chạy `npm run screenshots` để chụp lại (xem mục ngay dưới).
+
+### Chụp lại ảnh README (`npm run screenshots`)
+[scripts/screenshots.ts](scripts/screenshots.ts) chạy server riêng trong tiến trình, cho 49 người chơi giả lập chơi một trận theo kịch bản cố định (4 lượt Bàn Cờ, 1 quả bom), mở `/host`, `/admin` và một điện thoại bằng Chrome headless, rồi chụp đủ 27 ảnh mà README dùng. Mất khoảng 2–3 phút.
+```bash
+npm run screenshots                        # build client rồi ghi đè docs/images/*.webp
+npm run screenshots -- --out /tmp/anh      # ghi ra thư mục khác để xem trước
+npm run screenshots -- --no-build          # bỏ bước build khi client/dist đã mới
+npm run screenshots -- --chrome /usr/bin/chromium   # chỉ đường dẫn Chrome (hoặc đặt biến CHROME_PATH)
+```
+- Cần **Node ≥ 22** (script dùng WebSocket có sẵn của Node) và **Google Chrome hoặc Chromium** đã cài trên máy. Không cần thêm thư viện nào.
+- Kịch bản cố định để khớp chú thích ở [mục 3](#3-luật-chơi-và-cách-chơi): điện thoại là của "Ngọc Hân" (đội trưởng Nhóm 3); lượt 3 Nhóm 3 chiếm ô Hiến pháp, nhanh hơn Nhóm 4; Nhóm 3 cầm bom đầu và chuyền cho Nhóm 5; ngòi đặt cố định 4 giây nên bom nổ ở Nhóm 5. Câu hỏi, vị trí ★ và ô bị nổ thì ngẫu nhiên, nên chú thích không nhắc tới. Sửa kịch bản thì sửa luôn chú thích tương ứng.
+- QR trong ảnh màn chiếu trỏ tới bản web thật (`cnxh-game.onrender.com/play`).
+- Xem lại vài ảnh trước khi commit. Nếu giao diện đổi tới mức script không tìm thấy phần tử cần bấm, script dừng với mã 1 và báo bước bị kẹt; ảnh đã chụp trước bước đó vẫn bị ghi đè, muốn bỏ thì chạy `git checkout docs/images`.
 
 ---
 
 ## 7. Test
 
 ```bash
-npm test                 # toàn bộ: 24 file, 252 test (khoảng 10 giây)
+npm test                 # toàn bộ: 27 file, 305 test (khoảng 12 giây)
 npm run test:watch       # chạy lại khi lưu file
 npx vitest run resolveTurn    # chỉ chạy file khớp tên
 ```
@@ -533,7 +581,9 @@ Kết quả đúng là dòng `OK — trận chạy trọn vẹn, không lỗi`; 
 
 Một service duy nhất trên **Render** (hoặc Railway): server Node phục vụ cả Socket.IO lẫn bản build của client. **Không dùng Vercel/Netlify**, vì chúng không giữ được WebSocket lâu dài.
 
-Cách nhanh nhất: Render → **New → Blueprint** → chọn repo này. Render sẽ đọc [render.yaml](render.yaml); nhập `ADMIN_PASSWORD` khi được hỏi.
+Bản đang chạy: **https://cnxh-game.onrender.com/** (tự deploy lại mỗi khi `main` có commit mới). Cách dùng cho người tổ chức buổi chơi: [mục 1, Cách 1](#cách-1--dùng-bản-web-trên-render-không-cần-cài-gì).
+
+Tạo một bản deploy mới (ví dụ cho lớp khác) chỉ cần vài cú click: mở [render.com/deploy?repo=https://github.com/leonardotrong/CNXH_GAME_4](https://render.com/deploy?repo=https://github.com/leonardotrong/CNXH_GAME_4) (hoặc Render → **New → Blueprint** → chọn repo này). Render sẽ đọc [render.yaml](render.yaml); nhập `ADMIN_PASSWORD` khi được hỏi.
 
 Những điều cần nhớ:
 - Chỉ chạy **1 instance**, vì trạng thái trận nằm trong bộ nhớ của một tiến trình.
@@ -573,7 +623,7 @@ Hướng dẫn chi tiết, bảng cấu hình thủ công và checklist kiểm t
 ## 10. Việc còn dở và vấn đề đã biết
 
 - [ ] **Ngân hàng câu hỏi chưa đủ.** Hiện có **18 câu `board` + 16 câu `bomb`**, trong khi một trận cần `board` ≥ 20 và `bomb` ≥ 35 ([CONTENT §5](docs/CONTENT.md)). Khi hết kho, game sẽ hỏi lại câu cũ. **Đây là việc ưu tiên nhất trước buổi học.**
-- [ ] **Giai đoạn 7**: deploy thật lên Render và thử với ≥ 10 điện thoại dùng 4G (giả lập tải và cấu hình deploy đã xong).
+- [ ] **Giai đoạn 7**: đã deploy lên Render (https://cnxh-game.onrender.com/); còn thử với ≥ 10 điện thoại dùng 4G.
 - [ ] Phiên bản Node chưa thống nhất: `render.yaml` và `docs/DEPLOY.md` đặt `NODE_VERSION=22`, còn `.nvmrc` (local và CI) là 24. Cả hai đều chạy được, nhưng nên thống nhất.
 - [ ] Client chưa có test giao diện (chỉ kiểm thử thủ công và bằng `simulate`).
 

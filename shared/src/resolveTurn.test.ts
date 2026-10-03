@@ -3,7 +3,7 @@
  * Ký hiệu: ok(t) = trả lời đúng, chốt lúc t (ms, giờ server); no(t) = trả lời sai.
  */
 import { describe, expect, it } from 'vitest';
-import { CONSTITUTION_CELL, OUTER_RING, cellsOf, validTargets, type BoardState } from './board';
+import { CONSTITUTION_CELL, OUTER_RING, cellsOf, scoreOf, validTargets, type BoardState } from './board';
 import { c, mk } from './boardFixtures';
 import { resolveTurn, type TeamAnswer, type TurnInput } from './resolveTurn';
 
@@ -378,5 +378,21 @@ describe('3.5 — Khiên bảo hộ (chống "hội đồng")', () => {
       { teamId: 1, reason: 'constitution' },
       { teamId: 2, reason: 'protection' },
     ]);
+  });
+});
+
+describe('3.7 — ô Cơ quan và ★ Lòng dân trong một lượt', () => {
+  it('★ ở yên trên ô sau khi giải quyết; CellOutcome.star báo ô có ★; nhóm chiếm được ô ★ thêm 2 điểm', () => {
+    const board = { ...mk([[0, -3, 1], [1, -3, 2]]), stars: [c(0, -2)] };
+    const res = run(board, { 1: c(0, -2) }, { 1: ok(5) });
+    expect(res.board.stars).toEqual([c(0, -2)]);
+    expect(cellOf(res, c(0, -2))).toMatchObject({ result: 'captured', newOwner: 1, star: true });
+    expect(scoreOf(res.board, 1)).toBe(1 + 2);
+  });
+
+  it('ô Cơ quan giải quyết như ô thường (chủ trả lời đúng và chốt sớm hơn → phòng thủ)', () => {
+    const res = run(mk([[0, -1, 1], [1, -2, 2]]), { 2: A }, { 1: ok(10), 2: ok(20) });
+    expect(cellOf(res, A)).toMatchObject({ result: 'defended', winner: 1, star: false });
+    expect(scoreOf(res.board, 1)).toBe(2);
   });
 });

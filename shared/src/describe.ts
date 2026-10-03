@@ -2,7 +2,7 @@
  * Câu mô tả kết quả bằng tiếng Việt — dùng chung cho màn chiếu, điện thoại và nhật ký sự kiện của admin.
  * Hàm thuần, không chứa dữ liệu bí mật (chỉ mô tả kết quả ĐÃ công bố).
  */
-import { CELLS, CONSTITUTION_CELL, type CellId, type ShieldGrant } from './board';
+import { CELLS, CONSTITUTION_CELL, organAt, type CellId, type ShieldGrant } from './board';
 import type { Explosion } from './bomb';
 import type { TeamId } from './lobby';
 import type { CellOutcome, IgnoredTarget } from './resolveTurn';
@@ -21,13 +21,35 @@ export function cellLabel(id: CellId): string {
 
 export function describeExplosion(e: Explosion): string {
   if (e.cells.length === 0) return `Bom nổ ở ${teamName(e.teamId)} — nhóm không còn ô nào để mất`;
-  const constitution = e.cells.includes(CONSTITUTION_CELL) ? ' (có ô Hiến pháp)' : '';
-  return `Bom nổ ở ${teamName(e.teamId)}: mất ${e.cells.length} ô${constitution}`;
+  // Ô đặc biệt bị mất (Hiến pháp trước, rồi ô Cơ quan theo thứ tự ô) — mất nhiều điểm hơn ô thường.
+  const special = [
+    ...(e.cells.includes(CONSTITUTION_CELL) ? ['ô Hiến pháp'] : []),
+    ...e.cells.flatMap((id) => {
+      const organ = organAt(id);
+      return organ ? [`ô ${organ.name}`] : [];
+    }),
+  ];
+  return `Bom nổ ở ${teamName(e.teamId)}: mất ${e.cells.length} ô${special.length ? ` (có ${special.join(', ')})` : ''}`;
 }
 
-function cellName(o: CellOutcome): string {
-  if (o.cellId === CONSTITUTION_CELL) return 'ô Hiến pháp';
-  return o.previousOwner === null ? 'ô trống' : `ô của ${teamName(o.previousOwner)}`;
+/**
+ * Tên ô trong câu kết quả (GAME_SPEC 3.7): "ô Hiến pháp"; "ô Quốc hội", "ô Quốc hội của Nhóm 2";
+ * "ô ★", "ô ★ của Nhóm 2"; "ô trống", "ô của Nhóm 2".
+ */
+export function cellName(cellId: CellId, owner: TeamId | null, star: boolean): string {
+  if (cellId === CONSTITUTION_CELL) return 'ô Hiến pháp';
+  const organ = organAt(cellId);
+  const base = organ ? `ô ${organ.name}` : star ? 'ô ★' : 'ô';
+  if (owner !== null) return `${base} của ${teamName(owner)}`;
+  return base === 'ô' ? 'ô trống' : base;
+}
+
+const outcomeCellName = (o: CellOutcome) => cellName(o.cellId, o.previousOwner, o.star);
+
+/** Nhật ký admin khi ★ Lòng dân xuất hiện; ★ rơi vào ô có chủ thì chủ ô được thêm 1 điểm ngay. */
+export function describeStar(cellId: CellId, owner: TeamId | null): string {
+  const where = `★ Lòng dân xuất hiện ở ${cellLabel(cellId)}`;
+  return owner === null ? where : `${where} — ô của ${teamName(owner)}, ${teamName(owner)} được thêm 1 điểm`;
 }
 
 /** Người về nhì (ứng viên trả lời đúng kế tiếp), để nói "nhanh hơn ai bao nhiêu". */
@@ -43,16 +65,16 @@ export function describeCell(o: CellOutcome): string {
     case 'captured': {
       const other = runnerUp(o);
       const margin = other !== null && o.marginMs !== null ? ` — nhanh hơn ${teamName(other)} ${formatSeconds(o.marginMs)}` : '';
-      return `${teamName(o.winner!)} chiếm ${cellName(o)}${margin}`;
+      return `${teamName(o.winner!)} chiếm ${outcomeCellName(o)}${margin}`;
     }
     case 'defended':
       return `${teamName(o.winner!)} phòng thủ thành công trước ${attackers}${o.marginMs !== null ? ` — nhanh hơn ${formatSeconds(o.marginMs)}` : ''}`;
     case 'tie':
-      return `${o.contenders.filter((c) => c.correct).slice(0, 2).map((c) => teamName(c.teamId)).join(' và ')} chốt cùng mili-giây — ${cellName(o)} giữ nguyên`;
+      return `${o.contenders.filter((c) => c.correct).slice(0, 2).map((c) => teamName(c.teamId)).join(' và ')} chốt cùng mili-giây — ${outcomeCellName(o)} giữ nguyên`;
     case 'shielded':
-      return `Khiên chặn ${attackers} tấn công ${cellName(o)}`;
+      return `Khiên chặn ${attackers} tấn công ${outcomeCellName(o)}`;
     case 'failed':
-      return `${attackers} tấn công ${cellName(o)} thất bại (trả lời sai)`;
+      return `${attackers} tấn công ${outcomeCellName(o)} thất bại (trả lời sai)`;
   }
 }
 

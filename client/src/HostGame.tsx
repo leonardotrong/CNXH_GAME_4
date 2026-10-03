@@ -6,10 +6,35 @@ import { HostBomb } from './HostBomb';
 import { AnswerCard, HostBar } from './HostParts';
 import { HostLessons } from './HostLessons';
 import { HexBoard } from './HexBoard';
+import { Icon } from './Icon';
 import { OutcomeList } from './Outcome';
 import { QuestionPanel } from './QuestionPanel';
 import { Standings } from './Standings';
 import { teamName, teamStyle } from './teams';
+
+/** Chú giải giá trị ô trên bàn cờ (GAME_SPEC 3.6, 3.7). */
+function MapLegend() {
+  return (
+    <ul className="map-legend" aria-label="Giá trị ô">
+      <li>
+        <span className="map-legend__swatch is-constitution">
+          <Icon name="book" />
+        </span>
+        Hiến pháp <b>3 điểm</b>
+      </li>
+      <li>
+        <span className="map-legend__swatch is-organ">QH</span>
+        Ô Cơ quan <b>2 điểm</b>
+      </li>
+      <li>
+        <span className="map-legend__swatch is-star">
+          <Icon name="star" />
+        </span>
+        Ô ★ <b>2 điểm</b>
+      </li>
+    </ul>
+  );
+}
 
 /** Số ô được/mất của từng nhóm trong lượt vừa giải quyết. */
 function deltasOf(outcome: TurnOutcome): Record<number, number> {
@@ -61,7 +86,7 @@ export function HostGame({
           <QuestionPanel view={question} activeTeamIds={activeTeamIds} showTimer={false} />
         </div>
         <aside className="host-game__side">
-          <HexBoard owners={board.owners} shields={board.shields} targets={board.targets} label="Bàn cờ và mục tiêu các nhóm" />
+          <HexBoard owners={board.owners} shields={board.shields} stars={board.stars} targets={board.targets} label="Bàn cờ và mục tiêu các nhóm" />
         </aside>
       </section>
     );
@@ -73,7 +98,7 @@ export function HostGame({
       <section className="host-game host-game--reveal">
         <HostBar badge={turnBadge} owners={board.owners} title={PHASE_LABELS[phase]} />
         <div className="host-game__main">
-          <HexBoard owners={board.owners} shields={board.shields} targets={board.targets} outcome={outcome} />
+          <HexBoard owners={board.owners} shields={board.shields} stars={board.stars} targets={board.targets} outcome={outcome} />
         </div>
         <aside className="host-game__side">
           {question?.reveal && <AnswerCard question={question} />}
@@ -108,7 +133,7 @@ export function HostGame({
           <Standings standings={board.standings} shields={board.shields} activeTeamIds={activeTeamIds} showMeta />
         </div>
         <aside className="host-game__side">
-          <HexBoard owners={board.owners} />
+          <HexBoard owners={board.owners} stars={board.stars} />
           {game.bomb && game.bomb.explosions.length > 0 && (
             <ul className="bomb-log">
               {game.bomb.explosions.map((e) => (
@@ -136,10 +161,25 @@ export function HostGame({
         {phase === 'BOARD_SELECT' && <CountdownRing endsAt={select?.endsAt ?? game.phaseEndsAt} startedAt={select?.startedAt} />}
       </HostBar>
       <div className="host-game__main">
-        <HexBoard owners={board.owners} shields={board.shields} targets={board.targets} />
+        <HexBoard
+          owners={board.owners}
+          shields={board.shields}
+          stars={board.stars}
+          newStar={phase === 'BOARD_SELECT' ? board.newStar : null}
+          targets={board.targets}
+        />
       </div>
       <aside className="host-game__side">
-        {phase === 'BOARD_SELECT' && <p className="host-hint">Các nhóm đang chọn ô mục tiêu trên điện thoại…</p>}
+        {/* Lượt có ★ mới: băng-rôn thay dòng gợi ý để cột phải không dài thêm. */}
+        {phase === 'BOARD_SELECT' &&
+          (board.newStar !== null ? (
+            <p className="star-banner" role="status">
+              <Icon name="star" /> ★ Lòng dân xuất hiện! Ô có ★ được 2 điểm — nhóm nào giành được?
+            </p>
+          ) : (
+            <p className="host-hint">Các nhóm đang chọn ô mục tiêu trên điện thoại…</p>
+          ))}
+        <MapLegend />
         {standings}
       </aside>
     </section>

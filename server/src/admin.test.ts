@@ -401,3 +401,33 @@ describe('Room — lưu và khôi phục', () => {
     expect(restored.snapshot().teams[2]!.players.map((p) => p.name)).toEqual(['An', 'Bảo']);
   });
 });
+
+describe('Room — ô Cơ quan và ★ Lòng dân (GAME_SPEC 3.7)', () => {
+  it('★ xuất hiện khi bắt đầu lượt 3 và được ghi nhật ký; hết Bàn Cờ thì ★ còn trên bàn cờ, không còn "sao mới"', () => {
+    join('An', 1);
+    join('Bình', 2);
+    must(room.startBoard(BANK, 4));
+    for (let i = 0; i < 6; i++) tick(); // lượt 1 và 2: SELECT → QUESTION → REVEAL
+    const board = room.publicGame().board!;
+    expect(room.phase).toBe('BOARD_SELECT');
+    expect(board.turn).toBe(3);
+    expect(board.stars).toHaveLength(1);
+    expect(board.newStar).toBe(board.stars[0]);
+    expect(room.log().some((e) => e.text.startsWith('Lượt 3: ★ Lòng dân xuất hiện'))).toBe(true);
+
+    for (let i = 0; i < 6; i++) tick(); // lượt 3 và 4 → hết Bàn Cờ
+    expect(room.phase).toBe('BOMB_INTRO');
+    expect(room.publicGame().board).toMatchObject({ stars: board.stars, newStar: null });
+  });
+
+  it('khôi phục file lưu từ trước khi có ★: coi như chưa có sao', () => {
+    join('An', 1);
+    must(room.startBoard(BANK, 3));
+    const snap = JSON.parse(JSON.stringify(room.toSnapshot()));
+    delete snap.match.board.stars;
+    delete snap.match.newStar;
+    const restored = Room.fromSnapshot(snap as RoomSnapshot, () => time, TIMING);
+    expect(restored.publicGame().board).toMatchObject({ stars: [], newStar: null });
+    expect(restored.publicGame().board!.standings.find((s) => s.teamId === 1)!.score).toBe(1);
+  });
+});

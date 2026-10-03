@@ -65,7 +65,7 @@
 - Ô trung tâm `(0,0)` = **ô Hiến pháp** (màu vàng kim, biểu tượng cuốn Hiến pháp).
 - Vòng ngoài cùng (khoảng cách 3) có 18 ô, đánh số 0–17 theo một chiều cố định, bắt đầu từ góc `(0,-3)`: theo chiều kim đồng hồ trên màn hình (`(0,-3) → (3,-3) → (3,0) → (0,3) → (-3,3) → (-3,0) → (0,-3)`).
 - Ô xuất phát (mỗi nhóm sở hữu sẵn 1 ô): các ô số `0, 3, 5, 8, 10, 13, 15` của vòng ngoài lần lượt cho Nhóm 1–7 (khoảng cách 3-2-3-2-3-2-3).
-- 29 ô còn lại là ô trống.
+- 29 ô còn lại là ô trống; 4 ô trong số đó ở vòng trong là **ô Cơ quan** (mục 3.7).
 - Nhóm chưa có thành viên lúc bắt đầu Bàn Cờ không nhận ô xuất phát (ô đó là ô trống). Nếu sau đó có người vào nhóm, nhóm chơi theo luật "nhóm không còn ô nào".
 - Ô kề: 6 hướng axial `(+1,0) (-1,0) (0,+1) (0,-1) (+1,-1) (-1,+1)`.
 - Màu nhóm (gợi ý): N1 `#E53935`, N2 `#FB8C00`, N3 `#43A047`, N4 `#00ACC1`, N5 `#1E88E5`, N6 `#8E24AA`, N7 `#6D4C41`. Ô trống xám nhạt. Mỗi ô có ghi số nhóm để không phụ thuộc hoàn toàn vào màu.
@@ -109,9 +109,24 @@ Với mỗi ô bị ít nhất một nhóm nhắm tới:
 
 ### 3.6 Kết thúc và tính điểm
 - Kết thúc sau N lượt (mặc định 14). Admin chỉnh được N và có nút "Kết thúc sau lượt này".
-- Điểm = số ô sở hữu (ô Hiến pháp tính 3).
+- Điểm = tổng giá trị các ô sở hữu: ô Hiến pháp 3, ô Cơ quan 2, ô có ★ Lòng dân 2, ô thường 1 (mục 3.7).
 - Tiêu chí phụ khi hòa: (1) tổng số câu đúng cả trận, (2) tổng thời gian chốt của các câu đúng (ít hơn xếp trên). Thời gian chốt của một câu = từ lúc câu mở tới lúc server ghi nhận chốt (câu đúng do tự chốt khi hết giờ tính bằng cả thời lượng câu). Bằng nhau cả ba tiêu chí → đồng hạng.
 - Bàn cờ và điểm được giữ nguyên để chơi tiếp Quả Bom.
+
+### 3.7 Ô Cơ quan và ★ Lòng dân
+- **4 ô Cơ quan nhà nước** ở vòng trong, quanh ô Hiến pháp: **Quốc hội** `(0,-1)`, **Chính phủ** `(1,-1)`, **Tòa án** `(0,1)`, **Viện kiểm sát** `(-1,0)`. Mỗi ô **2 điểm**.
+  - Chiếm, phòng thủ, hòa, khiên như ô thường; không có quyền năng riêng (chỉ khác số điểm).
+  - Vị trí công bằng: từ ô xuất phát, mỗi nhóm cách đúng một ô Cơ quan 2 bước (Nhóm 1 → Quốc hội; Nhóm 2, 3 → Chính phủ; Nhóm 4, 5 → Tòa án; Nhóm 6, 7 → Viện kiểm sát). Hai ô vòng trong còn lại `(1,0)`, `(-1,1)` là ô thường.
+  - Loại ô gắn với ô, không gắn với chủ: bom nổ hay admin chỉnh tay làm ô đổi chủ/thành ô trống thì ô vẫn là ô Cơ quan.
+- **★ Lòng dân**: khi bắt đầu các lượt 3, 6, 9, 12 (số lượt chia hết cho 3), server đặt một ngôi sao lên một ô. Ô có ★ được **2 điểm** cho nhóm đang giữ ô. Sao ở yên ô đó đến hết trận, nên ô ★ bị chiếm qua chiếm lại như mọi ô.
+  - Chọn ô — ngẫu nhiên trên server, xét bàn cờ đầu lượt (đã tính khiên của lượt đó):
+    - Nhóm dẫn đầu = nhóm có điểm cao nhất trong các nhóm đang chơi; mọi nhóm bằng điểm thì không có nhóm dẫn đầu.
+    - Ô được xét: không phải ô Hiến pháp, ô Cơ quan hay ô đã có ★; không thuộc nhóm dẫn đầu; không thuộc nhóm đang có khiên.
+    - Ưu tiên lần lượt: (a) ô trống mà ít nhất 2 nhóm không dẫn đầu nhắm được ở lượt này; (b) ô bất kỳ (trong số ô được xét) có ít nhất 2 nhóm như vậy nhắm được; (c) có ít nhất 1 nhóm nhắm được; (d) ô trống bất kỳ. Chọn đều ngẫu nhiên trong mức ưu tiên đầu tiên còn ô; không còn ô nào thì lượt đó không có ★ (ghi nhật ký).
+  - ★ rơi vào ô đã có chủ (không bao giờ là nhóm dẫn đầu) → chủ ô được thêm 1 điểm ngay.
+  - Màn chiếu báo khi ★ xuất hiện (băng-rôn + âm thanh), điện thoại nhắc trong pha chọn ô.
+  - Admin chỉnh tay chủ ô không thêm/bớt ★. Đổi số lượt hay "Kết thúc sau lượt này" không đổi quy tắc: ★ chỉ xuất hiện khi bắt đầu một lượt chia hết cho 3 (kể cả lượt cuối).
+  - Quả Bom: ô Cơ quan và ★ giữ nguyên trên bàn cờ; bom nổ làm mất ô thì nhóm mất luôn điểm của ô đó.
 
 ## 4. Quả Bom Tham Nhũng
 
@@ -136,7 +151,7 @@ Với mỗi ô bị ít nhất một nhóm nhắm tới:
    - Hết giờ không chốt → tự chốt theo phiếu như 2.2; không có phiếu nào → server chọn ngẫu nhiên một nhóm hợp lệ.
    - Host vẽ mũi tên bom bay sang nhóm nhận.
 4. Sai hoặc hết giờ → sau REVEAL là câu hỏi mới ngay (không qua PASS), bom vẫn ở nhóm đó.
-5. **Nổ** (pha EXPLODE, khoảng 6 giây): nhóm đang cầm bom mất 2 ô chọn ngẫu nhiên trong các ô của nhóm (ô trở thành ô trống; ô Hiến pháp cũng có thể mất). Còn ≤ 2 ô thì mất hết. Hiệu ứng nổ lớn trên host + âm thanh.
+5. **Nổ** (pha EXPLODE, khoảng 6 giây): nhóm đang cầm bom mất 2 ô chọn ngẫu nhiên trong các ô của nhóm (ô trở thành ô trống; ô Hiến pháp, ô Cơ quan, ô ★ cũng có thể mất — ô vẫn giữ loại đặc biệt). Còn ≤ 2 ô thì mất hết. Hiệu ứng nổ lớn trên host + âm thanh.
 
 ### 4.4 Ai cầm bom đầu tiên
 - Quả 1: nhóm đang dẫn đầu (theo 3.6).
@@ -151,7 +166,7 @@ Với mỗi ô bị ít nhất một nhóm nhắm tới:
 ### 5.1 `/host` — máy chiếu 16:9, chữ to đọc được từ cuối lớp
 - **LOBBY**: mã QR lớn + URL + mã phòng; 7 cột nhóm với số người và tên đã vào; đội trưởng (★) đứng đầu cột.
 - **RULES**: luật tóm tắt, có minh họa. Admin bấm "Hiện luật" (từ LOBBY) rồi "Bắt đầu Bàn Cờ"; không có đồng hồ tự chuyển.
-- **BOARD**: bàn cờ chiếm khoảng 65% chiều ngang. Thanh bên: 7 nhóm (màu, tên, số điểm, khiên). Trên cùng: tên pha + đồng hồ đếm ngược. Pha QUESTION: câu hỏi và phương án hiển thị lớn. Pha REVEAL: đáp án, giải thích, hiệu ứng đổi màu ô, tên nhóm thắng tranh chấp kèm chênh lệch ms.
+- **BOARD**: bàn cờ chiếm khoảng 65% chiều ngang. Ô Cơ quan có nhãn QH/CP/TA/VKS, ô ★ có ngôi sao vàng; pha chọn ô có chú giải giá trị ô và băng-rôn "★ Lòng dân xuất hiện" ở lượt có sao mới. Thanh bên: 7 nhóm (màu, tên, số điểm, khiên). Trên cùng: tên pha + đồng hồ đếm ngược. Pha QUESTION: câu hỏi và phương án hiển thị lớn. Pha REVEAL: đáp án, giải thích, hiệu ứng đổi màu ô, tên nhóm thắng tranh chấp kèm chênh lệch ms.
 - **BOMB**: quả bom lớn trên nhãn nhóm đang cầm, dây cháy (không lộ thời gian), mũi tên chuyền bom.
 - **SUMMARY**: bục vinh danh top 3, bảng đầy đủ, sau đó màn tổng kết 6 đặc điểm của nhà nước pháp quyền XHCN Việt Nam (lấy từ `docs/CONTENT.md`). Admin chuyển giữa hai màn bằng nút.
 - Nút tắt/bật âm thanh.
@@ -214,3 +229,4 @@ Với mỗi ô bị ít nhất một nhóm nhắm tới:
 - Tự chốt khi mọi thành viên online đã bỏ phiếu: nhóm không bị kẹt vì đội trưởng lơ đãng; vẫn là quyết định của tập thể (đa số), đội trưởng vẫn có thể chốt sớm khi quá nửa. Chỉ xét khi có phiếu mới để thời điểm chốt luôn gắn với một thao tác của nhóm.
 - Một nút "Bước tiếp theo" + phím tắt trên `/host`: người dẫn không phải nhớ thứ tự các nút, có thể điều khiển chỉ bằng máy chiếu. Không cho bỏ qua REVEAL để giữ "sau mỗi câu là lúc học".
 - Đội trưởng đặt theo danh sách nhóm trưởng thực tế (thay vì chỉ dựa vào "người vào đầu tiên"): 7 nhóm trùng nhóm của lớp nên đã có nhóm trưởng mà cả nhóm quen nghe theo; người dẫn bấm một nút là xong, sinh viên không phải làm gì thêm. Danh sách chỉ lưu trên trình duyệt của người dẫn để tên thật không nằm trong repo/server; khớp tên chỉ là gợi ý, người dẫn thấy trước và sửa tay được. Giữ "người vào đầu tiên" làm mặc định khi chưa đặt để nhóm luôn có người giữ nút CHỐT. Đã cân nhắc cho nhóm tự bầu trên điện thoại: dân chủ hơn nhưng tốn thời gian phòng chờ và cần cả nhóm thao tác.
+- Bản đồ có ô đặc biệt (mục 3.7) để cạnh tranh và bất ngờ hơn — cảm hứng từ ô "vương miện" của Kingdomino/ô số của Catan (ô tĩnh giá trị cao, lên kế hoạch từ đầu), ngôi sao của Mario Party (mục tiêu mới xuất hiện bất ngờ, cả lớp cùng đua) và rubber-banding của Mario Kart (sao không rơi cho nhóm dẫn đầu). 4 ô Cơ quan đặt sao cho mỗi nhóm cách đúng một ô 2 bước — cách đặt duy nhất công bằng với 7 nhóm trên bàn lục giác. Mô phỏng 3.000 trận (bot): độ lệch điểm theo vị trí xuất phát giảm 0,62 → 0,47, số lần đổi ngôi đầu bảng 4,6 → 5,2/trận, khoảng cách đầu–cuối so với điểm nhóm thắng không đổi (0,80). ★ là giá trị của ô (cướp được) chứ không phải điểm giữ mãi: điểm sao giữ mãi làm nhóm dẫn đầu bỏ xa (mô phỏng). Không dùng ô chướng ngại vì làm lệch cân bằng giữa các vị trí xuất phát; không dùng hộp quà ngẫu nhiên vì thêm luật và may rủi. Bốn cơ quan quây quanh một ô Hiến pháp thể hiện quyền lực nhà nước thống nhất, có phân công — không dùng cách nói "tam quyền phân lập".

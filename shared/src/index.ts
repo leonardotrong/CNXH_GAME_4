@@ -9,6 +9,7 @@ export * from './questions';
 export * from './voteRound';
 export * from './questionRound';
 export * from './board';
+export * from './stars';
 export * from './resolveTurn';
 export * from './selectRound';
 export * from './standings';
