@@ -86,9 +86,16 @@
   stroke-width: 1.4;
 }
 
-/* Chọn ô (điện thoại, admin chỉnh tay): ô chọn được có viền xanh nhấp nháy tại chỗ (không di chuyển, dễ bấm) */
-.hex--disabled {
-  opacity: 0.4;
+/*
+ * Chọn ô (điện thoại, admin chỉnh tay): ô không chọn được phủ một lớp màu nền (`.hex__dim`, MỘT hình gộp mặt trên +
+ * mặt bên) thay cho `opacity` của cả nhóm — hàng chục nhóm trong suốt chồng mép nhau vừa lộ dải sáng tối, vừa làm
+ * GPU điện thoại (Chrome Android) vẽ vỡ thành sọc khi bàn cờ được vẽ lại liên tục.
+ * Ô chọn được có viền xanh, nhấp nháy 2 nhịp lúc mở pha rồi đứng yên (không vẽ lại bàn cờ mãi).
+ */
+.hex__dim {
+  fill: #e4f0fa;
+  fill-opacity: 0.64;
+  pointer-events: none;
 }
 
 .hex--selectable {
@@ -98,7 +105,7 @@
 .hex--selectable .hex__shape {
   stroke: var(--blue);
   stroke-width: 1.3;
-  animation: hex-breathe 1.6s ease-in-out infinite;
+  animation: hex-breathe 1.6s ease-in-out 2;
 }
 
 .hex--selectable.hex--empty .hex__shape {

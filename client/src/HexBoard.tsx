@@ -91,7 +91,10 @@ function hexPath(cx: number, cy: number, size: number, round: number): string {
 const GEOMETRY = CELLS.map((cell) => {
   const cx = SIZE * SQRT3 * (cell.q + cell.r / 2);
   const cy = SIZE * 1.5 * cell.r;
-  return { cell, cx, cy, shape: hexPath(cx, cy, SIZE * 0.91, 1.6) };
+  const shape = hexPath(cx, cy, SIZE * 0.91, 1.6);
+  // Lớp phủ ô không chọn được: MỘT path gồm mặt trên + mặt bên (fill nonzero → phủ hợp của hai hình đúng một lần).
+  const dim = `${shape} ${hexPath(cx, cy + DEPTH, SIZE * 0.91, 1.6)}`;
+  return { cell, cx, cy, shape, dim };
 });
 
 /** Vị trí huy hiệu mục tiêu thứ i trong n huy hiệu trên một ô. */
@@ -153,7 +156,7 @@ export const HexBoard = memo(function HexBoard({
       role="img"
       aria-label={label}
     >
-      {GEOMETRY.map(({ cell, cx, cy, shape }) => {
+      {GEOMETRY.map(({ cell, cx, cy, shape, dim }) => {
         const owner = owners[cell.id] ?? null;
         const isConstitution = cell.id === CONSTITUTION_CELL;
         const organ = organAt(cell.id);
@@ -247,6 +250,7 @@ export const HexBoard = memo(function HexBoard({
                 </g>
               );
             })}
+            {selectableSet && !canPick && <path className="hex__dim" d={dim} />}
           </g>
         );
       })}

@@ -2,6 +2,8 @@
 
 Một service duy nhất: server Node (Express + Socket.IO) phục vụ luôn bản build của client. **Không dùng Vercel/Netlify** (không giữ được kết nối WebSocket lâu dài).
 
+**Bản đang chạy của nhóm: https://cnxh-game.onrender.com/** (Render, gói miễn phí, tự deploy lại mỗi khi `main` có commit mới). Hướng dẫn dùng cho người tổ chức buổi chơi nằm ở [README mục 1, Cách 1](../README.md#cách-1--dùng-bản-web-trên-render-không-cần-cài-gì); file này dành cho người quản lý bản deploy hoặc muốn tạo bản mới.
+
 ## Render (khuyên dùng)
 
 ### Cách 1 — Blueprint (nhanh nhất)
