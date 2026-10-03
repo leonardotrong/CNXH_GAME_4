@@ -132,33 +132,38 @@ class Page {
       ],
       { stdio: 'ignore' },
     );
-    // Chrome tự chọn cổng và ghi ra DevToolsActivePort trong thư mục hồ sơ.
-    let port = '';
-    for (let i = 0; i < 100 && !port; i++) {
-      await sleep(100);
-      const file = path.join(profile, 'DevToolsActivePort');
-      if (existsSync(file)) port = readFileSync(file, 'utf8').split('\n')[0]!.trim();
+    try {
+      // Chrome tự chọn cổng và ghi ra DevToolsActivePort trong thư mục hồ sơ.
+      let port = '';
+      for (let i = 0; i < 100 && !port; i++) {
+        await sleep(100);
+        const file = path.join(profile, 'DevToolsActivePort');
+        if (existsSync(file)) port = readFileSync(file, 'utf8').split('\n')[0]!.trim();
+      }
+      if (!port) throw new Error('Chrome không mở được cổng điều khiển');
+      let target: { type: string; webSocketDebuggerUrl: string } | undefined;
+      for (let i = 0; i < 50 && !target; i++) {
+        const list = (await (await fetch(`http://127.0.0.1:${port}/json/list`)).json()) as { type: string; webSocketDebuggerUrl: string }[];
+        target = list.find((t) => t.type === 'page');
+        if (!target) await sleep(100);
+      }
+      if (!target) throw new Error('Không thấy tab của Chrome');
+      const ws = new WebSocket(target.webSocketDebuggerUrl);
+      await new Promise((r) => ws.addEventListener('open', r, { once: true }));
+      const page = new Page(proc, ws, profile, outDir);
+      await page.send('Page.enable');
+      await page.send('Runtime.enable');
+      await page.send('Emulation.setDeviceMetricsOverride', {
+        width: device.width,
+        height: device.height,
+        deviceScaleFactor: device.scale,
+        mobile: device.mobile,
+      });
+      return page;
+    } catch (err) {
+      proc.kill('SIGKILL'); // mở hỏng thì không để Chrome chạy ngầm
+      throw err;
     }
-    if (!port) throw new Error('Chrome không mở được cổng điều khiển');
-    let target: { type: string; webSocketDebuggerUrl: string } | undefined;
-    for (let i = 0; i < 50 && !target; i++) {
-      const list = (await (await fetch(`http://127.0.0.1:${port}/json/list`)).json()) as { type: string; webSocketDebuggerUrl: string }[];
-      target = list.find((t) => t.type === 'page');
-      if (!target) await sleep(100);
-    }
-    if (!target) throw new Error('Không thấy tab của Chrome');
-    const ws = new WebSocket(target.webSocketDebuggerUrl);
-    await new Promise((r) => ws.addEventListener('open', r, { once: true }));
-    const page = new Page(proc, ws, profile, outDir);
-    await page.send('Page.enable');
-    await page.send('Runtime.enable');
-    await page.send('Emulation.setDeviceMetricsOverride', {
-      width: device.width,
-      height: device.height,
-      deviceScaleFactor: device.scale,
-      mobile: device.mobile,
-    });
-    return page;
   }
 
   send(method: string, params: object = {}): Promise<unknown> {
@@ -228,9 +233,15 @@ class Page {
     } catch {
       /* đã đóng */
     }
-    const exited = new Promise((r) => this.proc.once('exit', r));
+    // SIGTERM để Chrome tự tắt; có lúc Chrome treo giữa chừng khi tắt và chạy ngầm mãi → quá hạn thì SIGKILL.
+    const exited = () => this.proc.exitCode !== null || this.proc.signalCode !== null;
+    const waitExit = (ms: number) => (exited() ? Promise.resolve() : Promise.race([new Promise((r) => this.proc.once('exit', r)), sleep(ms)]));
     this.proc.kill();
-    await Promise.race([exited, sleep(3_000)]);
+    await waitExit(3_000);
+    if (!exited()) {
+      this.proc.kill('SIGKILL');
+      await waitExit(2_000);
+    }
     try {
       rmSync(this.profile, { recursive: true, force: true, maxRetries: 3 });
     } catch {
@@ -330,10 +341,14 @@ async function main() {
     };
 
     // Ba "thiết bị": màn chiếu, laptop người dẫn, điện thoại của Ngọc Hân.
-    const host = await Page.open(chrome, HOST, opts.out);
-    const adminPage = await Page.open(chrome, ADMIN, opts.out);
-    const phone = await Page.open(chrome, PHONE, opts.out);
-    pages.push(host, adminPage, phone);
+    const open = async (device: Device) => {
+      const page = await Page.open(chrome, device, opts.out);
+      pages.push(page); // đóng được cả khi thiết bị sau mở hỏng
+      return page;
+    };
+    const host = await open(HOST);
+    const adminPage = await open(ADMIN);
+    const phone = await open(PHONE);
 
     // ── Phòng chờ ────────────────────────────────────────────────────────────
     await phone.goto(`${url}/play?room=${code}`);
