@@ -92,19 +92,26 @@ Kịch bản 30 phút ([GAME_SPEC §1](docs/GAME_SPEC.md#1-kịch-bản-30-phút
 **Người dẫn chỉ cần nhớ một nút: "Bước tiếp theo"** (nút xanh lớn trên `/admin`, hoặc phím `Space` trên màn chiếu). Nút luôn ghi rõ việc sẽ xảy ra; trong pha tự chạy, nút hiện "Đang tự chạy" và không làm gì.
 
 <p align="center"><img src="docs/images/admin-lobby.webp" alt="Bảng điều khiển /admin ở phòng chờ" width="90%"></p>
-<p align="center"><sub><code>/admin</code> ở phòng chờ: thanh 5 chặng, nút xanh <b>Bước tiếp theo</b> (lúc này ghi "Hiện luật chơi"), bên dưới là người chơi theo nhóm (★ = đội trưởng; chạm vào tên để đổi đội trưởng hoặc chuyển nhóm).</sub></p>
+<p align="center"><sub><code>/admin</code> ở phòng chờ: thanh 5 chặng, nút xanh <b>Bước tiếp theo</b> (lúc này ghi "Hiện luật chơi"), ngay dưới là thanh vàng <b>Đặt theo danh sách</b> ghi sẵn nhóm trưởng thực tế sẽ được đặt ở từng nhóm; bên dưới là người chơi theo nhóm, mỗi nhóm có ô ★ đội trưởng và dòng so với danh sách (chạm vào tên để đổi đội trưởng hoặc chuyển nhóm).</sub></p>
 
 | Phút | Pha | Nút "Bước tiếp theo" ghi | Ghi chú |
 |---|---|---|---|
 | Trước giờ | | **Tạo phòng** | Mở `/host` trên máy chiếu **khoảng 15 phút trước giờ học** (gói Render miễn phí cần thời gian "thức dậy"). |
-| 0–3 | LOBBY | **Hiện luật chơi** | Sinh viên quét QR, nhập tên, chọn Nhóm 1–7. Người vào nhóm đầu tiên là đội trưởng. "Câu thử" (ở *Công cụ khác*) giúp lớp làm quen cách bỏ phiếu. |
+| 0–3 | LOBBY | **Hiện luật chơi** | Sinh viên quét QR, nhập tên, chọn Nhóm 1–7. Người vào nhóm đầu tiên tạm làm đội trưởng; bấm **Đặt theo danh sách** (thanh vàng ngay dưới nút) để đổi sang nhóm trưởng thực tế. "Câu thử" (ở *Công cụ khác*) giúp lớp làm quen cách bỏ phiếu. |
 | 3–4 | RULES | **Bắt đầu Bàn Cờ** | Giải thích luật xong mới bấm (pha không có đồng hồ). Chỉnh số lượt ngay cạnh nút (mặc định 14). |
 | 4–21 | BOARD | *Đang tự chạy* | Các lượt tự chạy. Thiếu giờ thì bấm **Kết thúc sau lượt này** ở thẻ Bàn Cờ. |
 | 21–28 | BOMB | **Bắt đầu Quả Bom** | Màn giới thiệu Quả Bom (BOMB_INTRO). Chỉnh số bom ngay cạnh nút (1–5, mặc định 3). |
 | 28–30 | SUMMARY | **Hiện tổng kết bài học** | Bục vinh danh, rồi 6 đặc điểm của nhà nước pháp quyền XHCN. |
 
 <p align="center"><img src="docs/images/host-lobby.webp" alt="Màn chiếu ở phòng chờ: mã QR, mã phòng và 7 cột nhóm" width="90%"></p>
-<p align="center"><sub>Màn chiếu ở phòng chờ: sinh viên quét QR (hoặc gõ địa chỉ rồi nhập mã phòng 4 chữ số); tên hiện ngay trong cột nhóm vừa chọn, ★ là đội trưởng.</sub></p>
+<p align="center"><sub>Màn chiếu ở phòng chờ: sinh viên quét QR (hoặc gõ địa chỉ rồi nhập mã phòng 4 chữ số); tên hiện ngay trong cột nhóm vừa chọn, đội trưởng ★ đứng đầu cột.</sub></p>
+
+**Đội trưởng theo danh sách nhóm trưởng thực tế** ([GAME_SPEC §2.1](docs/GAME_SPEC.md#21-người-chơi-nhóm-đội-trưởng)): 7 nhóm trùng nhóm của lớp nên đã có sẵn nhóm trưởng. Cách dùng:
+1. **Một lần, trước buổi học:** trên `/admin`, mục *Người chơi* → **Nhập danh sách nhóm trưởng**, gõ họ tên nhóm trưởng của từng nhóm. Có thể dán cả cột từ Excel hay ghi chú vào ô Nhóm 1 (mỗi dòng một nhóm; dòng tiêu đề, "Nhóm 3:", "3." được tự bỏ). Danh sách chỉ lưu trên trình duyệt của máy đó, không gửi lên server.
+2. **Trong buổi học:** khi sinh viên đã vào, thanh vàng ngay dưới nút Bước tiếp theo ghi sẵn ai sẽ được đặt (vd. "Nhóm 1 → An · Nhóm 5 → Tâm"); bấm **Đặt theo danh sách** (hoặc nút cùng tên ở mục *Người chơi*). Một lần bấm là xong cho mọi nhóm.
+3. Mỗi nhóm có ô **★** để chọn tay, kèm một dòng cho biết tình trạng: *Đúng danh sách*, *người sẽ được đặt*, *trùng tên — chọn tay*, *vào nhầm nhóm* (có nút **Chuyển về & đặt ★**), hoặc *chưa thấy vào phòng*.
+
+Tên được so không phân biệt hoa thường. Sinh viên gõ không dấu vẫn khớp; còn khi cả hai bên đều có dấu thì dấu được tính ("Hùng" khác "Hưng"). Sinh viên gõ tắt ("An", "Văn An", "Nguyễn An") vẫn khớp "Nguyễn Văn An" nếu trong nhóm chỉ có một người như vậy; tên dài bị cắt ở 20 ký tự cũng khớp. Chưa đặt thì người vào nhóm đầu tiên tạm làm đội trưởng.
 
 **Điều khiển ngay trên máy chiếu (khỏi chuyển cửa sổ):** trên `/host` bấm `K` (hoặc nút mờ ở góc phải dưới) và nhập mật khẩu admin một lần. Sau đó: `Space`/`→` = bước tiếp theo, `P` = tạm dừng/tiếp tục, `M` = tắt/bật âm thanh, `F` = toàn màn hình. Mỗi lần bấm có thông báo xác nhận ngắn; gợi ý phím hiện mờ rồi tự ẩn. (Tạo phòng mới khi đang có trận chỉ làm được ở `/admin`, để tránh bấm nhầm.)
 
@@ -114,7 +121,7 @@ Kịch bản 30 phút ([GAME_SPEC §1](docs/GAME_SPEC.md#1-kịch-bản-30-phút
 Các nút dùng được bất cứ lúc nào:
 - **Tạm dừng / Tiếp tục** (cạnh nút Bước tiếp theo, hoặc phím `P`): mọi đồng hồ (kể cả ngòi bom) đứng yên, người chơi không bỏ phiếu được.
 - **Bỏ qua câu lỗi**: đổi sang câu khác. Mục tiêu đã chọn được giữ nguyên, ngòi bom vẫn cháy tiếp.
-- **Chỉnh tay**: đổi chủ ô, đổi đội trưởng, chuyển người chơi sang nhóm khác.
+- **Chỉnh tay**: đổi chủ ô, đổi đội trưởng (ô ★ của từng nhóm, hoặc **Đặt theo danh sách**), chuyển người chơi sang nhóm khác.
 - **Nhật ký sự kiện**: ai chiếm ô nào, ai phòng thủ thành công, bom nổ ở đâu. Dùng để giải quyết tranh cãi.
 - **Chế độ dự phòng** (khi mạng sập): các nhóm giơ thẻ màu A/B/C/D, người dẫn nhập ô mục tiêu, đáp án và thứ tự nhanh chậm, còn `/host` vẫn chạy. Chi tiết ở [GAME_SPEC §5.3](docs/GAME_SPEC.md#53-admin--người-dẫn-bảo-vệ-bằng-mật-khẩu-từ-biến-môi-trường-admin_password).
 
@@ -142,7 +149,7 @@ Server sập giữa trận? Khởi động lại server là trận được **kh
 
 ### Vào phòng
 1. Quét QR trên màn chiếu: mã phòng được điền sẵn. Nhập tên, chọn nhóm, bấm **Vào chơi**. Không cần cài app.
-2. Người vào nhóm đầu tiên là **đội trưởng ★**. Mất mạng hay tải lại trang thì tự vào lại đúng nhóm, đúng vai trò.
+2. **Đội trưởng ★** là nhóm trưởng thực tế do người dẫn đặt theo danh sách (chưa đặt thì người vào nhóm đầu tiên tạm làm). Nên gõ đủ họ tên để khớp danh sách chắc chắn. Mất mạng hay tải lại trang thì tự vào lại đúng nhóm, đúng vai trò.
 3. Còn ở phòng chờ thì đổi nhóm được. Người dẫn bấm **Hiện luật chơi** thì điện thoại cũng hiện luật tóm tắt.
 
 <p align="center">
@@ -377,6 +384,7 @@ Xuất qua [index.ts](shared/src/index.ts). Mỗi module đi kèm một file `*.
 | [events.ts](shared/src/events.ts) | **Hợp đồng Socket.IO**: mọi sự kiện, payload, mã lỗi, `LogEntry` | |
 | [lobby.ts](shared/src/lobby.ts) | Hằng số 7 nhóm, mã phòng 4 số, chuẩn hóa tên, kiểu `RoomState` | §2.1 |
 | [captain.ts](shared/src/captain.ts) | Chọn đội trưởng, chuyển quyền tạm sau 10 s mất kết nối | §2.1 |
+| [roster.ts](shared/src/roster.ts) | Danh sách nhóm trưởng thực tế: khớp tên có/không dấu, gõ tắt, tên bị cắt ở 20 ký tự (`matchName`, `findRosterCaptain`), tình trạng từng nhóm (`rosterStatus`, `rosterChanges`), đọc danh sách dán từ Excel (`parseRosterText`) | §2.1 |
 | [voting.ts](shared/src/voting.ts) | Đếm phiếu, `canLock` (quá nửa), `resolveTeamChoice` (đa số / đội trưởng / sớm nhất) | §2.2 |
 | [voteRound.ts](shared/src/voteRound.ts) | **Vòng biểu quyết dùng chung** cho câu hỏi, SELECT, PASS: bỏ phiếu, chốt, tự chốt khi cả nhóm đã bầu (test: `autoLock.test.ts`), đóng, tự chốt khi hết giờ, dời mốc khi tạm dừng, nhập tay (dự phòng) | §2.2 |
 | [questions.ts](shared/src/questions.ts) | Kiểu `Question`, kiểm tra ngân hàng câu hỏi, trộn phương án, chọn câu không lặp | §2.3 |
@@ -410,7 +418,7 @@ Không dùng router: [App.tsx](client/src/App.tsx) chọn trang theo `location.p
 | Kết nối | [socket.ts](client/src/socket.ts): **một** socket cho cả trang + các hook `useRoomState`, `useGame`, `useQuestion`, `useTeamVotes`, `useTeamSelect`, `useTeamPass`, `useAdminLog`. [clock.ts](client/src/clock.ts): bù lệch đồng hồ, `useCountdown`. |
 | Màn chiếu | `HostGame`, `HostBomb`, `HostRules`, `HostLessons`, `HostParts`, `Standings`, `TerritoryBar`, `Confetti`, `QuestionPanel` |
 | Điện thoại | `PlayBoard` (chọn ô), `PlayQuestion` + `VoteControls` (biểu quyết, nút CHỐT), `PlayBomb` |
-| Người dẫn | `AdminNext` (thanh tiến trình + nút **Bước tiếp theo**), `AdminBoard`, `AdminPlayers` (người chơi dạng chip), `AdminFallback`, `AdminLog` |
+| Người dẫn | `AdminNext` (thanh tiến trình + nút **Bước tiếp theo**), `AdminBoard`, `AdminPlayers` (người chơi dạng chip, ô ★ đội trưởng từng nhóm), `AdminRoster` (danh sách nhóm trưởng thực tế lưu `localStorage`, nút **Đặt theo danh sách**), `AdminFallback`, `AdminLog` |
 | Điều khiển | [nextStep.ts](client/src/nextStep.ts): **một nguồn duy nhất** cho "bước tiếp theo" ở mỗi pha — dùng chung cho `/admin` và phím tắt trên `/host` ([HostRemote.tsx](client/src/HostRemote.tsx)). Thêm pha mới cần người dẫn bấm → sửa ở đây. |
 | Dùng chung | `HexBoard` (vẽ bàn cờ SVG), `Countdown`, `Outcome`, `TeamTag`, `StatusBanner`, `ConnectionBadge`, `Icon` (bộ icon nét thay cho emoji), `Logo`, `BombIcon` |
 | Âm thanh | [sound.ts](client/src/sound.ts): tạo âm bằng Web Audio API (không cần file âm thanh), **chỉ phát trên host**. [useHostSounds.ts](client/src/useHostSounds.ts) quyết định lúc nào phát âm nào. |

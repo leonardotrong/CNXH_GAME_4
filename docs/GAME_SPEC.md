@@ -20,7 +20,17 @@
 ### 2.1 Người chơi, nhóm, đội trưởng
 - Vào `/play?room=XXXX` (mã phòng 4 chữ số), nhập tên, chọn Nhóm 1–7.
 - `playerId` lưu trong localStorage. Mất kết nối hoặc khóa màn hình rồi vào lại: giữ nguyên nhóm và vai trò.
-- Đội trưởng = người vào nhóm đầu tiên; admin đổi được. Đội trưởng mất kết nối quá 10 giây thì quyền tạm chuyển cho thành viên đang online vào sớm nhất, và trả lại khi đội trưởng quay lại.
+- Đội trưởng mặc định = người vào nhóm đầu tiên (để nhóm luôn có người giữ nút CHỐT). Người dẫn chọn lại được bất cứ lúc nào trên `/admin`:
+  - **Theo danh sách nhóm trưởng thực tế**: người dẫn nhập trước họ tên nhóm trưởng của từng nhóm (lưu trên trình duyệt của người dẫn, không gửi danh sách lên server; dán được cả danh sách từ Excel/ghi chú), rồi bấm "Đặt theo danh sách" — một lần cho mọi nhóm. Ở phòng chờ và lúc xem luật, nút này hiện ngay dưới nút "Bước tiếp theo" khi còn nhóm lệch danh sách, kèm tên người sẽ được đặt ở từng nhóm.
+  - **Chọn tay**: ô "★ Đội trưởng" của từng nhóm (hoặc chạm vào tên → "Làm đội trưởng").
+- Khớp tên với danh sách (chỉ để gợi ý; người dẫn luôn thấy trước người sẽ được đặt):
+  - Không phân biệt hoa thường, dấu câu, khoảng trắng, ghi chú trong ngoặc ("Thảo (NT)").
+  - Dấu: tên sinh viên gõ và tên trong danh sách đều có dấu thì dấu phân biệt hai tên khác nhau ("Hùng" ≠ "Hưng", "Thu" ≠ "Thư"); một bên gõ không dấu thì so bỏ dấu ("Hung" khớp "Hùng" và "Hưng").
+  - Ưu tiên người gõ đủ họ tên trùng danh sách (danh sách ghi từ 2 chữ trở lên). Tên dài bị cắt ở giới hạn 20 ký tự vẫn tính là đủ ("Nguyễn Thị Phương Th" ↔ "Nguyễn Thị Phương Thảo").
+  - Không có thì chấp nhận tên gõ tắt: một tên là phần của tên kia và có chung tên gọi (chữ cuối của tên trong danh sách), được dùng chữ viết tắt cho họ/tên đệm — vd. "An", "Văn An", "Nguyễn An", "An Nguyễn" khớp "Nguyễn Văn An", "Nguyễn T. Phương Thảo" khớp "Nguyễn Thị Phương Thảo"; "Nguyễn" hay "Văn" một mình thì không.
+  - Trong nhóm có nhiều người khớp như nhau → không tự đặt, người dẫn chọn tay. Nhóm trưởng gõ đủ họ tên nhưng đang ở nhóm khác (vào nhầm) → `/admin` báo nhóm đang ở, có nút chuyển về và đặt làm đội trưởng.
+- Đội trưởng do người dẫn chọn được giữ khi có người vào/ra nhóm; chỉ đổi khi người dẫn chọn lại hoặc chính người đó rời nhóm (khi đó quay về người vào nhóm sớm nhất còn lại).
+- Đội trưởng mất kết nối quá 10 giây thì quyền tạm chuyển cho thành viên đang online vào sớm nhất, và trả lại khi đội trưởng quay lại.
 - Sau khi LOBBY đóng, người chơi không tự đổi nhóm (admin vẫn chuyển được).
 
 ### 2.2 Biểu quyết trong nhóm (dùng cho câu hỏi, chọn ô, chọn nhóm nhận bom)
@@ -139,7 +149,7 @@ Với mỗi ô bị ít nhất một nhóm nhắm tới:
 ## 5. Màn hình
 
 ### 5.1 `/host` — máy chiếu 16:9, chữ to đọc được từ cuối lớp
-- **LOBBY**: mã QR lớn + URL + mã phòng; 7 cột nhóm với số người và tên đã vào.
+- **LOBBY**: mã QR lớn + URL + mã phòng; 7 cột nhóm với số người và tên đã vào; đội trưởng (★) đứng đầu cột.
 - **RULES**: luật tóm tắt, có minh họa. Admin bấm "Hiện luật" (từ LOBBY) rồi "Bắt đầu Bàn Cờ"; không có đồng hồ tự chuyển.
 - **BOARD**: bàn cờ chiếm khoảng 65% chiều ngang. Thanh bên: 7 nhóm (màu, tên, số điểm, khiên). Trên cùng: tên pha + đồng hồ đếm ngược. Pha QUESTION: câu hỏi và phương án hiển thị lớn. Pha REVEAL: đáp án, giải thích, hiệu ứng đổi màu ô, tên nhóm thắng tranh chấp kèm chênh lệch ms.
 - **BOMB**: quả bom lớn trên nhãn nhóm đang cầm, dây cháy (không lộ thời gian), mũi tên chuyền bom.
@@ -156,7 +166,7 @@ Với mỗi ô bị ít nhất một nhóm nhắm tới:
 - **Nút "Bước tiếp theo"**: một nút lớn luôn ghi rõ việc sẽ xảy ra (Tạo phòng → Hiện luật → Bắt đầu Bàn Cờ → Bắt đầu Quả Bom → Hiện 6 đặc điểm). Trong pha tự chạy, nút hiện "Đang tự chạy" và không làm gì; không có cách bỏ qua REVEAL (lúc học).
 - **Điều khiển ngay trên `/host`**: người dẫn đăng nhập (mật khẩu admin) một lần trên máy chiếu rồi dùng phím: `Space`/`→` = Bước tiếp theo, `P` = tạm dừng/tiếp tục, `M` = tắt/bật âm thanh, `F` = toàn màn hình. Gợi ý phím hiện mờ ở góc và tự ẩn. Tạo phòng mới khi đang có trận chỉ làm được ở `/admin`.
 - Tạo phòng; mở/đóng LOBBY; bắt đầu từng pha; tạm dừng/tiếp tục; bỏ qua câu lỗi; "Kết thúc Bàn Cờ sau lượt này".
-- Chỉnh tay: đổi chủ ô, đổi đội trưởng, chuyển người chơi sang nhóm khác.
+- Chỉnh tay: đổi chủ ô, đổi đội trưởng (ô chọn ở từng nhóm, hoặc đặt cả lớp theo danh sách nhóm trưởng thực tế — mục 2.1), chuyển người chơi sang nhóm khác.
 - **Chế độ dự phòng**: khi mạng sập, các nhóm giơ thẻ màu A/B/C/D; admin nhập ô mục tiêu, đáp án và thứ tự nhanh chậm cho từng nhóm; trò chơi vẫn chạy trên host.
   - Bật chế độ dự phòng: pha SELECT, QUESTION, PASS không tự đóng khi hết giờ và không đóng sớm khi các nhóm chốt bằng điện thoại — admin bấm xác nhận mới đóng (đồng hồ vẫn hiện để các nhóm suy nghĩ). Pha REVEAL/EXPLODE vẫn tự chạy.
   - Mọi nhóm 1–7 coi như "có thành viên" (nhận ô xuất phát, được chuyền bom) dù không ai vào bằng điện thoại.
@@ -203,3 +213,4 @@ Với mỗi ô bị ít nhất một nhóm nhắm tới:
 - Pha RULES do admin chuyển (không đếm giờ): người dẫn giải thích luật theo nhịp của lớp.
 - Tự chốt khi mọi thành viên online đã bỏ phiếu: nhóm không bị kẹt vì đội trưởng lơ đãng; vẫn là quyết định của tập thể (đa số), đội trưởng vẫn có thể chốt sớm khi quá nửa. Chỉ xét khi có phiếu mới để thời điểm chốt luôn gắn với một thao tác của nhóm.
 - Một nút "Bước tiếp theo" + phím tắt trên `/host`: người dẫn không phải nhớ thứ tự các nút, có thể điều khiển chỉ bằng máy chiếu. Không cho bỏ qua REVEAL để giữ "sau mỗi câu là lúc học".
+- Đội trưởng đặt theo danh sách nhóm trưởng thực tế (thay vì chỉ dựa vào "người vào đầu tiên"): 7 nhóm trùng nhóm của lớp nên đã có nhóm trưởng mà cả nhóm quen nghe theo; người dẫn bấm một nút là xong, sinh viên không phải làm gì thêm. Danh sách chỉ lưu trên trình duyệt của người dẫn để tên thật không nằm trong repo/server; khớp tên chỉ là gợi ý, người dẫn thấy trước và sửa tay được. Giữ "người vào đầu tiên" làm mặc định khi chưa đặt để nhóm luôn có người giữ nút CHỐT. Đã cân nhắc cho nhóm tự bầu trên điện thoại: dân chủ hơn nhưng tốn thời gian phòng chờ và cần cả nhóm thao tác.
