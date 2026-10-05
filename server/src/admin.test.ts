@@ -57,6 +57,42 @@ describe('Room — pha RULES', () => {
     expect(room.phase).toBe('BOARD_SELECT');
     expect(room.showRules()).toEqual({ ok: false, error: 'WRONG_PHASE' });
   });
+
+  it('câu thử sau khi hiện luật: chạy trọn (biểu quyết → đáp án → về màn luật) rồi mới bắt đầu Bàn Cờ', () => {
+    join('An', 1);
+    join('Bình', 2);
+    must(room.showRules());
+    const started = room.startTestQuestion(BANK, 'board');
+    if (!started.ok) throw new Error(started.error);
+    const { round } = started;
+    expect(room.phase).toBe('RULES');
+    expect(round.teamIds).toEqual([1, 2, 3, 4, 5, 6, 7]);
+    must(room.vote(ids['An']!, round.roundId, answer()));
+    must(room.vote(ids['Bình']!, round.roundId, (answer() + 1) % 4));
+    expect(room.startTestQuestion(BANK, 'board')).toEqual({ ok: false, error: 'QUESTION_ACTIVE' });
+
+    tick(); // hết giờ (hoặc mọi nhóm đã chốt) → hiện đáp án
+    expect(room.question?.status).toBe('closed');
+    expect(room.publicQuestion()?.reveal?.results.find((r) => r.teamId === 1)?.correct).toBe(true);
+    tick(); // hết thời gian đáp án → về màn luật
+    expect(room.question).toBeNull();
+    expect(room.phase).toBe('RULES');
+    expect(room.publicGame().board).toBeNull();
+
+    must(room.startBoard(BANK, 2));
+    expect(room.phase).toBe('BOARD_SELECT');
+  });
+
+  it('câu thử chỉ mở ngoài trận (LOBBY, RULES, SUMMARY); bắt đầu Bàn Cờ thì câu thử đang chạy bị bỏ', () => {
+    join('An', 1);
+    must(room.startTestQuestion(BANK, 'bomb'));
+    room.clearQuestion();
+    must(room.showRules());
+    must(room.startTestQuestion(BANK, 'board'));
+    must(room.startBoard(BANK, 2));
+    expect(room.question).toBeNull();
+    expect(room.startTestQuestion(BANK, 'board')).toEqual({ ok: false, error: 'WRONG_PHASE' });
+  });
 });
 
 describe('Room — tạm dừng toàn cục', () => {

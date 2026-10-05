@@ -9,6 +9,7 @@ import { applyRoster, useCaptainRoster } from '../AdminRoster';
 import { ConnectionBadge } from '../ConnectionBadge';
 import { Icon } from '../Icon';
 import { Logo } from '../Logo';
+import { TEST_PHASES } from '../nextStep';
 import { QuestionPanel } from '../QuestionPanel';
 import { socket, useAdminLog, useGame, useQuestion, useRoomState } from '../socket';
 import { teamName } from '../teams';
@@ -64,8 +65,8 @@ export function AdminPage() {
     login(password);
   };
 
-  /** Câu thử chỉ mở được ngoài trận (LOBBY/SUMMARY). */
-  const testAllowed = !game || game.phase === 'LOBBY' || game.phase === 'SUMMARY';
+  /** Câu thử chỉ mở được ngoài trận (LOBBY, RULES, SUMMARY). */
+  const testAllowed = !game || TEST_PHASES.includes(game.phase);
   const report = (what: string) => (res: { ok: boolean; error?: string }) => setNotice(res.ok ? '' : `${what} (${res.error}).`);
 
   const createRoom = () => {
@@ -160,7 +161,7 @@ export function AdminPage() {
                     </button>
                   </h2>
                   <div className="admin-question">
-                    <QuestionPanel view={question} activeTeamIds={state.teams.filter((t) => t.players.length > 0).map((t) => t.id)} />
+                    <QuestionPanel view={question} activeTeamIds={state.teams.filter((t) => t.players.length > 0).map((t) => t.id)} practice={testAllowed} />
                   </div>
                 </section>
               )}
@@ -174,7 +175,7 @@ export function AdminPage() {
               <button
                 className="primary-btn primary-btn--ghost"
                 disabled={question?.status === 'open' || !testAllowed}
-                title="Một câu cho cả lớp làm quen cách bỏ phiếu (chỉ ở phòng chờ / tổng kết)"
+                title="Một câu cho cả lớp làm quen cách bỏ phiếu, không tính điểm (ở phòng chờ, màn luật, tổng kết)"
                 onClick={() => socket.emit('admin:startQuestion', { pool: 'board' }, (res) => setNotice(res.ok ? '' : `Không mở được câu hỏi (${res.error}).`))}
               >
                 <Icon name="question" /> Câu thử

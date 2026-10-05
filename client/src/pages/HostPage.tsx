@@ -58,8 +58,8 @@ export function HostPage() {
 
   const activeTeamIds = state?.teams.filter((t) => t.players.length > 0).map((t) => t.id) ?? [];
 
-  // Trong trận: màn Bàn Cờ. Câu thử (chỉ mở được ở LOBBY/SUMMARY) vẫn hiện như Giai đoạn 2.
-  if (state && game?.board && game.phase !== 'LOBBY' && !(game.phase === 'SUMMARY' && question)) {
+  // Trong trận: màn Bàn Cờ. Câu thử (chỉ mở ngoài trận: LOBBY, RULES, SUMMARY) vẫn hiện như Giai đoạn 2.
+  if (state && game?.board && game.phase !== 'LOBBY' && game.phase !== 'RULES' && !(game.phase === 'SUMMARY' && question)) {
     return (
       <main className={`page page--host page--game ${game.phase.startsWith('BOMB_') ? 'page--danger' : ''}`} onPointerDown={unlockAudio}>
         {chrome}
@@ -75,11 +75,12 @@ export function HostPage() {
   return (
     <main className="page page--host" onPointerDown={unlockAudio}>
       {chrome}
+      {/* Màn luật; câu thử mở ở màn luật thì hiện câu, xong (hết phần đáp án) tự quay lại luật. */}
       {game?.phase === 'RULES' && !question ? (
         <HostRules key="rules" />
       ) : question ? (
         <div className="host-solo">
-          <QuestionPanel view={question} activeTeamIds={activeTeamIds} />
+          <QuestionPanel view={question} activeTeamIds={activeTeamIds} practice />
         </div>
       ) : !state ? (
         <section className="host-waiting">

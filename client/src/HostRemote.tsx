@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { GameView, PublicQuestionView } from '@cnxh/shared';
 import { Icon } from './Icon';
-import { DEFAULT_STEP_OPTIONS, nextStep } from './nextStep';
+import { DEFAULT_STEP_OPTIONS, nextStep, practiceStep, type NextStep } from './nextStep';
 import { ACK_TIMEOUT_MS, orNetworkError, socket } from './socket';
 import { isMuted, setMuted, unlockAudio } from './sound';
 
@@ -11,7 +11,7 @@ const HINT_MS = 5000;
 
 /**
  * Người dẫn điều khiển ngay trên máy chiếu (GAME_SPEC 5.3):
- * K = đăng nhập · Space/→ = bước tiếp theo · P = tạm dừng · M = âm thanh · F = toàn màn hình.
+ * K = đăng nhập · Space/→ = bước tiếp theo · T = chơi thử một câu (màn luật) · P = tạm dừng · M = âm thanh · F = toàn màn hình.
  * Không đăng nhập thì màn chiếu vẫn chỉ để xem như cũ.
  */
 export function HostRemote({ hasRoom, game, question }: { hasRoom: boolean; game: GameView | null; question: PublicQuestionView | null }) {
@@ -112,6 +112,21 @@ export function HostRemote({ hasRoom, game, question }: { hasRoom: boolean; game
       };
       const failed = (what: string, error?: string) =>
         error === 'NETWORK' ? 'Mạng chập chờn — xem màn hình, chưa đổi thì bấm lại' : `Không được: ${what} (${error})`;
+      const run = (step: NextStep) => {
+        sending.current = true;
+        step.run!(DEFAULT_STEP_OPTIONS, (res) => {
+          sending.current = false;
+          showToast(res.ok ? step.label : failed(step.label, res.error), !res.ok);
+        });
+        showHint();
+      };
+      if (key === 't') {
+        const practice = practiceStep(game, question);
+        if (!practice) return;
+        e.preventDefault();
+        if (ready()) run(practice);
+        return;
+      }
       if (key === ' ' || key === 'arrowright' || key === 'enter') {
         e.preventDefault();
         const step = nextStep(hasRoom, game, question);
@@ -121,12 +136,7 @@ export function HostRemote({ hasRoom, game, question }: { hasRoom: boolean; game
         }
         if (!ready()) return;
         // Tạo phòng mới khi đang có trận chỉ làm ở /admin (tránh bấm nhầm).
-        sending.current = true;
-        step.run(DEFAULT_STEP_OPTIONS, (res) => {
-          sending.current = false;
-          showToast(res.ok ? step.label : failed(step.label, res.error), !res.ok);
-        });
-        showHint();
+        run(step);
         return;
       }
       if (key === 'p') {
@@ -155,6 +165,7 @@ export function HostRemote({ hasRoom, game, question }: { hasRoom: boolean; game
   };
 
   const step = nextStep(hasRoom, game, question);
+  const practice = practiceStep(game, question);
 
   return (
     <>
@@ -168,6 +179,11 @@ export function HostRemote({ hasRoom, game, question }: { hasRoom: boolean; game
           <span>
             <kbd>Space</kbd> {step.run ? step.label : step.label + ' (tự chạy)'}
           </span>
+          {practice && (
+            <span>
+              <kbd>T</kbd> {practice.label}
+            </span>
+          )}
           {game && game.phase !== 'LOBBY' && game.phase !== 'RULES' && game.phase !== 'SUMMARY' && (
             <span>
               <kbd>P</kbd> {game.pausedAt === null ? 'Tạm dừng' : 'Tiếp tục'}

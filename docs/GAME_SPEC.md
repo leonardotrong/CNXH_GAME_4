@@ -10,7 +10,7 @@
 | Phút | Pha | Nội dung |
 |---|---|---|
 | 0–3 | LOBBY | Quét QR, nhập tên, chọn nhóm |
-| 3–4 | RULES | Host hiện luật tóm tắt (đọc trong 60 giây) |
+| 3–4 | RULES | Host hiện luật tóm tắt (đọc trong 60 giây), rồi cả lớp chơi thử một câu |
 | 4–21 | BOARD | Bàn Cờ Quyền Lực, 14 lượt (cấu hình được) |
 | 21–28 | BOMB | Quả Bom Tham Nhũng, 3 quả, chơi trên chính bàn cờ |
 | 28–30 | SUMMARY | Xếp hạng, vinh danh, tổng kết 6 đặc điểm |
@@ -165,7 +165,7 @@ Với mỗi ô bị ít nhất một nhóm nhắm tới:
 
 ### 5.1 `/host` — máy chiếu 16:9, chữ to đọc được từ cuối lớp
 - **LOBBY**: mã QR lớn + URL + mã phòng; 7 cột nhóm với số người và tên đã vào; đội trưởng (★) đứng đầu cột.
-- **RULES**: luật tóm tắt, có minh họa. Admin bấm "Hiện luật" (từ LOBBY) rồi "Bắt đầu Bàn Cờ"; không có đồng hồ tự chuyển.
+- **RULES**: luật tóm tắt, có minh họa. Admin bấm "Hiện luật" (từ LOBBY) rồi "Bắt đầu Bàn Cờ"; không có đồng hồ tự chuyển. Đang có câu thử thì host hiện câu thử, xong quay lại màn luật.
 - **BOARD**: bàn cờ chiếm khoảng 65% chiều ngang. Ô Cơ quan có nhãn QH/CP/TA/VKS, ô ★ có ngôi sao vàng; pha chọn ô có chú giải giá trị ô và băng-rôn "★ Lòng dân xuất hiện" ở lượt có sao mới. Thanh bên: 7 nhóm (màu, tên, số điểm, khiên). Trên cùng: tên pha + đồng hồ đếm ngược. Pha QUESTION: câu hỏi và phương án hiển thị lớn. Pha REVEAL: đáp án, giải thích, hiệu ứng đổi màu ô, tên nhóm thắng tranh chấp kèm chênh lệch ms.
 - **BOMB**: quả bom lớn trên nhãn nhóm đang cầm, dây cháy (không lộ thời gian), mũi tên chuyền bom.
 - **SUMMARY**: bục vinh danh top 3, bảng đầy đủ, sau đó màn tổng kết 6 đặc điểm của nhà nước pháp quyền XHCN Việt Nam (lấy từ `docs/CONTENT.md`). Admin chuyển giữa hai màn bằng nút.
@@ -179,8 +179,9 @@ Với mỗi ô bị ít nhất một nhóm nhắm tới:
 
 ### 5.3 `/admin` — người dẫn; bảo vệ bằng mật khẩu từ biến môi trường `ADMIN_PASSWORD`
 - **Nút "Bước tiếp theo"**: một nút lớn luôn ghi rõ việc sẽ xảy ra (Tạo phòng → Hiện luật → Bắt đầu Bàn Cờ → Bắt đầu Quả Bom → Hiện 6 đặc điểm). Trong pha tự chạy, nút hiện "Đang tự chạy" và không làm gì; không có cách bỏ qua REVEAL (lúc học).
-- **Điều khiển ngay trên `/host`**: người dẫn đăng nhập (mật khẩu admin) một lần trên máy chiếu rồi dùng phím: `Space`/`→` = Bước tiếp theo, `P` = tạm dừng/tiếp tục, `M` = tắt/bật âm thanh, `F` = toàn màn hình. Gợi ý phím hiện mờ ở góc và tự ẩn. Tạo phòng mới khi đang có trận chỉ làm được ở `/admin`.
+- **Điều khiển ngay trên `/host`**: người dẫn đăng nhập (mật khẩu admin) một lần trên máy chiếu rồi dùng phím: `Space`/`→` = Bước tiếp theo, `T` = chơi thử một câu (ở RULES), `P` = tạm dừng/tiếp tục, `M` = tắt/bật âm thanh, `F` = toàn màn hình. Gợi ý phím hiện mờ ở góc và tự ẩn. Tạo phòng mới khi đang có trận chỉ làm được ở `/admin`.
 - Tạo phòng; mở/đóng LOBBY; bắt đầu từng pha; tạm dừng/tiếp tục; bỏ qua câu lỗi; "Kết thúc Bàn Cờ sau lượt này".
+- **Câu thử** (ngoài trận: LOBBY, RULES, SUMMARY): một câu cho cả 7 nhóm, chạy đúng như câu Bàn Cờ (biểu quyết, CHỐT, đồng hồ, đáp án) nhưng không tính điểm, không đổi bàn cờ. Ở RULES có nút "Chơi thử một câu" ngay cạnh "Bắt đầu Bàn Cờ": giải thích luật → chơi thử → bắt đầu. Câu đã dùng để thử được ưu tiên không hỏi lại trong trận. Đang có câu thử thì chưa sang bước tiếp theo được (không bỏ qua phần đáp án); "Hủy câu thử" để dừng ngay.
 - Chỉnh tay: đổi chủ ô, đổi đội trưởng (ô chọn ở từng nhóm, hoặc đặt cả lớp theo danh sách nhóm trưởng thực tế — mục 2.1), chuyển người chơi sang nhóm khác.
 - **Chế độ dự phòng**: khi mạng sập, các nhóm giơ thẻ màu A/B/C/D; admin nhập ô mục tiêu, đáp án và thứ tự nhanh chậm cho từng nhóm; trò chơi vẫn chạy trên host.
   - Bật chế độ dự phòng: pha SELECT, QUESTION, PASS không tự đóng khi hết giờ và không đóng sớm khi các nhóm chốt bằng điện thoại — admin bấm xác nhận mới đóng (đồng hồ vẫn hiện để các nhóm suy nghĩ). Pha REVEAL/EXPLODE vẫn tự chạy.
@@ -226,6 +227,7 @@ Với mỗi ô bị ít nhất một nhóm nhắm tới:
 - Khôi phục sau khi server khởi động lại → trận ở trạng thái tạm dừng: người chơi cần thời gian kết nối lại trước khi đồng hồ chạy tiếp.
 - Chế độ dự phòng tắt tự đóng pha: người dẫn cần thời gian nhìn thẻ màu và nhập; thứ tự nhanh chậm quy đổi thành hạng × 1 giây để dùng lại nguyên luật 3.3.
 - Pha RULES do admin chuyển (không đếm giờ): người dẫn giải thích luật theo nhịp của lớp.
+- Câu thử mở được ở RULES (trước đây chỉ ở LOBBY/SUMMARY): sinh viên cần biết luật (biểu quyết, quá nửa mới CHỐT, nhanh hơn thắng) rồi mới thử có ý nghĩa; thử ngay trên màn luật thì người dẫn chỉ vào luật trong lúc cả lớp bấm. Vẫn giữ ở LOBBY để làm quen điện thoại khi chờ người vào.
 - Tự chốt khi mọi thành viên online đã bỏ phiếu: nhóm không bị kẹt vì đội trưởng lơ đãng; vẫn là quyết định của tập thể (đa số), đội trưởng vẫn có thể chốt sớm khi quá nửa. Chỉ xét khi có phiếu mới để thời điểm chốt luôn gắn với một thao tác của nhóm.
 - Một nút "Bước tiếp theo" + phím tắt trên `/host`: người dẫn không phải nhớ thứ tự các nút, có thể điều khiển chỉ bằng máy chiếu. Không cho bỏ qua REVEAL để giữ "sau mỗi câu là lúc học".
 - Đội trưởng đặt theo danh sách nhóm trưởng thực tế (thay vì chỉ dựa vào "người vào đầu tiên"): 7 nhóm trùng nhóm của lớp nên đã có nhóm trưởng mà cả nhóm quen nghe theo; người dẫn bấm một nút là xong, sinh viên không phải làm gì thêm. Danh sách chỉ lưu trên trình duyệt của người dẫn để tên thật không nằm trong repo/server; khớp tên chỉ là gợi ý, người dẫn thấy trước và sửa tay được. Giữ "người vào đầu tiên" làm mặc định khi chưa đặt để nhóm luôn có người giữ nút CHỐT. Đã cân nhắc cho nhóm tự bầu trên điện thoại: dân chủ hơn nhưng tốn thời gian phòng chờ và cần cả nhóm thao tác.

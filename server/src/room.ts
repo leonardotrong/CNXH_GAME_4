@@ -478,6 +478,12 @@ export class Room {
     this.revealEndsAt = null;
   }
 
+  /** Câu thử cho cả 7 nhóm — chỉ ngoài trận: LOBBY, RULES (thử ngay sau khi nghe luật), SUMMARY. */
+  startTestQuestion(bank: readonly Question[], pool: QuestionPool, durationMs?: number): RoomResult<{ round: QuestionRound }> {
+    if (this.inMatch()) return WRONG_PHASE;
+    return this.startQuestion(bank, pool, { durationMs });
+  }
+
   /** Câu thử (ngoài trận) đóng: hiện đáp án trong `timing.reveal`. */
   closeTestQuestion(): RoomResult {
     if (this.question?.status !== 'open' || this.inMatch()) return WRONG_PHASE;

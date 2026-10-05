@@ -198,6 +198,20 @@ describe('câu hỏi qua Socket.IO', () => {
     expect(byTeam[2]).toMatchObject({ choice: 1, lockedBy: 'auto' });
   });
 
+  it('câu thử mở được sau khi hiện luật (RULES); xong thì về màn luật, vẫn bắt đầu Bàn Cờ được', async () => {
+    const { admin, host, a1, b1 } = await setup();
+    expect(await call(admin, 'admin:showRules')).toEqual({ ok: true });
+    const closedP = waitFor<PublicQuestionView | null>(host, 'question:state', (v) => v?.status === 'closed');
+    const start = await call(admin, 'admin:startQuestion', { pool: 'board' });
+    expect(start.ok).toBe(true);
+    await call(a1, 'player:vote', { roundId: start['roundId'], option: 0 });
+    await call(b1, 'player:vote', { roundId: start['roundId'], option: 0 });
+    const clearedP = waitFor<PublicQuestionView | null>(host, 'question:state', (v) => v === null);
+    expect((await closedP)!.reveal).toBeTruthy();
+    await clearedP;
+    expect(await call(admin, 'admin:startBoard', { totalTurns: 1 })).toEqual({ ok: true });
+  });
+
   it('admin bỏ qua câu → hủy, không công bố đáp án', async () => {
     const { admin, host } = await setup();
     const log = record(host);
