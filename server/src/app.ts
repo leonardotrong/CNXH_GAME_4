@@ -337,9 +337,8 @@ export function createAppServer(options: AppServerOptions = {}): AppServer {
     socket.on('admin:startQuestion', (req, ack) => {
       const room = adminRoom(ack);
       if (!room) return;
-      if (room.phase !== 'LOBBY' && room.phase !== 'SUMMARY') return done(ack, { ok: false, error: 'WRONG_PHASE' });
       const pool: QuestionPool = req?.pool === 'bomb' ? 'bomb' : 'board';
-      const res = room.startQuestion(questions, pool, { durationMs: durations[pool] });
+      const res = room.startTestQuestion(questions, pool, durations[pool]);
       if (!res.ok) return done(ack, res);
       changed(room);
       done(ack, { ok: true, roundId: res.round.roundId });

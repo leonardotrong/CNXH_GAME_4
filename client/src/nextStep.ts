@@ -42,6 +42,9 @@ export function stageOf(phase: Phase | undefined): number {
   return 4;
 }
 
+/** Pha ngoài trận: mở được câu thử (GAME_SPEC 5.3). */
+export const TEST_PHASES: readonly Phase[] = ['LOBBY', 'RULES', 'SUMMARY'];
+
 /** Pha cần người dẫn nhập kết quả khi bật chế độ dự phòng. */
 const MANUAL_PHASES: readonly Phase[] = ['BOARD_SELECT', 'BOARD_QUESTION', 'BOMB_QUESTION', 'BOMB_PASS'];
 
@@ -54,6 +57,19 @@ const RUNNING: Partial<Record<Phase, string>> = {
   BOMB_PASS: 'Nhóm cầm bom đang chọn nhóm nhận',
   BOMB_EXPLODE: 'Bom nổ!',
 };
+
+/**
+ * Việc phụ cạnh "Bước tiếp theo" ở màn luật: cả lớp chơi thử một câu (không tính điểm) trước khi bắt đầu Bàn Cờ.
+ * Nút trên /admin và phím T trên /host.
+ */
+export function practiceStep(game: GameView | null, question: PublicQuestionView | null): NextStep | null {
+  if (!game || game.phase !== 'RULES' || question || game.pausedAt !== null) return null;
+  return {
+    label: 'Chơi thử một câu',
+    hint: 'Cả lớp tập biểu quyết và CHỐT trên điện thoại, không tính điểm; xong quay lại màn luật.',
+    run: (_, done) => send().emit('admin:startQuestion', { pool: 'board' }, orNetworkError(done)),
+  };
+}
 
 export function nextStep(hasRoom: boolean, game: GameView | null, question: PublicQuestionView | null): NextStep {
   if (!hasRoom) {
@@ -72,9 +88,18 @@ export function nextStep(hasRoom: boolean, game: GameView | null, question: Publ
     };
   }
   const { phase } = game;
-  // Câu thử ngoài trận (LOBBY/SUMMARY).
-  if (question && (phase === 'LOBBY' || phase === 'SUMMARY')) {
-    return { label: 'Câu thử đang chạy', hint: 'Tự đóng khi hết giờ hoặc khi mọi nhóm đã chốt.', run: null };
+  // Câu thử ngoài trận: chạy trọn (kể cả phần đáp án) rồi mới sang bước tiếp theo.
+  if (question && TEST_PHASES.includes(phase)) {
+    return {
+      label: 'Câu thử đang chạy',
+      hint:
+        question.status === 'open'
+          ? 'Tự đóng khi hết giờ hoặc khi mọi nhóm đã chốt.'
+          : phase === 'RULES'
+            ? 'Đang hiện đáp án — vài giây nữa màn chiếu quay lại màn luật.'
+            : 'Đang hiện đáp án câu thử.',
+      run: null,
+    };
   }
   switch (phase) {
     case 'LOBBY':
@@ -86,7 +111,7 @@ export function nextStep(hasRoom: boolean, game: GameView | null, question: Publ
     case 'RULES':
       return {
         label: 'Bắt đầu Bàn Cờ',
-        hint: 'Mỗi lượt tự chạy khoảng 45 giây: chọn ô → trả lời → kết quả.',
+        hint: 'Mỗi lượt tự chạy khoảng 45 giây: chọn ô → trả lời → kết quả. Lớp chưa quen thì cho chơi thử một câu trước.',
         run: (opts, done) => send().emit('admin:startBoard', { totalTurns: opts.turns }, orNetworkError(done)),
         setting: 'turns',
       };

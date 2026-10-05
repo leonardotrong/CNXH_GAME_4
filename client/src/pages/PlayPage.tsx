@@ -107,7 +107,7 @@ export function PlayPage() {
   const me = saved && state ? state.teams.flatMap((t) => t.players.map((p) => ({ ...p, teamId: t.id }))).find((p) => p.id === saved.playerId) : undefined;
 
   if (saved && me && state) {
-    const inGame = !!game?.board && game.phase !== 'LOBBY' && !(game.phase === 'SUMMARY' && question);
+    const inGame = !!game?.board && game.phase !== 'LOBBY' && game.phase !== 'RULES' && !(game.phase === 'SUMMARY' && question);
     const members = state.teams[me.teamId - 1]!.players;
     const inLobby = state.lobbyOpen && !question && (game?.phase ?? 'LOBBY') === 'LOBBY';
     // Đang có vòng bỏ phiếu/câu hỏi: thu gọn danh sách nhóm để màn hình chỉ còn việc cần làm.
@@ -138,7 +138,7 @@ export function PlayPage() {
             teamId={me.teamId}
           />
         ) : question && question.teamIds.includes(me.teamId) ? (
-          <PlayQuestion view={question} team={teamVotes} playerId={me.id} />
+          <PlayQuestion view={question} team={teamVotes} playerId={me.id} practice />
         ) : game?.phase === 'RULES' ? (
           <section className="play-rules">
             <h2 className="play-section-title">Luật chơi</h2>

@@ -3,7 +3,7 @@ import { MAX_BOARD_TURNS, MAX_BOMB_COUNT, type GameView, type PublicQuestionView
 import { PHASE_LABELS } from './boardText';
 import { useCountdown } from './clock';
 import { Icon } from './Icon';
-import { DEFAULT_STEP_OPTIONS, STAGES, nextStep, stageOf, type StepOptions } from './nextStep';
+import { DEFAULT_STEP_OPTIONS, STAGES, nextStep, practiceStep, stageOf, type NextStep, type StepOptions } from './nextStep';
 import { socket } from './socket';
 import { TeamTag } from './TeamTag';
 
@@ -25,12 +25,13 @@ export function AdminNext({
   const [opts, setOpts] = useState<StepOptions>(DEFAULT_STEP_OPTIONS);
   const [busy, setBusy] = useState(false);
   const step = nextStep(hasRoom, game, question);
+  const practice = practiceStep(game, question);
   const stage = stageOf(game?.phase);
   const left = useCountdown(game?.phaseEndsAt ?? null);
   const paused = game?.pausedAt != null;
   const inMatch = !!game && game.phase !== 'LOBBY' && game.phase !== 'SUMMARY' && game.phase !== 'RULES';
 
-  const go = () => {
+  const go = (step: NextStep) => {
     if (!step.run || busy) return;
     // Đang mất kết nối: không xếp hàng lệnh — lúc kết nối lại, lệnh sẽ tới trước khi kịp đăng nhập lại và bị từ chối.
     if (!socket.connected) return onNotice('Đang mất kết nối tới máy chủ — chờ kết nối lại rồi bấm.');
@@ -63,10 +64,18 @@ export function AdminNext({
       <div className="admin-next__row">
         <div className="admin-next__main">
           {game && hasRoom && <Status game={game} left={left} />}
-          <button className={`next-btn ${step.run ? '' : 'is-waiting'}`} disabled={!step.run || busy} onClick={go}>
-            {step.run ? <Icon name="play" /> : <span className="next-btn__spinner" aria-hidden />}
-            <span>{step.label}</span>
-          </button>
+          <div className="admin-next__actions">
+            <button className={`next-btn ${step.run ? '' : 'is-waiting'}`} disabled={!step.run || busy} onClick={() => go(step)}>
+              {step.run ? <Icon name="play" /> : <span className="next-btn__spinner" aria-hidden />}
+              <span>{step.label}</span>
+            </button>
+            {/* Màn luật: chơi thử một câu trước khi bắt đầu (GAME_SPEC 5.3). */}
+            {practice && (
+              <button className="primary-btn primary-btn--ghost" disabled={busy} title={practice.hint} onClick={() => go(practice)}>
+                <Icon name="question" /> {practice.label}
+              </button>
+            )}
+          </div>
           <p className="admin-next__hint">{step.hint}</p>
           {step.setting === 'turns' && (
             <label className="admin-inline">

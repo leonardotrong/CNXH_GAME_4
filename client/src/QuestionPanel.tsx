@@ -9,6 +9,13 @@ export function formatMs(ms: number): string {
   return `${(ms / 1000).toLocaleString('vi-VN', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} s`;
 }
 
+/** Nhãn đầu câu hỏi; `practice` = câu thử ngoài trận (LOBBY, RULES, SUMMARY), không tính điểm. */
+export function questionLabel(view: PublicQuestionView, practice = false): string {
+  if (view.status !== 'open') return 'Đáp án';
+  if (practice) return 'Câu thử · không tính điểm';
+  return view.pool === 'board' ? 'Câu hỏi Bàn Cờ' : 'Câu hỏi Bom';
+}
+
 /**
  * Câu hỏi + đếm ngược + thứ tự chốt / đáp án. Dùng cho /host (và /admin ở cỡ nhỏ).
  * `showTimer = false` khi đồng hồ đã nằm ở thanh trên của màn chiếu.
@@ -17,17 +24,19 @@ export function QuestionPanel({
   view,
   activeTeamIds,
   showTimer = true,
+  practice = false,
 }: {
   view: PublicQuestionView;
   activeTeamIds?: number[];
   showTimer?: boolean;
+  practice?: boolean;
 }) {
   const reveal = view.reveal;
   const waiting = view.teamIds.filter((t) => (!activeTeamIds || activeTeamIds.includes(t)) && !view.locked.some((l) => l.teamId === t));
   return (
     <section className={`question question--${view.status}`}>
       <header className="question__head">
-        <span className="question__label">{view.status === 'open' ? (view.pool === 'board' ? 'Câu hỏi Bàn Cờ' : 'Câu hỏi Bom') : 'Đáp án'}</span>
+        <span className="question__label">{questionLabel(view, practice)}</span>
         {view.status === 'open' && showTimer && <CountdownRing endsAt={view.endsAt} startedAt={view.startedAt} className="question__timer" />}
       </header>
       <h2 className="question__prompt">{view.prompt}</h2>

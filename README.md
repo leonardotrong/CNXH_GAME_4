@@ -127,8 +127,8 @@ Kịch bản 30 phút ([GAME_SPEC §1](docs/GAME_SPEC.md#1-kịch-bản-30-phút
 | Phút | Pha | Nút "Bước tiếp theo" ghi | Ghi chú |
 |---|---|---|---|
 | Trước giờ | | **Tạo phòng** | Mở `/host` trên máy chiếu **khoảng 15 phút trước giờ học** (gói Render miễn phí cần thời gian "thức dậy"). |
-| 0–3 | LOBBY | **Hiện luật chơi** | Sinh viên quét QR, nhập tên, chọn Nhóm 1–7. Người vào nhóm đầu tiên tạm làm đội trưởng; bấm **Đặt theo danh sách** (thanh vàng ngay dưới nút) để đổi sang nhóm trưởng thực tế. "Câu thử" (ở *Công cụ khác*) giúp lớp làm quen cách bỏ phiếu. |
-| 3–4 | RULES | **Bắt đầu Bàn Cờ** | Giải thích luật xong mới bấm (pha không có đồng hồ). Chỉnh số lượt ngay cạnh nút (mặc định 14). |
+| 0–3 | LOBBY | **Hiện luật chơi** | Sinh viên quét QR, nhập tên, chọn Nhóm 1–7. Người vào nhóm đầu tiên tạm làm đội trưởng; bấm **Đặt theo danh sách** (thanh vàng ngay dưới nút) để đổi sang nhóm trưởng thực tế. |
+| 3–4 | RULES | **Bắt đầu Bàn Cờ** | Giải thích luật xong mới bấm (pha không có đồng hồ). Nên bấm **Chơi thử một câu** (ngay cạnh nút, hoặc phím `T` trên màn chiếu) để cả lớp tập biểu quyết và CHỐT trước: câu thử không tính điểm, xong tự quay lại màn luật. Chỉnh số lượt ngay cạnh nút (mặc định 14). |
 | 4–21 | BOARD | *Đang tự chạy* | Các lượt tự chạy. Thiếu giờ thì bấm **Kết thúc sau lượt này** ở thẻ Bàn Cờ. |
 | 21–28 | BOMB | **Bắt đầu Quả Bom** | Màn giới thiệu Quả Bom (BOMB_INTRO). Chỉnh số bom ngay cạnh nút (1–5, mặc định 3). |
 | 28–30 | SUMMARY | **Hiện tổng kết bài học** | Bục vinh danh, rồi 6 đặc điểm của nhà nước pháp quyền XHCN. |
@@ -143,13 +143,14 @@ Kịch bản 30 phút ([GAME_SPEC §1](docs/GAME_SPEC.md#1-kịch-bản-30-phút
 
 Tên được so không phân biệt hoa thường. Sinh viên gõ không dấu vẫn khớp; còn khi cả hai bên đều có dấu thì dấu được tính ("Hùng" khác "Hưng"). Sinh viên gõ tắt ("An", "Văn An", "Nguyễn An") vẫn khớp "Nguyễn Văn An" nếu trong nhóm chỉ có một người như vậy; tên dài bị cắt ở 20 ký tự cũng khớp. Chưa đặt thì người vào nhóm đầu tiên tạm làm đội trưởng.
 
-**Điều khiển ngay trên máy chiếu (khỏi chuyển cửa sổ):** trên `/host` bấm `K` (hoặc nút mờ ở góc phải dưới) và nhập mật khẩu admin một lần. Sau đó: `Space`/`→` = bước tiếp theo, `P` = tạm dừng/tiếp tục, `M` = tắt/bật âm thanh, `F` = toàn màn hình. Mỗi lần bấm có thông báo xác nhận ngắn; gợi ý phím hiện mờ rồi tự ẩn. (Tạo phòng mới khi đang có trận chỉ làm được ở `/admin`, để tránh bấm nhầm.)
+**Điều khiển ngay trên máy chiếu (khỏi chuyển cửa sổ):** trên `/host` bấm `K` (hoặc nút mờ ở góc phải dưới) và nhập mật khẩu admin một lần. Sau đó: `Space`/`→` = bước tiếp theo, `T` = chơi thử một câu (ở màn luật), `P` = tạm dừng/tiếp tục, `M` = tắt/bật âm thanh, `F` = toàn màn hình. Mỗi lần bấm có thông báo xác nhận ngắn; gợi ý phím hiện mờ rồi tự ẩn. (Tạo phòng mới khi đang có trận chỉ làm được ở `/admin`, để tránh bấm nhầm.)
 
 <p align="center"><img src="docs/images/host-remote.webp" alt="Màn chiếu sau khi bấm K và nhập mật khẩu: thông báo xác nhận và gợi ý phím" width="90%"></p>
 <p align="center"><sub>Sau khi bấm <code>K</code> và nhập mật khẩu: thông báo "Đã bật điều khiển bằng phím" ở trên, gợi ý phím ở dưới (tự ẩn sau vài giây).</sub></p>
 
 Các nút dùng được bất cứ lúc nào:
 - **Tạm dừng / Tiếp tục** (cạnh nút Bước tiếp theo, hoặc phím `P`): mọi đồng hồ (kể cả ngòi bom) đứng yên, người chơi không bỏ phiếu được.
+- **Câu thử** (*Công cụ khác*, hoặc nút **Chơi thử một câu** ở màn luật): một câu cho cả lớp, không tính điểm. Mở được ở phòng chờ, màn luật và màn tổng kết; **Hủy câu thử** để dừng ngay.
 - **Bỏ qua câu lỗi**: đổi sang câu khác. Mục tiêu đã chọn được giữ nguyên, ngòi bom vẫn cháy tiếp.
 - **Chỉnh tay**: đổi chủ ô, đổi đội trưởng (ô ★ của từng nhóm, hoặc **Đặt theo danh sách**), chuyển người chơi sang nhóm khác.
 - **Nhật ký sự kiện**: ai chiếm ô nào, ai phòng thủ thành công, bom nổ ở đâu. Dùng để giải quyết tranh cãi.

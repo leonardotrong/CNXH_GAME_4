@@ -2,7 +2,7 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import type { PublicQuestionView, TeamQuestionView } from '@cnxh/shared';
 import { CountdownRing } from './Countdown';
 import { Icon } from './Icon';
-import { OPTION_LABELS } from './QuestionPanel';
+import { OPTION_LABELS, questionLabel } from './QuestionPanel';
 import { ACK_TIMEOUT_MS, orNetworkError, socket } from './socket';
 import { VoteStatus } from './VoteControls';
 
@@ -22,12 +22,15 @@ export function PlayQuestion({
   team,
   playerId,
   readOnly = false,
+  practice = false,
 }: {
   view: PublicQuestionView;
   team: TeamQuestionView | null;
   playerId: string;
   /** Nhóm không trả lời câu này (Quả Bom: chỉ nhóm cầm bom trả lời) — chỉ xem. */
   readOnly?: boolean;
+  /** Câu thử ngoài trận: không tính điểm. */
+  practice?: boolean;
 }) {
   const [error, setError] = useState('');
   // Phiếu vừa chạm, hiện ngay trước khi server xác nhận (mạng 4G có thể trễ vài trăm ms).
@@ -73,7 +76,7 @@ export function PlayQuestion({
       <div className="play-task">
         {view.status === 'open' && <CountdownRing endsAt={view.endsAt} startedAt={view.startedAt} />}
         <span className="play-task__text">
-          <b>{view.status === 'open' ? (view.pool === 'board' ? 'Câu hỏi Bàn Cờ' : 'Câu hỏi Bom') : 'Đáp án'}</b>
+          <b>{questionLabel(view, practice)}</b>
           <span>
             {readOnly && view.status === 'open'
               ? 'Chỉ xem — nhóm khác đang trả lời.'
