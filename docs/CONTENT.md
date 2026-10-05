@@ -6,7 +6,7 @@ Luôn đối chiếu với giáo trình/slide giảng viên đang dùng. Nếu c
 ## 1. Nhà nước nói chung
 - Nguồn gốc (Lênin, "Nhà nước và cách mạng"): nhà nước là sản phẩm và biểu hiện của những mâu thuẫn giai cấp không thể điều hòa được.
 - Công xã nguyên thủy chưa có giai cấp nên chưa có nhà nước.
-- Các kiểu nhà nước trong lịch sử: chủ nô, phong kiến, tư sản, xã hội chủ nghĩa.
+- Các kiểu nhà nước trong lịch sử (nối tiếp nhau): chủ nô, phong kiến, tư sản, xã hội chủ nghĩa.
 
 ## 2. Nhà nước xã hội chủ nghĩa
 - Ra đời là kết quả của cách mạng do giai cấp công nhân (vô sản) và nhân dân lao động tiến hành dưới sự lãnh đạo của Đảng Cộng sản.
@@ -30,25 +30,31 @@ Luôn đối chiếu với giáo trình/slide giảng viên đang dùng. Nếu c
 
 ## 4. Hiến pháp 2013 — các điều hay dùng
 - Điều 2: Nhà nước pháp quyền XHCN của Nhân dân, do Nhân dân, vì Nhân dân; tất cả quyền lực nhà nước thuộc về Nhân dân, nền tảng là liên minh giữa giai cấp công nhân với giai cấp nông dân và đội ngũ trí thức; quyền lực nhà nước là thống nhất, có phân công, phối hợp, kiểm soát giữa các cơ quan trong thực hiện quyền lập pháp, hành pháp, tư pháp.
-- Điều 4: vai trò lãnh đạo của Đảng Cộng sản Việt Nam.
+- Điều 4: vai trò lãnh đạo của Đảng Cộng sản Việt Nam; các tổ chức của Đảng và đảng viên hoạt động trong khuôn khổ Hiến pháp và pháp luật.
 - Điều 6: Nhân dân thực hiện quyền lực nhà nước bằng dân chủ trực tiếp và dân chủ đại diện (qua Quốc hội, Hội đồng nhân dân và các cơ quan khác của Nhà nước).
-- Điều 8: Nhà nước tổ chức và hoạt động theo Hiến pháp và pháp luật, quản lý xã hội bằng Hiến pháp và pháp luật, thực hiện nguyên tắc tập trung dân chủ.
+- Điều 7: bầu cử đại biểu Quốc hội, HĐND theo nguyên tắc phổ thông, bình đẳng, trực tiếp và bỏ phiếu kín; đại biểu bị cử tri hoặc Quốc hội, HĐND bãi nhiệm khi không còn xứng đáng với sự tín nhiệm của Nhân dân.
+- Điều 8: Nhà nước tổ chức và hoạt động theo Hiến pháp và pháp luật, quản lý xã hội bằng Hiến pháp và pháp luật, thực hiện nguyên tắc tập trung dân chủ. Khoản 2: cơ quan nhà nước, cán bộ, công chức, viên chức phải tận tụy phục vụ Nhân dân, chịu sự giám sát của Nhân dân, kiên quyết đấu tranh chống tham nhũng, lãng phí, quan liêu, hách dịch, cửa quyền (dùng cho Quả Bom Tham Nhũng).
 - Điều 27: công dân đủ 18 tuổi có quyền bầu cử, đủ 21 tuổi có quyền ứng cử vào Quốc hội, Hội đồng nhân dân.
-- Điều 69: Quốc hội là cơ quan đại biểu cao nhất của Nhân dân, cơ quan quyền lực nhà nước cao nhất; thực hiện quyền lập hiến, lập pháp.
+- Điều 28: công dân có quyền tham gia quản lý nhà nước và xã hội, thảo luận và kiến nghị với cơ quan nhà nước. Điều 29: đủ 18 tuổi có quyền biểu quyết khi Nhà nước tổ chức trưng cầu ý dân.
+- Điều 69–70: Quốc hội là cơ quan đại biểu cao nhất của Nhân dân, cơ quan quyền lực nhà nước cao nhất; thực hiện quyền lập hiến, lập pháp (làm, sửa đổi Hiến pháp và luật), giám sát tối cao đối với hoạt động của Nhà nước.
+- Điều 86–87: Chủ tịch nước là người đứng đầu Nhà nước, thay mặt nước CHXHCN Việt Nam về đối nội và đối ngoại; do Quốc hội bầu trong số đại biểu Quốc hội.
 - Điều 94: Chính phủ là cơ quan hành chính nhà nước cao nhất, thực hiện quyền hành pháp, là cơ quan chấp hành của Quốc hội.
 - Điều 102: Tòa án nhân dân là cơ quan xét xử, thực hiện quyền tư pháp.
 - Điều 103: Thẩm phán, Hội thẩm xét xử độc lập và chỉ tuân theo pháp luật.
 - Điều 107: Viện kiểm sát nhân dân thực hành quyền công tố, kiểm sát hoạt động tư pháp.
+- Điều 118: Kiểm toán nhà nước do Quốc hội thành lập, hoạt động độc lập và chỉ tuân theo pháp luật, kiểm toán việc quản lý, sử dụng tài chính, tài sản công.
+- Điều 119: Hiến pháp là luật cơ bản, có hiệu lực pháp lý cao nhất; mọi văn bản pháp luật khác phải phù hợp với Hiến pháp.
 - Nguyên tắc thường được giảng: cơ quan nhà nước chỉ được làm những gì pháp luật cho phép; công dân được làm những gì pháp luật không cấm.
-- LƯU Ý: Hiến pháp 2013 đã được sửa đổi, bổ sung năm 2025 (chính quyền địa phương hai cấp). Câu hỏi về bộ máy, nhất là chính quyền địa phương, phải đúng quy định hiện hành. Tránh câu hỏi về số lượng đơn vị hành chính hoặc số liệu dễ lỗi thời.
+- LƯU Ý: Hiến pháp 2013 đã được sửa đổi, bổ sung năm 2025 (Nghị quyết 203/2025/QH15: Mặt trận Tổ quốc và Công đoàn ở Điều 9, 10, quyền trình dự án luật ở Điều 84, chính quyền địa phương hai cấp từ Điều 110). Các điều liệt kê ở trên không thuộc phần sửa đổi. Câu hỏi về bộ máy, nhất là chính quyền địa phương, phải đúng quy định hiện hành. Tránh câu hỏi về số lượng đơn vị hành chính hoặc số liệu dễ lỗi thời.
 
 ## 5. Quy tắc soạn câu hỏi
-- Kho `board`: 4 phương án, đúng 1 đáp án; câu hỏi ≤ 25 từ, mỗi phương án ≤ 10 từ; phương án nhiễu hợp lý; không dùng "tất cả các ý trên".
+- Kho `board`: 4 phương án, đúng 1 đáp án; câu hỏi ≤ 25 từ, mỗi phương án ≤ 10 từ ("từ" = tiếng, đếm theo dấu cách); phương án nhiễu hợp lý, độ dài gần bằng đáp án đúng (đáp án dài hẳn là lộ); không dùng "tất cả các ý trên" hay "cả A và B" (server trộn thứ tự phương án).
 - Kho `bomb`: đúng/sai hoặc 2–3 phương án; câu ≤ 18 từ, đọc xong trong 3 giây.
 - `explanation`: 1–2 câu, nêu căn cứ (giáo trình hoặc điều Hiến pháp).
 - Mỗi câu gắn `topic`: `nguon-goc`, `ban-chat`, `chuc-nang`, `bo-may`, `dac-diem`, `tinh-huong`.
 - Trung lập, bám giáo trình; không bình luận thời sự, không nêu tên người thật.
-- Số lượng cần cho một trận: `board` ≥ 20 (dùng 14 + dự phòng), `bomb` ≥ 35.
+- Số lượng cần cho một trận: `board` ≥ 20 (dùng 14 + dự phòng), `bomb` ≥ 35. Hiện có 26 `board` + 36 `bomb` (rà soát 10/2026).
+- `server/src/questionBank.test.ts` kiểm tra tự động các quy tắc đo được ở trên (số lượng, số từ, topic, có nguồn, không trùng); nội dung đúng sai thì người phải đối chiếu.
 - Người soạn phải tự kiểm tra lại mọi đáp án với giáo trình trước buổi học.
 
 ## 6. Ánh xạ luật chơi ↔ bài học (người dẫn nói ở màn tổng kết)

@@ -481,7 +481,7 @@ Sửa [data/questions.json](data/questions.json). Đọc quy tắc soạn câu �
 - `type: "tf"` (đúng/sai) phải có `options` đúng bằng `["Đúng", "Sai"]`.
 - `answerIndex` đánh số từ 0. Không cần tự trộn thứ tự: server trộn phương án mỗi lần hỏi.
 - `id` không được trùng. `topic` thuộc `nguon-goc | ban-chat | chuc-nang | bo-may | dac-diem | tinh-huong`.
-- Chạy `npm test`: test `questionBank.test.ts` kiểm tra file hợp lệ. Server cũng từ chối khởi động nếu file lỗi.
+- Chạy `npm test`: test `questionBank.test.ts` kiểm tra file hợp lệ và các quy tắc đo được ở [CONTENT §5](docs/CONTENT.md) (đủ số câu, số từ, `topic`, có `source`, không trùng câu). Server cũng từ chối khởi động nếu file sai định dạng.
 - **Tự đối chiếu đáp án với giáo trình** trước buổi học.
 
 ### Đổi luật chơi
@@ -545,7 +545,7 @@ npm run screenshots -- --chrome /usr/bin/chromium   # chỉ đường dẫn Chro
 ## 7. Test
 
 ```bash
-npm test                 # toàn bộ: 27 file, 305 test (khoảng 12 giây)
+npm test                 # toàn bộ: 27 file, 310 test (khoảng 12 giây)
 npm run test:watch       # chạy lại khi lưu file
 npx vitest run resolveTurn    # chỉ chạy file khớp tên
 ```
@@ -622,7 +622,7 @@ Hướng dẫn chi tiết, bảng cấu hình thủ công và checklist kiểm t
 
 ## 10. Việc còn dở và vấn đề đã biết
 
-- [ ] **Ngân hàng câu hỏi chưa đủ.** Hiện có **18 câu `board` + 16 câu `bomb`**, trong khi một trận cần `board` ≥ 20 và `bomb` ≥ 35 ([CONTENT §5](docs/CONTENT.md)). Khi hết kho, game sẽ hỏi lại câu cũ. **Đây là việc ưu tiên nhất trước buổi học.**
+- [ ] **Giảng viên duyệt ngân hàng câu hỏi.** Đã đủ số lượng (**26 câu `board` + 36 câu `bomb`**, rà soát với giáo trình và Hiến pháp 2013 vào 10/2026), nhưng nên nhờ giảng viên đối chiếu với slide đang dùng trước buổi học ([CONTENT §5](docs/CONTENT.md)).
 - [ ] **Giai đoạn 7**: đã deploy lên Render (https://cnxh-game.onrender.com/); còn thử với ≥ 10 điện thoại dùng 4G.
 - [ ] Phiên bản Node chưa thống nhất: `render.yaml` và `docs/DEPLOY.md` đặt `NODE_VERSION=22`, còn `.nvmrc` (local và CI) là 24. Cả hai đều chạy được, nhưng nên thống nhất.
 - [ ] Client chưa có test giao diện (chỉ kiểm thử thủ công và bằng `simulate`).
