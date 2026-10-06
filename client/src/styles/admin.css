@@ -796,6 +796,15 @@
   font-size: 0.85rem;
 }
 
+/* Đang chơi thử (GAME_SPEC 5.3) */
+.admin-next__practice {
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  background: #e9f2ff;
+  color: var(--blue-dark);
+  font-size: 0.85rem;
+}
+
 .admin-next__actions {
   display: flex;
   flex-wrap: wrap;
@@ -1112,6 +1121,12 @@
 .admin-callout .primary-btn {
   min-height: 42px;
   font-size: 0.95rem;
+}
+
+.admin-callout__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .admin-trial h2 {

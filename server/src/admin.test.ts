@@ -28,11 +28,11 @@ function join(name: string, teamId: number) {
   ids[name] = (res as { playerId: string }).playerId;
 }
 /** Tua tới hạn của pha hiện tại rồi chuyển pha như timer của server. */
-function tick() {
+function tick(bank: readonly Question[] = BANK) {
   const at = room.nextDeadline();
   if (at === null) throw new Error(`Không có hạn ở pha ${room.phase}`);
   time = Math.max(time, at);
-  must(room.advance(BANK));
+  must(room.advance(bank));
 }
 /** CHỐT nếu nhóm chưa tự chốt — nhóm một người online thì phiếu đã tự chốt (GAME_SPEC 2.2). */
 function lockIfOpen(name: string, roundId: number) {
@@ -92,6 +92,111 @@ describe('Room — pha RULES', () => {
     must(room.startBoard(BANK, 2));
     expect(room.question).toBeNull();
     expect(room.startTestQuestion(BANK, 'board')).toEqual({ ok: false, error: 'WRONG_PHASE' });
+  });
+});
+
+describe('Room — chơi thử ở màn luật (GAME_SPEC 5.3)', () => {
+  /** Kho 3 câu board: chơi thử 2 lượt dùng 2 câu, trận thật phải hỏi câu còn lại trước. */
+  const BANK3: Question[] = [...BANK, { ...BANK[0]!, id: 'b3', prompt: 'Câu 3?' }];
+
+  beforeEach(() => {
+    join('An', 1);
+    join('Bình', 2);
+  });
+
+  it('chỉ mở ở RULES, không khi đang có câu thử, cần kho board', () => {
+    expect(room.startPractice(BANK3)).toEqual({ ok: false, error: 'WRONG_PHASE' }); // LOBBY: chưa nghe luật
+    must(room.showRules());
+    expect(room.startPractice(BANK.filter((q) => q.pool === 'bomb'))).toEqual({ ok: false, error: 'NO_QUESTIONS_IN_POOL' });
+    must(room.startTestQuestion(BANK3, 'board'));
+    expect(room.startPractice(BANK3)).toEqual({ ok: false, error: 'QUESTION_ACTIVE' });
+  });
+
+  it('chạy đúng như Bàn Cờ thật (2 lượt, có chiếm ô) rồi quay về màn luật; trận thật bắt đầu lại từ đầu, ưu tiên câu chưa hỏi', () => {
+    must(room.showRules());
+    must(room.startPractice(BANK3));
+    expect(room.publicGame()).toMatchObject({ phase: 'BOARD_SELECT', board: { practice: true, turn: 1, totalTurns: 2 } });
+    expect(room.startBoard(BANK3, 14)).toEqual({ ok: false, error: 'WRONG_PHASE' });
+    expect(room.startTestQuestion(BANK3, 'board')).toEqual({ ok: false, error: 'WRONG_PHASE' });
+    const asked: string[] = [];
+
+    // Lượt thử 1: Nhóm 1 chiếm ô kề ô xuất phát.
+    must(room.vote(ids['An']!, room.select!.roundId, c(1, -3)));
+    tick(BANK3); // đóng SELECT (nhóm 2 không chọn) → câu hỏi
+    asked.push(room.question!.question.questionId);
+    must(room.vote(ids['An']!, room.question!.roundId, answer()));
+    tick(BANK3); // đóng câu → REVEAL
+    expect(room.publicGame().board).toMatchObject({ practice: true, turn: 1 });
+    expect(room.match!.board.owners[c(1, -3)]).toBe(1);
+    tick(BANK3); // lượt thử 2
+    expect(room.publicGame()).toMatchObject({ phase: 'BOARD_SELECT', board: { practice: true, turn: 2 } });
+    tick(BANK3);
+    asked.push(room.question!.question.questionId);
+    tick(BANK3);
+    expect(room.phase).toBe('BOARD_REVEAL');
+    tick(BANK3); // hết REVEAL lượt thử cuối → về màn luật, bỏ bàn cờ chơi thử
+    expect(room.publicGame()).toMatchObject({ phase: 'RULES', phaseEndsAt: null, board: null });
+    expect(room.select).toBeNull();
+    expect(room.question).toBeNull();
+    expect(room.nextDeadline()).toBeNull();
+    expect(room.log().map((e) => e.text).join('\n')).toMatch(/Bắt đầu chơi thử \(2 lượt[\s\S]*Kết thúc chơi thử sau lượt 2/);
+
+    must(room.startBoard(BANK3, 14));
+    expect(room.publicGame().board).toMatchObject({ practice: false, turn: 1, totalTurns: 14 });
+    expect(room.match!.board.owners[c(1, -3)]).toBeNull();
+    expect(room.match!.stats[1]).toEqual({ correct: 0, correctLockMs: 0 });
+    tick(BANK3); // SELECT → câu đầu của trận thật
+    expect(asked).toHaveLength(2);
+    expect(asked).not.toContain(room.question!.question.questionId);
+  });
+
+  it('số lượt thử chọn được 1–3; hết lượt thử thì không sang Quả Bom', () => {
+    must(room.showRules());
+    must(room.startPractice(BANK3, 1));
+    expect(room.publicGame().board).toMatchObject({ practice: true, totalTurns: 1 });
+    tick(BANK3);
+    tick(BANK3);
+    tick(BANK3);
+    expect(room.phase).toBe('RULES');
+    expect(room.publicGame().bomb).toBeNull();
+    must(room.startPractice(BANK3, 9));
+    expect(room.publicGame().board!.totalTurns).toBe(3);
+  });
+
+  it('dừng chơi thử: quay về màn luật ngay, kể cả khi đang tạm dừng; ngoài chơi thử thì không có gì để dừng', () => {
+    must(room.showRules());
+    expect(room.stopPractice()).toEqual({ ok: false, error: 'WRONG_PHASE' });
+    must(room.startPractice(BANK3));
+    tick(BANK3); // đang ở câu hỏi
+    must(room.pause());
+    must(room.stopPractice());
+    expect(room.publicGame()).toMatchObject({ phase: 'RULES', pausedAt: null, board: null });
+    expect(room.question).toBeNull();
+    expect(room.log().at(-1)!.text).toContain('dừng chơi thử');
+    must(room.startBoard(BANK3, 2));
+    expect(room.stopPractice()).toEqual({ ok: false, error: 'WRONG_PHASE' }); // trận thật
+  });
+
+  it('chơi thử khi mở lại màn luật sau một trận: không còn dữ liệu Quả Bom cũ', () => {
+    must(room.startBoard(BANK3, 1));
+    tick(BANK3);
+    tick(BANK3);
+    tick(BANK3); // hết lượt duy nhất → BOMB_INTRO
+    expect(room.publicGame().bomb).not.toBeNull();
+    room.phase = 'SUMMARY'; // (đường tới SUMMARY qua Quả Bom được test ở bomb.test.ts)
+    must(room.showRules());
+    must(room.startPractice(BANK3));
+    expect(room.publicGame()).toMatchObject({ phase: 'BOARD_SELECT', bomb: null, board: { practice: true, turn: 1 } });
+  });
+
+  it('lưu/khôi phục giữa lúc chơi thử: vẫn là chơi thử; file cũ (chưa có cờ chơi thử) → trận thật', () => {
+    must(room.showRules());
+    must(room.startPractice(BANK3));
+    const restored = Room.fromSnapshot(room.toSnapshot(), () => time, TIMING);
+    expect(restored.publicGame().board!.practice).toBe(true);
+    const snap = JSON.parse(JSON.stringify(room.toSnapshot()));
+    delete snap.match.practice;
+    expect(Room.fromSnapshot(snap as RoomSnapshot, () => time, TIMING).publicGame().board!.practice).toBe(false);
   });
 });
 

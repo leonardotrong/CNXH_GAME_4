@@ -1,4 +1,4 @@
-import { DEFAULT_BOARD_TURNS, DEFAULT_BOMB_COUNT, type GameView, type Phase, type PublicQuestionView } from '@cnxh/shared';
+import { DEFAULT_BOARD_TURNS, DEFAULT_BOMB_COUNT, PRACTICE_TURNS, type GameView, type Phase, type PublicQuestionView } from '@cnxh/shared';
 import { ACK_TIMEOUT_MS, orNetworkError, socket } from './socket';
 
 /**
@@ -34,9 +34,10 @@ export interface NextStep {
 /** Năm chặng của buổi chơi, để hiện thanh tiến trình. */
 export const STAGES = ['Phòng chờ', 'Luật chơi', 'Bàn Cờ', 'Quả Bom', 'Tổng kết'] as const;
 
-export function stageOf(phase: Phase | undefined): number {
+/** Chặng hiện tại; chơi thử vẫn thuộc chặng "Luật chơi". */
+export function stageOf(phase: Phase | undefined, practice = false): number {
   if (!phase || phase === 'LOBBY') return 0;
-  if (phase === 'RULES') return 1;
+  if (phase === 'RULES' || practice) return 1;
   if (phase.startsWith('BOARD_')) return 2;
   if (phase.startsWith('BOMB_')) return 3;
   return 4;
@@ -58,16 +59,31 @@ const RUNNING: Partial<Record<Phase, string>> = {
   BOMB_EXPLODE: 'Bom nổ!',
 };
 
+/** Đang chơi thử (GAME_SPEC 5.3): trận đánh dấu `practice`, đang ở các pha Bàn Cờ. */
+export function isPractice(game: GameView | null): boolean {
+  return !!game?.board?.practice && game.phase.startsWith('BOARD_');
+}
+
 /**
- * Việc phụ cạnh "Bước tiếp theo" ở màn luật: cả lớp chơi thử một câu (không tính điểm) trước khi bắt đầu Bàn Cờ.
+ * Việc phụ cạnh "Bước tiếp theo" ở màn luật: cả lớp chơi thử vài lượt Bàn Cờ (không tính điểm) trước khi bắt đầu.
  * Nút trên /admin và phím T trên /host.
  */
 export function practiceStep(game: GameView | null, question: PublicQuestionView | null): NextStep | null {
   if (!game || game.phase !== 'RULES' || question || game.pausedAt !== null) return null;
   return {
-    label: 'Chơi thử một câu',
-    hint: 'Cả lớp tập biểu quyết và CHỐT trên điện thoại, không tính điểm; xong quay lại màn luật.',
-    run: (_, done) => send().emit('admin:startQuestion', { pool: 'board' }, orNetworkError(done)),
+    label: `Chơi thử ${PRACTICE_TURNS} lượt`,
+    hint: `Cả lớp chơi thử ${PRACTICE_TURNS} lượt Bàn Cờ trên bàn cờ thật (chọn ô → trả lời → kết quả), không tính điểm; xong tự quay lại màn luật.`,
+    run: (_, done) => send().emit('admin:startPractice', {}, orNetworkError(done)),
+  };
+}
+
+/** Dừng chơi thử giữa chừng (chỉ trên /admin — không gán phím để khỏi bấm nhầm trên máy chiếu). */
+export function stopPracticeStep(game: GameView | null): NextStep | null {
+  if (!isPractice(game)) return null;
+  return {
+    label: 'Dừng chơi thử',
+    hint: 'Bỏ bàn cờ chơi thử, quay lại màn luật ngay.',
+    run: (_, done) => send().emit('admin:stopPractice', orNetworkError(done)),
   };
 }
 
@@ -111,7 +127,7 @@ export function nextStep(hasRoom: boolean, game: GameView | null, question: Publ
     case 'RULES':
       return {
         label: 'Bắt đầu Bàn Cờ',
-        hint: 'Mỗi lượt tự chạy khoảng 45 giây: chọn ô → trả lời → kết quả. Lớp chưa quen thì cho chơi thử một câu trước.',
+        hint: `Mỗi lượt tự chạy khoảng 45 giây: chọn ô → trả lời → kết quả. Lớp chưa quen thì cho chơi thử ${PRACTICE_TURNS} lượt trước.`,
         run: (opts, done) => send().emit('admin:startBoard', { totalTurns: opts.turns }, orNetworkError(done)),
         setting: 'turns',
       };
@@ -140,7 +156,9 @@ export function nextStep(hasRoom: boolean, game: GameView | null, question: Publ
         hint:
           game.fallback && MANUAL_PHASES.includes(phase)
             ? 'Chế độ dự phòng: nhập kết quả từ thẻ màu ở bảng bên dưới.'
-            : 'Pha tự chạy — không cần bấm gì.',
+            : isPractice(game)
+              ? 'Đang chơi thử: pha tự chạy, không tính điểm. Hết lượt thử cuối tự quay lại màn luật.'
+              : 'Pha tự chạy — không cần bấm gì.',
         run: null,
       };
   }

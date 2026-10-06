@@ -27,7 +27,7 @@ export function AdminBoard({ game, onNotice }: { game: GameView | null; onNotice
 
   return (
     <section className="admin-card admin-board">
-      <h2>{bombPhase ? 'Quả Bom Tham Nhũng' : 'Bàn Cờ Quyền Lực'}</h2>
+      <h2>{bombPhase ? 'Quả Bom Tham Nhũng' : board?.practice && inPlay ? 'Bàn Cờ — chơi thử (không tính điểm)' : 'Bàn Cờ Quyền Lực'}</h2>
       {game?.phase === 'BOMB_INTRO' ? (
         <p className="admin-board__status">
           Nhóm cầm bom đầu tiên: <TeamTag teamId={game.bomb!.holder} />
@@ -37,16 +37,21 @@ export function AdminBoard({ game, onNotice }: { game: GameView | null; onNotice
       ) : (
         <>
           <div className="admin-actions">
-            <label className="admin-inline">
-              Số lượt
-              <input type="number" min={board!.turn} max={MAX_BOARD_TURNS} value={turns} onChange={(e) => setTurns(Number(e.target.value))} />
-            </label>
-            <button
-              className="primary-btn"
-              onClick={() => socket.emit('admin:setBoardTurns', { totalTurns: turns }, report('Không đổi được số lượt'))}
-            >
-              Đổi số lượt
-            </button>
+            {/* Chơi thử: số lượt cố định (dừng sớm bằng "Dừng chơi thử" ở thẻ trên). */}
+            {!board!.practice && (
+              <>
+                <label className="admin-inline">
+                  Số lượt
+                  <input type="number" min={board!.turn} max={MAX_BOARD_TURNS} value={turns} onChange={(e) => setTurns(Number(e.target.value))} />
+                </label>
+                <button
+                  className="primary-btn"
+                  onClick={() => socket.emit('admin:setBoardTurns', { totalTurns: turns }, report('Không đổi được số lượt'))}
+                >
+                  Đổi số lượt
+                </button>
+              </>
+            )}
             <button
               className={`primary-btn ${board!.endAfterThisTurn ? '' : 'primary-btn--danger'}`}
               onClick={() =>

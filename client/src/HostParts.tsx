@@ -11,17 +11,20 @@ export function HostBar({
   badge,
   title,
   owners,
+  practice = false,
   children,
 }: {
   badge: ReactNode;
   title: ReactNode;
   owners?: readonly (number | null)[];
+  /** Đang chơi thử: nhãn nổi bật để không ai tưởng là trận thật. */
+  practice?: boolean;
   children?: ReactNode;
 }) {
   return (
     <header className="host-bar">
       <div className="host-bar__row">
-        <span className="host-bar__badge">{badge}</span>
+        <span className={`host-bar__badge ${practice ? 'host-bar__badge--practice' : ''}`}>{badge}</span>
         <h1 className="host-bar__title">{title}</h1>
         <div className="host-bar__end">{children}</div>
       </div>

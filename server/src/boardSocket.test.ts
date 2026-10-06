@@ -7,6 +7,7 @@ import {
   type GameView,
   type PublicQuestionView,
   type Question,
+  type RoomState,
   type ServerToClientEvents,
   type TeamSelectView,
 } from '@cnxh/shared';
@@ -139,4 +140,60 @@ describe('Bàn Cờ qua Socket.IO', () => {
     expect(end.board!.turn).toBe(2);
     expect(end.board!.standings[0]).toMatchObject({ teamId: 1, score: 2 });
   }, 15_000);
+
+  it('chơi thử ở màn luật (GAME_SPEC 5.3): điện thoại chọn ô và trả lời như thật; hết lượt thử thì về màn luật; dừng được', async () => {
+    const admin = client();
+    await call(admin, 'admin:login', { password: 'pw' });
+    const { code } = (await call(admin, 'admin:createRoom')) as unknown as { code: string };
+    const host = client();
+    await call(host, 'host:watch', { roomCode: code });
+    const p1 = client();
+    await call(p1, 'player:join', { roomCode: code, name: 'A', teamId: 1 });
+
+    expect(await call(admin, 'admin:startPractice', {})).toEqual({ ok: false, error: 'WRONG_PHASE' }); // chưa hiện luật
+    expect(await call(admin, 'admin:showRules')).toEqual({ ok: true });
+    const selectAtP1 = waitFor<TeamSelectView | null>(p1, 'select:team', (v) => v !== null);
+    const practiceAtHost = waitFor<GameView>(host, 'game:state', (v) => v.phase === 'BOARD_SELECT');
+    expect(await call(admin, 'admin:startPractice', { turns: 1 })).toEqual({ ok: true });
+    expect((await practiceAtHost).board).toMatchObject({ practice: true, turn: 1, totalTurns: 1 });
+
+    // Nhóm 1 (một người) chọn ô → tự chốt → mọi nhóm đã chốt → câu hỏi; trả lời đúng → chiếm ô.
+    const sel = (await selectAtP1)!;
+    const qAtP1 = waitFor<PublicQuestionView | null>(p1, 'question:state', (v) => v?.status === 'open');
+    await call(p1, 'player:vote', { roundId: sel.roundId, option: c(1, -3) });
+    const q = (await qAtP1)!;
+    const revealAtHost = waitFor<GameView>(host, 'game:state', (v) => v.phase === 'BOARD_REVEAL');
+    const rulesAtHost = waitFor<GameView>(host, 'game:state', (v) => v.phase === 'RULES');
+    await call(p1, 'player:vote', { roundId: q.roundId, option: q.options.findIndex((o) => o.startsWith('Đúng')) });
+    const reveal = await revealAtHost;
+    expect(reveal.board).toMatchObject({ practice: true });
+    expect(reveal.board!.owners[c(1, -3)]).toBe(1);
+    expect((await rulesAtHost).board).toBeNull(); // hết REVEAL của lượt thử cuối
+
+    // Chơi thử lần nữa rồi dừng giữa chừng; sau đó trận thật bắt đầu từ bàn cờ xuất phát.
+    expect(await call(admin, 'admin:stopPractice')).toEqual({ ok: false, error: 'WRONG_PHASE' });
+    expect(await call(admin, 'admin:startPractice', {})).toEqual({ ok: true });
+    const stopped = waitFor<GameView>(host, 'game:state', (v) => v.phase === 'RULES');
+    expect(await call(admin, 'admin:stopPractice')).toEqual({ ok: true });
+    expect((await stopped).board).toBeNull();
+    const realAtHost = waitFor<GameView>(host, 'game:state', (v) => v.phase === 'BOARD_SELECT');
+    expect(await call(admin, 'admin:startBoard', { totalTurns: 2 })).toEqual({ ok: true });
+    const real = await realAtHost;
+    expect(real.board).toMatchObject({ practice: false, turn: 1 });
+    expect(real.board!.owners[c(1, -3)]).toBeNull();
+  }, 15_000);
+
+  it('nhóm trưởng tên là số nhóm tự thành đội trưởng; người dẫn thấy ngay trong nhật ký', async () => {
+    const admin = client();
+    await call(admin, 'admin:login', { password: 'pw' });
+    const { code } = (await call(admin, 'admin:createRoom')) as unknown as { code: string };
+    const [a, captain] = [client(), client()];
+    await call(a, 'player:join', { roomCode: code, name: 'An', teamId: 3 });
+    const logged = waitFor<{ text: string }[]>(admin, 'admin:log', (entries) => entries.some((e) => e.text.includes('làm đội trưởng Nhóm 3')));
+    const stateAtA = waitFor<RoomState>(a, 'room:state', (st) => st.teams[2]!.players.length === 2);
+    await call(captain, 'player:join', { roomCode: code, name: 'Nhóm 3', teamId: 3 });
+    await logged;
+    const team3 = (await stateAtA).teams[2]!;
+    expect(team3.players.find((p) => p.isCaptain)?.name).toBe('Nhóm 3');
+  });
 });

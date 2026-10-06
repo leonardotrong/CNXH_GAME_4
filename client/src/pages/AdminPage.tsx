@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { rosterChanges, rosterStatus } from '@cnxh/shared';
+import { namedCaptainInfo, rosterChanges, rosterStatus } from '@cnxh/shared';
 import { AdminBoard } from '../AdminBoard';
 import { AdminFallback } from '../AdminFallback';
 import { AdminLog } from '../AdminLog';
 import { AdminNext } from '../AdminNext';
 import { AdminPlayers } from '../AdminPlayers';
-import { applyRoster, useCaptainRoster } from '../AdminRoster';
+import { applyRoster, moveNamedCaptain, useCaptainRoster } from '../AdminRoster';
 import { ConnectionBadge } from '../ConnectionBadge';
 import { Icon } from '../Icon';
 import { Logo } from '../Logo';
@@ -28,10 +28,17 @@ export function AdminPage() {
   const [roster, setRoster] = useCaptainRoster();
   const rosterView = useMemo(() => (state ? rosterStatus(roster, state) : []), [roster, state]);
   // Ai sẽ được đặt khi bấm "Đặt theo danh sách" — liệt kê ngay trên thanh nhắc để người dẫn thấy trước.
-  const rosterPlan = rosterChanges(rosterView).map((c) => ({
-    ...c,
-    name: state?.teams.flatMap((t) => t.players).find((p) => p.id === c.playerId)?.name ?? '?',
-  }));
+  const nameOf = (playerId: string) => state?.teams.flatMap((t) => t.players).find((p) => p.id === playerId)?.name ?? '?';
+  const rosterPlan = rosterChanges(rosterView).map((c) => ({ ...c, name: nameOf(c.playerId) }));
+  // Nhóm trưởng (tên là số nhóm) vào nhầm nhóm, trong khi nhóm của mình chưa có ai như vậy (GAME_SPEC 2.1).
+  const strays = useMemo(
+    () =>
+      (state ? namedCaptainInfo(state) : [])
+        .filter((x) => x.inTeam.length === 0 && x.elsewhere.length > 0)
+        .map((x) => ({ target: x.teamId, playerId: x.elsewhere[0]!.playerId, at: x.elsewhere[0]!.teamId })),
+    [state],
+  );
+  const beforeBoard = game?.phase === 'LOBBY' || game?.phase === 'RULES';
 
   const login = (pw: string) =>
     socket.emit('admin:login', { password: pw }, (res) => {
@@ -115,8 +122,27 @@ export function AdminPage() {
         <ConnectionBadge />
       </header>
       <AdminNext hasRoom={!!state} game={game} question={question} onNotice={setNotice} />
-      {/* Trước khi bắt đầu Bàn Cờ: nhắc đặt đội trưởng theo danh sách nhóm trưởng (GAME_SPEC 2.1). */}
-      {rosterPlan.length > 0 && (game?.phase === 'LOBBY' || game?.phase === 'RULES') && (
+      {/* Trước khi bắt đầu Bàn Cờ: nhắc nhóm trưởng vào nhầm nhóm và đặt đội trưởng theo danh sách (GAME_SPEC 2.1). */}
+      {strays.length > 0 && beforeBoard && (
+        <div className="admin-callout" role="status">
+          <span>
+            <span className="captain-star">★</span> Nhóm trưởng vào nhầm nhóm:{' '}
+            {strays.map((x, i) => (
+              <span key={x.playerId}>
+                {i > 0 && ' · '}“<b>{nameOf(x.playerId)}</b>” đang ở {teamName(x.at)}
+              </span>
+            ))}
+          </span>
+          <span className="admin-callout__actions">
+            {strays.map((x) => (
+              <button key={x.playerId} className="primary-btn primary-btn--gold" onClick={() => moveNamedCaptain(x.playerId, x.target, setNotice)}>
+                Chuyển về {teamName(x.target)}
+              </button>
+            ))}
+          </span>
+        </div>
+      )}
+      {rosterPlan.length > 0 && beforeBoard && (
         <div className="admin-callout" role="status">
           <span>
             <span className="captain-star">★</span> Đặt đội trưởng theo danh sách nhóm trưởng:{' '}
