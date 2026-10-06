@@ -11,6 +11,10 @@ function join(name: string, teamId: number): string {
   if (!res.ok) throw new Error(res.error);
   return res.playerId;
 }
+function must<T extends { ok: boolean }>(res: T): T {
+  if (!res.ok) throw new Error(JSON.stringify(res));
+  return res;
+}
 const team = (id: number) => room.snapshot().teams.find((t) => t.id === id)!;
 const captainName = (id: number) => team(id).players.find((p) => p.isCaptain)?.name;
 
@@ -100,6 +104,69 @@ describe('đổi đội trưởng (admin)', () => {
 
   it('người chơi không tồn tại', () => {
     expect(room.setCaptain('nope')).toEqual({ ok: false, error: 'PLAYER_NOT_FOUND' });
+  });
+});
+
+describe('nhóm trưởng đặt tên là số nhóm (GAME_SPEC 2.1)', () => {
+  const designated = (id: number) => team(id).players.find((p) => p.isDesignatedCaptain)?.name;
+
+  it('vào sau vẫn tự thành đội trưởng, không cần người dẫn bấm; ghi nhật ký', () => {
+    join('An', 1);
+    join('Bình', 1);
+    join('1', 1);
+    expect(captainName(1)).toBe('1');
+    expect(room.log().at(-1)!.text).toBe('“1” làm đội trưởng Nhóm 1 (nhóm trưởng đặt tên là số nhóm)');
+    join('Chi', 1);
+    expect(captainName(1)).toBe('1');
+  });
+
+  it('nhận "Nhóm 2", "N3"… nhưng không nhận tên là số của nhóm khác', () => {
+    join('An', 2);
+    join('Nhóm 2', 2);
+    join('Cường', 3);
+    join('N3', 3);
+    join('Dũng', 4);
+    join('1', 4);
+    expect(captainName(2)).toBe('Nhóm 2');
+    expect(captainName(3)).toBe('N3');
+    expect(captainName(4)).toBe('Dũng');
+  });
+
+  it('hai người cùng tên là số nhóm → người đến trước giữ', () => {
+    join('1', 1);
+    join('Nhóm 1', 1);
+    expect(captainName(1)).toBe('1');
+  });
+
+  it('người dẫn chọn tay thì giữ khi người khác ra vào; nhóm trưởng thật vào muộn (tên là số nhóm) thì thay', () => {
+    join('1', 1);
+    const binh = join('Bình', 1);
+    must(room.setCaptain(binh));
+    join('Chi', 1);
+    expect(designated(1)).toBe('Bình'); // không quét lại cả nhóm
+    room.changeTeam(binh, 2);
+    expect(designated(1)).toBe('1'); // đội trưởng rời nhóm → ưu tiên người tên là số nhóm
+    const an = join('An', 2);
+    must(room.setCaptain(an));
+    join('2', 2);
+    expect(designated(2)).toBe('2');
+  });
+
+  it('vào nhầm nhóm rồi tự đổi nhóm, hoặc được người dẫn chuyển về → thành đội trưởng nhóm đúng', () => {
+    join('An', 1);
+    const one = join('1', 2);
+    join('Bình', 2);
+    expect(designated(1)).toBe('An');
+    expect(designated(2)).toBe('1'); // người vào đầu Nhóm 2 (mặc định), không phải vì tên
+    room.changeTeam(one, 1);
+    expect(designated(1)).toBe('1');
+    expect(designated(2)).toBe('Bình');
+
+    join('Chi', 3);
+    const three = join('3', 4);
+    room.setLobbyOpen(false);
+    must(room.movePlayer(three, 3));
+    expect(designated(3)).toBe('3');
   });
 });
 

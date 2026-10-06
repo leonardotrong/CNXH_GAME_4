@@ -8,8 +8,11 @@
  *
  * Cần Google Chrome hoặc Chromium (chạy headless, điều khiển qua DevTools Protocol bằng WebSocket có sẵn của Node ≥ 22).
  *
- * Kịch bản cố định để khớp chú thích trong README: 49 sinh viên (7 nhóm × 7), điện thoại trong ảnh là của Ngọc Hân
- * (đội trưởng Nhóm 3). Lượt 3: Nhóm 3 chiếm ô Hiến pháp (Nhóm 4 cùng tranh nhưng chốt chậm hơn), lượt 4 Nhóm 3 có
+ * Kịch bản cố định để khớp chú thích trong README: 49 sinh viên (7 nhóm × 7). Nhóm trưởng đặt tên là số nhóm
+ * (GAME_SPEC 2.1) và vào thứ ba trong nhóm — vẫn tự làm đội trưởng; nhóm trưởng "5" bấm nhầm Nhóm 6 (ảnh /admin ở phòng
+ * chờ có thanh nhắc "vào nhầm nhóm"), người dẫn chuyển về. Điện thoại trong ảnh là của nhóm trưởng Nhóm 3 (tên "3").
+ * Sau màn luật, cả lớp chơi thử (ảnh lượt thử 1), người dẫn dừng chơi thử rồi bắt đầu trận thật.
+ * Lượt 3: Nhóm 3 chiếm ô Hiến pháp (Nhóm 4 cùng tranh nhưng chốt chậm hơn), lượt 4 Nhóm 3 có
  * Khiên Hiến pháp. Nhóm 3 dẫn đầu nên cầm quả bom đầu, trả lời đúng, chuyền cho Nhóm 5; ngòi cố định 4 giây nên bom nổ
  * ở Nhóm 5. Cuối cùng bật chế độ dự phòng để chụp /admin. Phần ngẫu nhiên còn lại (câu hỏi, vị trí ★ Lòng dân, ô bị nổ)
  * không ảnh hưởng chú thích.
@@ -252,19 +255,21 @@ class Page {
 
 // ─── Người chơi giả ──────────────────────────────────────────────────────────
 
-/** 7 nhóm × 7 người, theo thứ tự vào (người đầu mỗi nhóm là đội trưởng mặc định). */
+/**
+ * 7 nhóm × 7 người, theo thứ tự vào. Nhóm trưởng đặt tên là số nhóm (GAME_SPEC 2.1), vào thứ ba — vẫn tự làm đội trưởng.
+ * "3" là điện thoại trong ảnh.
+ */
 const NAMES: string[][] = [
-  ['Minh Anh', 'Gia Huy', 'Bảo Ngọc', 'Đức Thịnh', 'Khánh Linh', 'Quốc Bảo', 'Thu Trang'],
-  ['Hoàng Nam', 'Mai Phương', 'Tuấn Kiệt', 'Thanh Hằng', 'Đăng Khoa', 'Phương Thảo', 'Văn Hùng'],
-  ['Ngọc Hân', 'Minh Khôi', 'Lan Chi', 'Hải Đăng', 'Thùy Dung', 'Trung Hiếu', 'Kim Ngân'],
-  ['Anh Tuấn', 'Hồng Nhung', 'Đình Phong', 'Yến Nhi', 'Quang Vinh', 'Bích Ngọc', 'Thế Anh'],
-  ['Thành Đạt', 'Diệu Linh', 'Gia Bảo', 'Thanh Tâm', 'Hữu Phước', 'Ngọc Ánh', 'Công Minh'],
-  ['Phúc Lâm', 'Hà My', 'Tiến Dũng', 'Kiều Oanh', 'Nhật Minh', 'Tố Uyên', 'Văn Toàn'],
-  ['Đức Anh', 'Thu Hà', 'Minh Quân', 'Cẩm Tú', 'Bá Long', 'Vân Anh', 'Quang Huy'],
+  ['Minh Anh', 'Bảo Ngọc', '1', 'Đức Thịnh', 'Khánh Linh', 'Quốc Bảo', 'Thu Trang'],
+  ['Mai Phương', 'Tuấn Kiệt', '2', 'Thanh Hằng', 'Đăng Khoa', 'Phương Thảo', 'Văn Hùng'],
+  ['Minh Khôi', 'Lan Chi', '3', 'Hải Đăng', 'Thùy Dung', 'Trung Hiếu', 'Kim Ngân'],
+  ['Anh Tuấn', 'Đình Phong', '4', 'Yến Nhi', 'Quang Vinh', 'Bích Ngọc', 'Thế Anh'],
+  ['Thành Đạt', 'Diệu Linh', '5', 'Gia Bảo', 'Hữu Phước', 'Ngọc Ánh', 'Công Minh'],
+  ['Phúc Lâm', 'Tiến Dũng', '6', 'Kiều Oanh', 'Nhật Minh', 'Tố Uyên', 'Văn Toàn'],
+  ['Thu Hà', 'Minh Quân', '7', 'Cẩm Tú', 'Bá Long', 'Vân Anh', 'Quang Huy'],
 ];
-
-/** Danh sách nhóm trưởng thực tế (ảnh /admin ở phòng chờ có thanh vàng "Đặt theo danh sách"). */
-const ROSTER = { 1: 'Trần Gia Huy', 2: 'Nguyễn Hoàng Nam', 3: 'Lê Ngọc Hân', 4: 'Phạm Hồng Nhung', 5: 'Võ Thanh Tâm', 6: 'Đỗ Hà My', 7: 'Bùi Đức Anh' };
+/** Nhóm trưởng bấm nhầm nhóm khi vào phòng: tên → nhóm đã bấm. */
+const MISTAPPED: Record<string, number> = { '5': 6 };
 
 interface Bot {
   name: string;
@@ -340,7 +345,7 @@ async function main() {
       }
     };
 
-    // Ba "thiết bị": màn chiếu, laptop người dẫn, điện thoại của Ngọc Hân.
+    // Ba "thiết bị": màn chiếu, laptop người dẫn, điện thoại của nhóm trưởng Nhóm 3.
     const open = async (device: Device) => {
       const page = await Page.open(chrome, device, opts.out);
       pages.push(page); // đóng được cả khi thiết bị sau mở hỏng
@@ -351,11 +356,11 @@ async function main() {
     const phone = await open(PHONE);
 
     // ── Phòng chờ ────────────────────────────────────────────────────────────
+    // Nhóm trưởng Nhóm 3 gõ tên "3": nút Nhóm 3 tự được chọn.
     await phone.goto(`${url}/play?room=${code}`);
     await phone.waitFor('.join-form input');
     await phone.eval(`document.querySelector('.join-form input').focus()`);
-    await phone.type('Ngọc Hân');
-    await phone.eval(`[...document.querySelectorAll('.join-teams .team-btn')][2].click()`);
+    await phone.type('3');
     await sleep(300);
     await phone.shot('play-join');
 
@@ -365,28 +370,34 @@ async function main() {
         const s: Client = connect(url, { transports: ['websocket'], forceNew: true });
         sockets.push(s);
         await ready(s);
-        const res = await call(s, 'player:join', { roomCode: code, name, teamId: i + 1 });
-        bots.push({ name, team: i + 1, socket: s, id: String(res['playerId']) });
+        const teamId = MISTAPPED[name] ?? i + 1;
+        const res = await call(s, 'player:join', { roomCode: code, name, teamId });
+        bots.push({ name, team: teamId, socket: s, id: String(res['playerId']) });
       }
     }
     log(`${bots.length} người chơi đã vào phòng ${code}`);
     const team = (t: number) => bots.filter((b) => b.team === t);
     const byName = (name: string) => bots.find((b) => b.name === name)!;
-    const han = byName('Ngọc Hân');
+    const captain3 = byName('3'); // điện thoại trong ảnh: nhóm trưởng Nhóm 3
 
     // Phiếu chọn ô mới nhất của từng nhóm (ô hợp lệ của lượt).
     const selectView = new Map<number, TeamSelectView>();
     for (const t of [1, 2, 3, 4, 5, 6, 7]) team(t)[0]!.socket.on('select:team', (v) => v && selectView.set(t, v));
 
-    await phone.goto(`${url}/play?room=${code}`, { storage: { 'cnxh.player': JSON.stringify({ roomCode: code, playerId: han.id }) } });
+    await phone.goto(`${url}/play?room=${code}`, { storage: { 'cnxh.player': JSON.stringify({ roomCode: code, playerId: captain3.id }) } });
     await phone.waitFor('.wait-card');
     await phone.shot('play-lobby');
 
-    await adminPage.goto(`${url}/admin`, { session: { 'cnxh.adminPassword': PASSWORD }, storage: { 'cnxh.captainRoster': JSON.stringify(ROSTER) } });
+    await adminPage.goto(`${url}/admin`, { session: { 'cnxh.adminPassword': PASSWORD } });
     await adminPage.waitFor('.admin-callout');
     await adminPage.shot('admin-lobby');
-    // Người dẫn bấm "Đặt theo danh sách": nhóm trưởng thực tế làm đội trưởng.
-    for (const name of ['Gia Huy', 'Hồng Nhung', 'Thanh Tâm', 'Hà My']) await call(admin, 'admin:setCaptain', { playerId: byName(name).id });
+    // Người dẫn bấm "Chuyển về Nhóm 5": vào đúng nhóm là tự làm đội trưởng.
+    for (const [name, wrong] of Object.entries(MISTAPPED)) {
+      const bot = byName(name);
+      const teamId = NAMES.findIndex((names) => names.includes(name)) + 1;
+      await call(admin, 'admin:movePlayer', { playerId: bot.id, teamId });
+      if (wrong !== teamId) bot.team = teamId;
+    }
 
     await host.goto(`${url}/host`);
     await host.waitFor('.host-lobby');
@@ -404,10 +415,28 @@ async function main() {
     // ── Luật chơi ────────────────────────────────────────────────────────────
     await call(admin, 'admin:showRules');
     await until(() => g()?.phase === 'RULES', 'RULES');
-    await sleep(5_600); // hiệu ứng hiện thẻ + gợi ý phím tự ẩn
+    await sleep(5_600); // hiệu ứng hiện thẻ + ★ rơi + gợi ý phím tự ẩn
     await host.shot('host-rules');
     await phone.waitFor('.play-rules');
     await phone.shot('play-rules');
+
+    // ── Chơi thử (GAME_SPEC 5.3): lượt thử 1, rồi người dẫn dừng chơi thử ──────
+    await call(admin, 'admin:startPractice', {});
+    await until(() => g()?.phase === 'BOARD_SELECT' && !!g()!.board?.practice, 'chơi thử');
+    const practiceRound = g()!.board!.select!.roundId;
+    await until(() => [1, 2, 3, 4, 5, 6, 7].every((t) => selectView.get(t)?.roundId === practiceRound), 'phiếu chọn ô (chơi thử)');
+    // Năm nhóm đã chốt; Nhóm 3 mới có 3 phiếu (có điện thoại trong ảnh), Nhóm 6 chưa bầu.
+    for (const t of [1, 2, 4, 5, 7]) {
+      const cell = selectView.get(t)!.validTargets.find((c) => g()!.board!.owners[c] === null)!;
+      for (const b of team(t)) await call(b.socket, 'player:vote', { roundId: practiceRound, option: cell });
+    }
+    const practiceCell = selectView.get(3)!.validTargets.find((c) => g()!.board!.owners[c] === null)!;
+    for (const b of team(3).slice(0, 3)) await call(b.socket, 'player:vote', { roundId: practiceRound, option: practiceCell });
+    await sleep(1_200);
+    await host.shot('host-practice');
+    await phone.shot('play-practice');
+    await call(admin, 'admin:stopPractice');
+    await until(() => g()?.phase === 'RULES', 'quay lại màn luật');
 
     // ── Bàn Cờ: kịch bản 4 lượt ─────────────────────────────────────────────
     const C = (q: number, r: number) => cellAt(q, r)! as CellId;
@@ -461,14 +490,14 @@ async function main() {
     await voteCell(4, CONSTITUTION_CELL);
     await voteCell(5, firstValid(5, star !== null ? [star] : []));
     await voteCell(7, firstValid(7, [C(-2, -1)]));
-    // Nhóm 3: 4 phiếu cho ô Hiến pháp (có Ngọc Hân), 1 phiếu cho ô khác, đội trưởng chưa chốt.
+    // Nhóm 3: 4 phiếu cho ô Hiến pháp (có điện thoại trong ảnh), 1 phiếu cho ô khác, đội trưởng chưa chốt.
     await voteCell(3, CONSTITUTION_CELL, 4);
     await voteCell(3, C(2, 0), 1, 4);
     await sleep(2_500); // băng-rôn ★ và hiệu ứng sao rơi
     await host.shot('host-select');
     await phone.shot('play-select');
     await voteCell(6, firstValid(6, star !== null ? [star] : []));
-    await call(han.socket, 'player:lock', { roundId: selectRound() });
+    await call(captain3.socket, 'player:lock', { roundId: selectRound() });
 
     await waitQuestion();
     // Nhóm 3: 4 người đã bầu (đủ quá nửa) — điện thoại đội trưởng thấy nút CHỐT.
@@ -476,7 +505,7 @@ async function main() {
     await voteAnswer(3, false, 1, 3);
     await sleep(500);
     await phone.shot('play-question');
-    await call(han.socket, 'player:lock', { roundId: q()!.roundId });
+    await call(captain3.socket, 'player:lock', { roundId: q()!.roundId });
     await sleep(500);
     await phone.shot('play-question-locked');
     await voteAnswer(1, true);
@@ -519,7 +548,7 @@ async function main() {
     await sleep(800);
     await host.shot('host-bomb-pass');
     await phone.shot('play-bomb-pass');
-    await call(han.socket, 'player:lock', { roundId: passRound() });
+    await call(captain3.socket, 'player:lock', { roundId: passRound() });
     // Nhóm 5 không kịp trả lời: ngòi còn khoảng 2,5 s → nổ ở Nhóm 5.
     await until(() => g()?.phase === 'BOMB_EXPLODE', 'bom nổ', 20_000);
     await sleep(1_200);

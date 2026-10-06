@@ -17,3 +17,4 @@ export * from './boardMatch';
 export * from './bomb';
 export * from './describe';
 export * from './fallback';
+export * from './rulesExample';

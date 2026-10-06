@@ -96,6 +96,28 @@
   border: 0;
 }
 
+.field__hint {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.field__hint b {
+  color: var(--text-2);
+}
+
+.join-warn {
+  margin: 0.6rem 0 0;
+  padding: 0.6rem 0.85rem;
+  border-radius: var(--radius-sm);
+  background: #fff1d6;
+  color: var(--gold-ink);
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-align: left;
+}
+
 .join-teams legend {
   margin-bottom: 0.5rem;
   padding: 0;
@@ -243,7 +265,7 @@
   letter-spacing: 0.06em;
 }
 
-.play-rules ul,
+.play-rules > ul,
 .play-bomb-rules {
   list-style: none;
   margin: 0;
@@ -255,7 +277,7 @@
   box-shadow: var(--chunky);
 }
 
-.play-rules li,
+.play-rules > ul > li,
 .play-bomb-rules li {
   display: flex;
   gap: 0.75rem;
@@ -267,14 +289,18 @@
   line-height: 1.45;
 }
 
-.play-rules li:last-child,
+.play-rules > ul > li:last-child,
 .play-bomb-rules li:last-child {
   border-bottom: 0;
 }
 
-.play-rules li b {
+.play-rules > ul > li b {
   color: var(--text);
   font-weight: 900;
+}
+
+.play-rules .rules-map {
+  margin-bottom: 0.9rem;
 }
 
 .play-rules__icon {
@@ -408,6 +434,35 @@
 .play-note--star .icon {
   color: #6b4e00;
   fill: #ffd21f;
+}
+
+/* Tên là số của nhóm khác (GAME_SPEC 2.1): nhắc chuyển nhóm. */
+.play-note--warn {
+  background: #fff1d6;
+  color: var(--gold-ink);
+}
+
+.play-note--warn .icon {
+  color: var(--amber);
+}
+
+.play-note__action {
+  display: flex;
+  width: 100%;
+  min-height: 48px;
+  margin-top: 0.6rem;
+  background: var(--team);
+  box-shadow: 0 4px 0 var(--team-dark);
+}
+
+/* Đang chơi thử (GAME_SPEC 5.3) */
+.play-note--practice {
+  background: #e9f2ff;
+  color: var(--blue-dark);
+}
+
+.play-note--practice b {
+  color: var(--text);
 }
 
 .hex-board--mini {

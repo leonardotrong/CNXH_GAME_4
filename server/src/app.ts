@@ -253,6 +253,7 @@ export function createAppServer(options: AppServerOptions = {}): AppServer {
       socket.data.playerId = res.playerId;
       watch(room);
       broadcast(room);
+      emitLog(room); // nhóm trưởng tự nhận bằng tên là số nhóm (GAME_SPEC 2.1)
       persist(room);
       done(ack, res);
     });
@@ -263,6 +264,7 @@ export function createAppServer(options: AppServerOptions = {}): AppServer {
       const res = room.changeTeam(socket.data.playerId, req?.teamId);
       if (res.ok) {
         broadcast(room);
+        emitLog(room);
         persist(room);
       }
       done(ack, res);
@@ -417,6 +419,8 @@ export function createAppServer(options: AppServerOptions = {}): AppServer {
     };
 
     socket.on('admin:showRules', (ack) => adminAction(ack, (room) => room.showRules()));
+    socket.on('admin:startPractice', (req, ack) => adminAction(ack, (room) => room.startPractice(questions, req?.turns)));
+    socket.on('admin:stopPractice', (ack) => adminAction(ack, (room) => room.stopPractice()));
     socket.on('admin:setPaused', (req, ack) => adminAction(ack, (room) => (req?.paused === true ? room.pause() : room.resume())));
     socket.on('admin:setCellOwner', (req, ack) => adminAction(ack, (room) => room.setCellOwner(req?.cellId, req?.owner)));
     socket.on('admin:setSummaryView', (req, ack) => adminAction(ack, (room) => room.setSummaryView(req?.view)));

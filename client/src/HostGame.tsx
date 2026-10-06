@@ -1,4 +1,4 @@
-import type { GameView, PublicQuestionView, TurnOutcome } from '@cnxh/shared';
+import type { GameView, Phase, PublicQuestionView, TurnOutcome } from '@cnxh/shared';
 import { PHASE_LABELS, describeExplosion, isBombPhase } from './boardText';
 import { Confetti } from './Confetti';
 import { CountdownRing } from './Countdown';
@@ -36,6 +36,49 @@ function MapLegend() {
   );
 }
 
+/** Ba bước của một lượt, nhắc trên màn chiếu khi chơi thử (GAME_SPEC 5.3). */
+const PRACTICE_STEPS: { phase: Phase; title: string; text: string }[] = [
+  {
+    phase: 'BOARD_SELECT',
+    title: 'Chọn ô',
+    text: 'Mỗi người chạm một ô SÁNG trên điện thoại — ô kề lãnh thổ nhóm mình. Cả nhóm bầu xong là tự chốt; đội trưởng ★ bấm CHỐT Ô khi quá nửa đã bầu.',
+  },
+  {
+    phase: 'BOARD_QUESTION',
+    title: 'Trả lời',
+    text: 'Đúng mới chiếm được ô; chủ ô trả lời đúng thì giữ được ô. Nhiều nhóm cùng nhắm một ô: nhóm CHỐT sớm hơn thắng.',
+  },
+  {
+    phase: 'BOARD_REVEAL',
+    title: 'Kết quả',
+    text: 'Ô đổi màu là đã bị chiếm. Xem nhóm nào đúng, chốt nhanh hơn bao nhiêu mili-giây.',
+  },
+];
+
+/** Thẻ nhắc từng bước khi chơi thử: 1 Chọn ô → 2 Trả lời → 3 Kết quả. */
+function PracticeCoach({ phase, last }: { phase: Phase; last: boolean }) {
+  const current = PRACTICE_STEPS.findIndex((s) => s.phase === phase);
+  if (current < 0) return null;
+  const step = PRACTICE_STEPS[current]!;
+  return (
+    <div className="practice-coach" role="note">
+      <p className="practice-coach__tag">Chơi thử · không tính điểm</p>
+      <ol className="practice-coach__steps">
+        {PRACTICE_STEPS.map((s, i) => (
+          <li key={s.phase} className={i === current ? 'is-current' : i < current ? 'is-done' : ''}>
+            <span>{i < current ? <Icon name="check" /> : i + 1}</span>
+            {s.title}
+          </li>
+        ))}
+      </ol>
+      <p className="practice-coach__text">{step.text}</p>
+      {last && phase === 'BOARD_REVEAL' && (
+        <p className="practice-coach__end">Hết chơi thử — vài giây nữa quay lại màn luật. Trận thật bắt đầu lại từ bàn cờ xuất phát.</p>
+      )}
+    </div>
+  );
+}
+
 /** Số ô được/mất của từng nhóm trong lượt vừa giải quyết. */
 function deltasOf(outcome: TurnOutcome): Record<number, number> {
   const out: Record<number, number> = {};
@@ -60,12 +103,19 @@ export function HostGame({
   if (isBombPhase(phase) && game.bomb) return <HostBomb game={game} question={question} activeTeamIds={activeTeamIds} />;
   if (phase === 'SUMMARY' && game.summaryView === 'lessons') return <HostLessons />;
 
-  const turnBadge = (
+  const { practice } = board;
+  const lastTurn = board.endAfterThisTurn || board.turn >= board.totalTurns;
+  const turnBadge = practice ? (
+    <>
+      Chơi thử · lượt {board.turn}/{board.totalTurns}
+    </>
+  ) : (
     <>
       Lượt {board.turn}/{board.totalTurns}
       {board.endAfterThisTurn && phase !== 'SUMMARY' && <span className="host-bar__flag"> · lượt cuối</span>}
     </>
   );
+  const coach = practice ? <PracticeCoach phase={phase} last={lastTurn} /> : null;
 
   const standings = (
     <Standings
@@ -78,14 +128,15 @@ export function HostGame({
 
   if (phase === 'BOARD_QUESTION' && question) {
     return (
-      <section className="host-game host-game--question">
-        <HostBar badge={turnBadge} owners={board.owners} title={PHASE_LABELS[phase]}>
+      <section className={`host-game host-game--question ${practice ? 'host-game--practice' : ''}`}>
+        <HostBar badge={turnBadge} practice={practice} owners={board.owners} title={PHASE_LABELS[phase]}>
           {question.status === 'open' && <CountdownRing endsAt={question.endsAt} startedAt={question.startedAt} />}
         </HostBar>
         <div className="host-game__main">
-          <QuestionPanel view={question} activeTeamIds={activeTeamIds} showTimer={false} />
+          <QuestionPanel view={question} activeTeamIds={activeTeamIds} showTimer={false} practice={practice} />
         </div>
         <aside className="host-game__side">
+          {coach}
           <HexBoard owners={board.owners} shields={board.shields} stars={board.stars} targets={board.targets} label="Bàn cờ và mục tiêu các nhóm" />
         </aside>
       </section>
@@ -95,20 +146,23 @@ export function HostGame({
   if (phase === 'BOARD_REVEAL') {
     const outcome = board.outcome;
     return (
-      <section className="host-game host-game--reveal">
-        <HostBar badge={turnBadge} owners={board.owners} title={PHASE_LABELS[phase]} />
+      <section className={`host-game host-game--reveal ${practice ? 'host-game--practice' : ''}`}>
+        <HostBar badge={turnBadge} practice={practice} owners={board.owners} title={PHASE_LABELS[phase]} />
         <div className="host-game__main">
           <HexBoard owners={board.owners} shields={board.shields} stars={board.stars} targets={board.targets} outcome={outcome} />
         </div>
         <aside className="host-game__side">
           {question?.reveal && <AnswerCard question={question} />}
           <OutcomeList outcome={outcome} />
-          <Standings
-            standings={board.standings}
-            shields={board.shields}
-            activeTeamIds={activeTeamIds}
-            deltas={outcome ? deltasOf(outcome) : undefined}
-          />
+          {/* Chơi thử không tính điểm: thẻ nhắc thay bảng điểm. */}
+          {coach ?? (
+            <Standings
+              standings={board.standings}
+              shields={board.shields}
+              activeTeamIds={activeTeamIds}
+              deltas={outcome ? deltasOf(outcome) : undefined}
+            />
+          )}
         </aside>
       </section>
     );
@@ -151,8 +205,8 @@ export function HostGame({
   // BOARD_SELECT (và QUESTION khi chưa nhận được câu hỏi)
   const select = board.select;
   return (
-    <section className="host-game host-game--select">
-      <HostBar badge={turnBadge} owners={board.owners} title={PHASE_LABELS[phase]}>
+    <section className={`host-game host-game--select ${practice ? 'host-game--practice' : ''}`}>
+      <HostBar badge={turnBadge} practice={practice} owners={board.owners} title={PHASE_LABELS[phase]}>
         {phase === 'BOARD_SELECT' && select && (
           <span className="host-bar__info">
             {select.locked.length}/{select.teamIds.length} nhóm đã chốt
@@ -170,14 +224,14 @@ export function HostGame({
         />
       </div>
       <aside className="host-game__side">
-        {/* Lượt có ★ mới: băng-rôn thay dòng gợi ý để cột phải không dài thêm. */}
+        {/* Lượt có ★ mới: băng-rôn thay dòng gợi ý để cột phải không dài thêm. Chơi thử: thẻ nhắc từng bước. */}
         {phase === 'BOARD_SELECT' &&
           (board.newStar !== null ? (
             <p className="star-banner" role="status">
               <Icon name="star" /> ★ Lòng dân xuất hiện! Ô có ★ được 2 điểm — nhóm nào giành được?
             </p>
           ) : (
-            <p className="host-hint">Các nhóm đang chọn ô mục tiêu trên điện thoại…</p>
+            coach ?? <p className="host-hint">Các nhóm đang chọn ô mục tiêu trên điện thoại…</p>
           ))}
         <MapLegend />
         {standings}

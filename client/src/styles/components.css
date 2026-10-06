@@ -827,3 +827,117 @@
   white-space: normal;
   box-shadow: 0 4px 0 #5a3fd1;
 }
+
+/* ─── Bản đồ minh họa ở màn luật (RulesMap, GAME_SPEC 5.1 RULES) ───────────
+ * Cỡ theo rem cho điện thoại; màn chiếu ghi đè theo --u trong host.css.
+ */
+.rules-map {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 0.9rem 1rem 1rem;
+  border-radius: var(--radius-lg);
+  background: #fff;
+  box-shadow: var(--chunky);
+}
+
+.rules-map__caption {
+  color: var(--blue-dark);
+  font-size: 0.8rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.rules-map__board {
+  display: flex;
+  justify-content: center;
+}
+
+.rules-map__board .hex-board {
+  max-width: 22rem;
+  filter: drop-shadow(0 6px 8px rgb(28 42 74 / 0.16));
+}
+
+.rules-map__legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  color: var(--text-2);
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.rules-map__legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.rules-map__legend b {
+  color: var(--text);
+  font-weight: 900;
+}
+
+/* Mẫu ô: lục giác đỉnh nhọn như ô bàn cờ; chấm tròn như huy hiệu mục tiêu. */
+.rules-swatch {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 1.85em;
+  height: 2.1em;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  font-size: 0.85em;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.rules-swatch .icon {
+  width: 1.1em;
+  height: 1.1em;
+}
+
+.rules-swatch.is-constitution {
+  background: var(--gold);
+  color: #6b4e00;
+}
+
+.rules-swatch.is-organ {
+  background: #dce7ff;
+  color: #1d3f8f;
+  font-size: 0.7em;
+  width: 2.25em;
+  height: 2.55em;
+}
+
+.rules-swatch.is-star {
+  background: #fff3c9;
+  color: #6b4e00;
+}
+
+.rules-swatch.is-star .icon {
+  fill: #ffd21f;
+}
+
+.rules-swatch.is-team {
+  background: var(--team);
+  color: #fff;
+}
+
+.rules-swatch.is-target {
+  width: 1.45em;
+  height: 1.45em;
+  margin-inline: 0.2em;
+  clip-path: none;
+  border: 0.14em solid #fff;
+  border-radius: 50%;
+  background: var(--team);
+  color: #fff;
+  font-size: 0.78em;
+  box-shadow: 0 0 0 0.08em rgb(28 42 74 / 0.18);
+}

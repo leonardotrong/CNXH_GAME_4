@@ -3,7 +3,17 @@ import { MAX_BOARD_TURNS, MAX_BOMB_COUNT, type GameView, type PublicQuestionView
 import { PHASE_LABELS } from './boardText';
 import { useCountdown } from './clock';
 import { Icon } from './Icon';
-import { DEFAULT_STEP_OPTIONS, STAGES, nextStep, practiceStep, stageOf, type NextStep, type StepOptions } from './nextStep';
+import {
+  DEFAULT_STEP_OPTIONS,
+  STAGES,
+  isPractice,
+  nextStep,
+  practiceStep,
+  stageOf,
+  stopPracticeStep,
+  type NextStep,
+  type StepOptions,
+} from './nextStep';
 import { socket } from './socket';
 import { TeamTag } from './TeamTag';
 
@@ -26,7 +36,8 @@ export function AdminNext({
   const [busy, setBusy] = useState(false);
   const step = nextStep(hasRoom, game, question);
   const practice = practiceStep(game, question);
-  const stage = stageOf(game?.phase);
+  const stopPractice = stopPracticeStep(game);
+  const stage = stageOf(game?.phase, isPractice(game));
   const left = useCountdown(game?.phaseEndsAt ?? null);
   const paused = game?.pausedAt != null;
   const inMatch = !!game && game.phase !== 'LOBBY' && game.phase !== 'SUMMARY' && game.phase !== 'RULES';
@@ -69,10 +80,15 @@ export function AdminNext({
               {step.run ? <Icon name="play" /> : <span className="next-btn__spinner" aria-hidden />}
               <span>{step.label}</span>
             </button>
-            {/* Màn luật: chơi thử một câu trước khi bắt đầu (GAME_SPEC 5.3). */}
+            {/* Màn luật: chơi thử vài lượt trước khi bắt đầu; đang chơi thử thì dừng được (GAME_SPEC 5.3). */}
             {practice && (
               <button className="primary-btn primary-btn--ghost" disabled={busy} title={practice.hint} onClick={() => go(practice)}>
-                <Icon name="question" /> {practice.label}
+                <Icon name="target" /> {practice.label}
+              </button>
+            )}
+            {stopPractice && (
+              <button className="primary-btn primary-btn--ghost" disabled={busy} title={stopPractice.hint} onClick={() => go(stopPractice)}>
+                <Icon name="x" /> {stopPractice.label}
               </button>
             )}
           </div>
@@ -128,7 +144,9 @@ function Status({ game, left }: { game: GameView; left: number }) {
   if (game.phase.startsWith('BOARD_') && game.board) {
     parts.push(
       <span key="turn">
-        Lượt <b>{game.board.turn}/{game.board.totalTurns}</b>
+        {game.board.practice ? <b className="admin-next__practice">Chơi thử</b> : null}
+        {game.board.practice ? ' · lượt ' : 'Lượt '}
+        <b>{game.board.turn}/{game.board.totalTurns}</b>
         {game.board.endAfterThisTurn && ' (lượt cuối)'}
       </span>,
     );
