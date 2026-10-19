@@ -62,6 +62,8 @@ import {
   teamQuestionView,
   isTeamId,
   normalizeName,
+  captainAfterEntry,
+  captainSignal,
   resolveDesignatedCaptain,
   type BoardMatch,
   type CaptainCandidate,
@@ -239,15 +241,23 @@ export class Room {
     return [...this.players.values()].filter((p) => p.teamId === teamId);
   }
 
+  /** Thành viên nhóm để chọn đội trưởng; `namedCaptain` = tên là số của chính nhóm này (GAME_SPEC 2.1). */
   private candidates(teamId: TeamId): CaptainCandidate[] {
-    return this.members(teamId);
+    return this.members(teamId).map((p) => ({ ...p, namedCaptain: captainSignal(p.name) === teamId }));
   }
 
-  private refreshCaptain(teamId: TeamId): void {
-    this.captains.set(
-      teamId,
-      resolveDesignatedCaptain(this.candidates(teamId), this.captains.get(teamId) ?? null),
-    );
+  /**
+   * Cập nhật đội trưởng được chỉ định của nhóm sau khi có người ra/vào. `entered` = người vừa vào nhóm: có tên là số
+   * nhóm thì thành đội trưởng (nhóm trưởng tự nhận), trừ khi đội trưởng hiện tại cũng có tên như vậy.
+   */
+  private refreshCaptain(teamId: TeamId, entered?: Player): void {
+    const members = this.candidates(teamId);
+    const current = this.captains.get(teamId) ?? null;
+    const next = entered ? captainAfterEntry(members, current, entered.id) : resolveDesignatedCaptain(members, current);
+    if (entered && next === entered.id && next !== current && captainSignal(entered.name) === teamId) {
+      this.addLog('system', `“${entered.name}” làm đội trưởng ${teamName(teamId)} (nhóm trưởng đặt tên là số nhóm)`);
+    }
+    this.captains.set(teamId, next);
   }
 
   private enterTeam(player: Player, teamId: TeamId): void {
@@ -255,7 +265,7 @@ export class Room {
     player.teamId = teamId;
     player.teamJoinSeq = ++this.seq;
     this.refreshCaptain(previous);
-    this.refreshCaptain(teamId);
+    this.refreshCaptain(teamId, player);
   }
 
   /** Vào phòng lần đầu (name + teamId) hoặc vào lại (playerId). */
@@ -281,7 +291,7 @@ export class Room {
       offlineSince: null,
     };
     this.players.set(player.id, player);
-    this.refreshCaptain(player.teamId);
+    this.refreshCaptain(player.teamId, player);
     return { ok: true, playerId: player.id, teamId: player.teamId };
   }
 
@@ -521,6 +531,42 @@ export class Room {
     return { ok: true };
   }
 
+  /**
+   * RULES → chơi thử (GAME_SPEC 5.3): vài lượt Bàn Cờ trên bàn cờ xuất phát, chạy đúng như trận thật nhưng không tính
+   * điểm; hết REVEAL của lượt thử cuối thì quay về RULES (`advanceTurn`).
+   */
+  startPractice(bank: readonly Question[], turns?: unknown): RoomResult {
+    if (this.phase !== 'RULES') return WRONG_PHASE;
+    if (this.question) return { ok: false, error: 'QUESTION_ACTIVE' };
+    if (!bank.some((q) => q.pool === 'board')) return { ok: false, error: 'NO_QUESTIONS_IN_POOL' };
+    const active = this.activeTeamIds();
+    // Màn luật mở lại sau một trận (SUMMARY → RULES): bỏ Quả Bom cũ như khi bắt đầu Bàn Cờ.
+    this.bomb = null;
+    this.pass = null;
+    this.match = startMatch(active, turns, { practice: true });
+    this.addLog('phase', `Bắt đầu chơi thử (${this.match.totalTurns} lượt, không tính điểm) — nhóm chơi: ${active.join(', ') || 'không có'}`);
+    this.beginSelect();
+    return { ok: true };
+  }
+
+  /** Admin dừng chơi thử: bỏ bàn cờ chơi thử, quay về RULES ngay (cả khi đang tạm dừng — bỏ luôn tạm dừng). */
+  stopPractice(): RoomResult {
+    if (!this.match?.practice || !this.phase.startsWith('BOARD_')) return WRONG_PHASE;
+    this.addLog('admin', `Admin dừng chơi thử ở lượt ${this.match.turn}${this.pausedAt !== null ? ' (bỏ tạm dừng)' : ''} — quay lại màn luật`);
+    this.endPractice();
+    return { ok: true };
+  }
+
+  /** Bỏ bàn cờ chơi thử, quay về màn luật. Câu đã hỏi vẫn ghi trong `seenBy` → trận thật ưu tiên câu khác. */
+  private endPractice(): void {
+    this.match = null;
+    this.select = null;
+    this.question = null;
+    this.revealEndsAt = null;
+    this.pausedAt = null;
+    this.phase = 'RULES';
+  }
+
   /** Bắt đầu Bàn Cờ: nhóm có người nhận ô xuất phát, vào SELECT lượt 1. */
   startBoard(bank: readonly Question[], totalTurns?: unknown): RoomResult {
     if (this.phase !== 'LOBBY' && this.phase !== 'RULES' && this.phase !== 'SUMMARY') return WRONG_PHASE;
@@ -588,10 +634,13 @@ export class Room {
     return { ok: true };
   }
 
-  /** Hết REVEAL: sang lượt kế, hoặc kết thúc Bàn Cờ → BOMB_INTRO. */
+  /** Hết REVEAL: sang lượt kế, hoặc kết thúc Bàn Cờ → BOMB_INTRO (chơi thử → quay về RULES). */
   advanceTurn(rng?: Rng): RoomResult {
     if (this.phase !== 'BOARD_REVEAL' || !this.match) return WRONG_PHASE;
-    if (isFinalTurn(this.match)) {
+    if (isFinalTurn(this.match) && this.match.practice) {
+      this.addLog('phase', `Kết thúc chơi thử sau lượt ${this.match.turn} — quay lại màn luật`);
+      this.endPractice();
+    } else if (isFinalTurn(this.match)) {
       // Khiên chỉ có nghĩa trong Bàn Cờ.
       this.match = { ...this.match, targets: null, outcome: null, newStar: null, board: { ...this.match.board, shields: [] } };
       this.select = null;
@@ -1033,8 +1082,13 @@ export class Room {
     room.seq = data.seq;
     room.lobbyOpen = data.lobbyOpen;
     room.phase = data.phase;
-    // File lưu từ trước khi có ★ Lòng dân (GAME_SPEC 3.7): coi như chưa có sao.
-    room.match = data.match && { ...data.match, newStar: data.match.newStar ?? null, board: { ...data.match.board, stars: data.match.board.stars ?? [] } };
+    // File lưu từ trước khi có ★ Lòng dân (GAME_SPEC 3.7) / chơi thử (5.3): coi như chưa có sao, không phải chơi thử.
+    room.match = data.match && {
+      ...data.match,
+      newStar: data.match.newStar ?? null,
+      practice: data.match.practice ?? false,
+      board: { ...data.match.board, stars: data.match.board.stars ?? [] },
+    };
     room.select = data.select;
     room.revealEndsAt = data.revealEndsAt;
     room.bomb = data.bomb;

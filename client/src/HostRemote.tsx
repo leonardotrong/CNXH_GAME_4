@@ -11,7 +11,7 @@ const HINT_MS = 5000;
 
 /**
  * Người dẫn điều khiển ngay trên máy chiếu (GAME_SPEC 5.3):
- * K = đăng nhập · Space/→ = bước tiếp theo · T = chơi thử một câu (màn luật) · P = tạm dừng · M = âm thanh · F = toàn màn hình.
+ * K = đăng nhập · Space/→ = bước tiếp theo · T = chơi thử 2 lượt (màn luật) · P = tạm dừng · M = âm thanh · F = toàn màn hình.
  * Không đăng nhập thì màn chiếu vẫn chỉ để xem như cũ.
  */
 export function HostRemote({ hasRoom, game, question }: { hasRoom: boolean; game: GameView | null; question: PublicQuestionView | null }) {

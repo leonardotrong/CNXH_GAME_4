@@ -2,7 +2,9 @@
  * Danh sách nhóm trưởng thực tế (GAME_SPEC 2.1): người dẫn nhập họ tên nhóm trưởng của từng nhóm trên /admin
  * rồi đặt đội trưởng theo danh sách bằng một lần bấm. Hàm thuần: so tên người chơi tự gõ với danh sách.
  * Khớp tên chỉ là gợi ý — người dẫn luôn thấy trước người sẽ được đặt và sửa tay được.
+ * Là phương án dự phòng: nhóm đã có người đặt tên là số nhóm (nhóm trưởng tự nhận, `captainSignal`) thì bỏ qua.
  */
+import { captainSignal } from './captain';
 import { MAX_NAME_LENGTH, isTeamId, type RoomState, type TeamId } from './lobby';
 
 /** Họ tên nhóm trưởng thực tế theo nhóm (nhóm không có tên → bỏ qua). */
@@ -121,13 +123,16 @@ export interface RosterTeamStatus {
   applied: boolean;
 }
 
-/** Tình trạng các nhóm có tên trong danh sách, theo thứ tự nhóm. */
+/**
+ * Tình trạng các nhóm có tên trong danh sách, theo thứ tự nhóm. Bỏ qua nhóm đã có người đặt tên là số nhóm
+ * (nhóm trưởng tự nhận — cách chính, GAME_SPEC 2.1): danh sách không đề xuất đổi đội trưởng của nhóm đó.
+ */
 export function rosterStatus(roster: CaptainRoster, state: Pick<RoomState, 'teams'>): RosterTeamStatus[] {
   const players = state.teams.flatMap((t) => t.players.map((p) => ({ id: p.id, name: p.name, teamId: t.id })));
   const result: RosterTeamStatus[] = [];
   for (const t of state.teams) {
     const rosterName = roster[t.id]?.trim() ?? '';
-    if (!rosterName) continue;
+    if (!rosterName || t.players.some((p) => captainSignal(p.name) === t.id)) continue;
     const match = findRosterCaptain(rosterName, t.id, players);
     const applied = match.kind === 'match' && t.players.some((p) => p.id === match.playerId && p.isDesignatedCaptain);
     result.push({ teamId: t.id, rosterName, match, applied });

@@ -1,12 +1,23 @@
-import { useEffect, useState, type ClipboardEvent } from 'react';
-import { TEAM_IDS, isTeamId, parseRosterText, rosterChanges, type CaptainRoster, type RosterTeamStatus } from '@cnxh/shared';
+import { useEffect, useState, type ClipboardEvent, type ReactNode } from 'react';
+import {
+  TEAM_IDS,
+  isTeamId,
+  parseRosterText,
+  rosterChanges,
+  type CaptainRoster,
+  type NamedCaptainInfo,
+  type PublicTeam,
+  type RosterTeamStatus,
+} from '@cnxh/shared';
 import { Icon } from './Icon';
 import { ACK_TIMEOUT_MS, orNetworkError, socket } from './socket';
 import { teamName, teamStyle } from './teams';
 
 /**
- * Danh sách nhóm trưởng thực tế (GAME_SPEC 2.1): người dẫn nhập một lần, lưu trên trình duyệt này
- * (không gửi lên server), rồi đặt đội trưởng theo danh sách bằng một lần bấm.
+ * Đội trưởng trên /admin (GAME_SPEC 2.1):
+ * - cách chính: nhóm trưởng đặt tên là số nhóm → server tự đặt; ở đây chỉ hiện tình trạng và nút sửa khi vào nhầm nhóm;
+ * - dự phòng: danh sách nhóm trưởng thực tế — người dẫn nhập một lần, lưu trên trình duyệt này
+ *   (không gửi lên server), rồi đặt đội trưởng theo danh sách bằng một lần bấm.
  */
 const ROSTER_KEY = 'cnxh.captainRoster';
 
@@ -64,6 +75,57 @@ export function applyRoster(statuses: readonly RosterTeamStatus[], onNotice: Not
   for (const { playerId } of rosterChanges(statuses)) setCaptain(playerId, onNotice);
 }
 
+/** Người tên là số nhóm vào nhầm nhóm: chuyển về đúng nhóm — vào đúng nhóm là server tự đặt làm đội trưởng. */
+export function moveNamedCaptain(playerId: string, teamId: number, onNotice: Notice): void {
+  socket.timeout(ACK_TIMEOUT_MS).emit(
+    'admin:movePlayer',
+    { playerId, teamId },
+    orNetworkError((res) => {
+      if (!res.ok) onNotice(`Không chuyển được người chơi (${res.error}).`);
+    }),
+  );
+}
+
+/**
+ * Dòng tình trạng "nhóm trưởng đặt tên là số nhóm" của một nhóm; null = không ai đặt tên là số của nhóm này
+ * (khi đó hiện dòng so với danh sách, nếu có).
+ */
+export function namedCaptainLine(info: NamedCaptainInfo, team: PublicTeam, nameOf: (playerId: string) => string, onNotice: Notice): ReactNode {
+  const designated = team.players.find((p) => p.isDesignatedCaptain);
+  const first = info.inTeam[0];
+  if (first !== undefined) {
+    if (designated && info.inTeam.includes(designated.id)) {
+      const extra = info.inTeam.length - 1;
+      return (
+        <p className={`roster-line ${extra > 0 ? 'is-warn' : 'is-ok'}`}>
+          <Icon name="check" /> Nhóm trưởng tự nhận: “{designated.name}”
+          {extra > 0 && ` — còn ${extra} người nữa đặt tên là số nhóm, kiểm tra ô ★`}
+        </p>
+      );
+    }
+    return (
+      <p className="roster-line is-pending">
+        <span>Có “{nameOf(first)}” (tên là số nhóm) — đội trưởng đang do người dẫn chọn</span>
+        <button className="mini-btn" onClick={() => setCaptain(first, onNotice)}>
+          ★ Đặt
+        </button>
+      </p>
+    );
+  }
+  const stray = info.elsewhere[0];
+  if (!stray) return null;
+  return (
+    <p className="roster-line is-warn">
+      <span>
+        “{nameOf(stray.playerId)}” vào nhầm, đang ở <b>{teamName(stray.teamId)}</b>
+      </span>
+      <button className="mini-btn" onClick={() => moveNamedCaptain(stray.playerId, info.teamId, onNotice)}>
+        Chuyển về &amp; đặt ★
+      </button>
+    </p>
+  );
+}
+
 /** Nhóm trưởng vào nhầm nhóm: chuyển về nhóm của mình rồi đặt làm đội trưởng. */
 function moveAndSetCaptain(playerId: string, teamId: number, onNotice: Notice): void {
   socket.timeout(ACK_TIMEOUT_MS).emit(
@@ -112,8 +174,9 @@ export function RosterEditor({ roster, onChange }: { roster: CaptainRoster; onCh
         ))}
       </div>
       <p className="admin-muted roster-editor__note">
-        Dán cả danh sách (mỗi dòng một nhóm, từ Excel hay ghi chú) vào ô {teamName(1)} là tự điền hết. Danh sách chỉ lưu trên trình duyệt này,
-        không gửi lên server. Sinh viên gõ tắt (vd. "An" cho "Nguyễn Văn An") vẫn khớp nếu trong nhóm chỉ có một người như vậy.
+        Dự phòng cho nhóm trưởng quên đặt tên là số nhóm; nhóm đã có người tên là số nhóm thì bỏ qua danh sách. Dán cả danh sách (mỗi dòng
+        một nhóm, từ Excel hay ghi chú) vào ô {teamName(1)} là tự điền hết. Danh sách chỉ lưu trên trình duyệt này, không gửi lên server.
+        Sinh viên gõ tắt (vd. "An" cho "Nguyễn Văn An") vẫn khớp nếu trong nhóm chỉ có một người như vậy.
       </p>
     </div>
   );

@@ -10,8 +10,8 @@
 | Phút | Pha | Nội dung |
 |---|---|---|
 | 0–3 | LOBBY | Quét QR, nhập tên, chọn nhóm |
-| 3–4 | RULES | Host hiện luật tóm tắt (đọc trong 60 giây), rồi cả lớp chơi thử một câu |
-| 4–21 | BOARD | Bàn Cờ Quyền Lực, 14 lượt (cấu hình được) |
+| 3–5 | RULES | Host hiện luật tóm tắt kèm bản đồ minh họa (đọc trong 60 giây), rồi cả lớp chơi thử 2 lượt Bàn Cờ (không tính điểm) |
+| 5–21 | BOARD | Bàn Cờ Quyền Lực, 14 lượt (cấu hình được) |
 | 21–28 | BOMB | Quả Bom Tham Nhũng, 3 quả, chơi trên chính bàn cờ |
 | 28–30 | SUMMARY | Xếp hạng, vinh danh, tổng kết 6 đặc điểm |
 
@@ -20,8 +20,14 @@
 ### 2.1 Người chơi, nhóm, đội trưởng
 - Vào `/play?room=XXXX` (mã phòng 4 chữ số), nhập tên, chọn Nhóm 1–7.
 - `playerId` lưu trong localStorage. Mất kết nối hoặc khóa màn hình rồi vào lại: giữ nguyên nhóm và vai trò.
-- Đội trưởng mặc định = người vào nhóm đầu tiên (để nhóm luôn có người giữ nút CHỐT). Người dẫn chọn lại được bất cứ lúc nào trên `/admin`:
-  - **Theo danh sách nhóm trưởng thực tế**: người dẫn nhập trước họ tên nhóm trưởng của từng nhóm (lưu trên trình duyệt của người dẫn, không gửi danh sách lên server; dán được cả danh sách từ Excel/ghi chú), rồi bấm "Đặt theo danh sách" — một lần cho mọi nhóm. Ở phòng chờ và lúc xem luật, nút này hiện ngay dưới nút "Bước tiếp theo" khi còn nhóm lệch danh sách, kèm tên người sẽ được đặt ở từng nhóm.
+- Đội trưởng mặc định = người vào nhóm đầu tiên (để nhóm luôn có người giữ nút CHỐT).
+- **Nhóm trưởng đặt tên là số nhóm** (cách chính): người dẫn dặn nhóm trưởng thực tế nhập tên là số nhóm của mình — nhóm trưởng Nhóm 1 nhập "1". Không phụ thuộc cách gõ họ tên.
+  - Tên được tính là số nhóm N khi chỉ gồm số N (1–7), có thể kèm chữ "Nhóm", "N" hoặc "NT" phía trước: "1", "Nhóm 1", "nhom1", "N1", "NT 1". Không phân biệt hoa thường, dấu, khoảng trắng, dấu câu.
+  - Người có tên là số N vào Nhóm N (vào phòng, tự đổi nhóm, hoặc được người dẫn chuyển vào) thì tự thành đội trưởng Nhóm N — server tự đặt, người dẫn không phải bấm gì. Ngoại lệ: đội trưởng hiện tại cũng có tên là số N (người đến trước giữ; `/admin` báo nhóm có hai người như vậy).
+  - Tên là số N nhưng đang ở nhóm khác (vd. "1" ở Nhóm 2): không thành đội trưởng nhóm đó. Ô nhập tên trên điện thoại nhắc ngay khi chọn nhầm (chưa chọn nhóm thì tự chọn Nhóm N); vào rồi thì điện thoại nhắc kèm nút "Chuyển sang Nhóm N" (khi còn được tự đổi nhóm) và `/admin` báo kèm nút chuyển về.
+  - Màn chiếu ở phòng chờ và ô nhập tên trên điện thoại ghi sẵn lời dặn này.
+- Người dẫn vẫn chọn lại được bất cứ lúc nào trên `/admin`:
+  - **Theo danh sách nhóm trưởng thực tế** (dự phòng, cho nhóm trưởng quên đặt tên là số nhóm; bỏ qua nhóm đã có người tên là số nhóm): người dẫn nhập trước họ tên nhóm trưởng của từng nhóm (lưu trên trình duyệt của người dẫn, không gửi danh sách lên server; dán được cả danh sách từ Excel/ghi chú), rồi bấm "Đặt theo danh sách" — một lần cho mọi nhóm. Ở phòng chờ và lúc xem luật, nút này hiện ngay dưới nút "Bước tiếp theo" khi còn nhóm lệch danh sách, kèm tên người sẽ được đặt ở từng nhóm.
   - **Chọn tay**: ô "★ Đội trưởng" của từng nhóm (hoặc chạm vào tên → "Làm đội trưởng").
 - Khớp tên với danh sách (chỉ để gợi ý; người dẫn luôn thấy trước người sẽ được đặt):
   - Không phân biệt hoa thường, dấu câu, khoảng trắng, ghi chú trong ngoặc ("Thảo (NT)").
@@ -29,7 +35,7 @@
   - Ưu tiên người gõ đủ họ tên trùng danh sách (danh sách ghi từ 2 chữ trở lên). Tên dài bị cắt ở giới hạn 20 ký tự vẫn tính là đủ ("Nguyễn Thị Phương Th" ↔ "Nguyễn Thị Phương Thảo").
   - Không có thì chấp nhận tên gõ tắt: một tên là phần của tên kia và có chung tên gọi (chữ cuối của tên trong danh sách), được dùng chữ viết tắt cho họ/tên đệm — vd. "An", "Văn An", "Nguyễn An", "An Nguyễn" khớp "Nguyễn Văn An", "Nguyễn T. Phương Thảo" khớp "Nguyễn Thị Phương Thảo"; "Nguyễn" hay "Văn" một mình thì không.
   - Trong nhóm có nhiều người khớp như nhau → không tự đặt, người dẫn chọn tay. Nhóm trưởng gõ đủ họ tên nhưng đang ở nhóm khác (vào nhầm) → `/admin` báo nhóm đang ở, có nút chuyển về và đặt làm đội trưởng.
-- Đội trưởng do người dẫn chọn được giữ khi có người vào/ra nhóm; chỉ đổi khi người dẫn chọn lại hoặc chính người đó rời nhóm (khi đó quay về người vào nhóm sớm nhất còn lại).
+- Đội trưởng do người dẫn chọn được giữ khi có người vào/ra nhóm; chỉ đổi khi người dẫn chọn lại, khi có người tên là số nhóm vào nhóm (xem trên), hoặc khi chính người đó rời nhóm (khi đó ưu tiên người còn lại có tên là số nhóm, rồi tới người vào nhóm sớm nhất còn lại).
 - Đội trưởng mất kết nối quá 10 giây thì quyền tạm chuyển cho thành viên đang online vào sớm nhất, và trả lại khi đội trưởng quay lại.
 - Sau khi LOBBY đóng, người chơi không tự đổi nhóm (admin vẫn chuyển được).
 
@@ -164,25 +170,34 @@ Với mỗi ô bị ít nhất một nhóm nhắm tới:
 ## 5. Màn hình
 
 ### 5.1 `/host` — máy chiếu 16:9, chữ to đọc được từ cuối lớp
-- **LOBBY**: mã QR lớn + URL + mã phòng; 7 cột nhóm với số người và tên đã vào; đội trưởng (★) đứng đầu cột.
-- **RULES**: luật tóm tắt, có minh họa. Admin bấm "Hiện luật" (từ LOBBY) rồi "Bắt đầu Bàn Cờ"; không có đồng hồ tự chuyển. Đang có câu thử thì host hiện câu thử, xong quay lại màn luật.
+- **LOBBY**: mã QR lớn + URL + mã phòng; 7 cột nhóm với số người và tên đã vào; đội trưởng (★) đứng đầu cột; một dòng dặn "Nhóm trưởng: nhập tên là số nhóm" (mục 2.1).
+- **RULES**: luật tóm tắt, có minh họa. Admin bấm "Hiện luật" (từ LOBBY) rồi "Bắt đầu Bàn Cờ"; không có đồng hồ tự chuyển. Đang có câu thử thì host hiện câu thử, xong quay lại màn luật; đang chơi thử thì host hiện bàn cờ chơi thử (mục 5.3), xong quay lại màn luật.
+  - **Bản đồ minh họa** chiếm khoảng 40% chiều ngang: một bàn cờ ví dụ "giữa trận" (cố định, vẽ bằng đúng component bàn cờ của trận): lãnh thổ 7 nhóm tỏa từ ô xuất phát ở viền vào giữa, ô Hiến pháp chưa ai chiếm có chấm của hai nhóm đang nhắm, ô Cơ quan đã có chủ và còn trống, một ô ★ Lòng dân. Ví dụ phải đúng luật (ô nhắm kề lãnh thổ nhóm đó, ★ không nằm trên ô Hiến pháp/Cơ quan) — có test.
+  - Chú giải ngay dưới bản đồ: Hiến pháp 3 điểm (+ Khiên), ô Cơ quan 2 điểm (QH, CP, TA, VKS), ★ Lòng dân 2 điểm (lượt 3, 6, 9, 12), ô thường 1 điểm, số trên ô = nhóm sở hữu, chấm tròn = nhóm đang nhắm ô.
+  - Phần còn lại: 6 thẻ luật (Biểu quyết, Chọn ô, Trả lời, Nhanh thắng, Khiên, Quả Bom) và dòng "tập trung dân chủ", vừa một màn hình.
 - **BOARD**: bàn cờ chiếm khoảng 65% chiều ngang. Ô Cơ quan có nhãn QH/CP/TA/VKS, ô ★ có ngôi sao vàng; pha chọn ô có chú giải giá trị ô và băng-rôn "★ Lòng dân xuất hiện" ở lượt có sao mới. Thanh bên: 7 nhóm (màu, tên, số điểm, khiên). Trên cùng: tên pha + đồng hồ đếm ngược. Pha QUESTION: câu hỏi và phương án hiển thị lớn. Pha REVEAL: đáp án, giải thích, hiệu ứng đổi màu ô, tên nhóm thắng tranh chấp kèm chênh lệch ms.
 - **BOMB**: quả bom lớn trên nhãn nhóm đang cầm, dây cháy (không lộ thời gian), mũi tên chuyền bom.
 - **SUMMARY**: bục vinh danh top 3, bảng đầy đủ, sau đó màn tổng kết 6 đặc điểm của nhà nước pháp quyền XHCN Việt Nam (lấy từ `docs/CONTENT.md`). Admin chuyển giữa hai màn bằng nút.
 - Nút tắt/bật âm thanh.
 
 ### 5.2 `/play` — điện thoại, màn dọc, nút cao ≥ 56px
-- Vào phòng: nhập tên → chọn nhóm (7 nút màu).
-- Màn chờ giữa các pha. SELECT: bản đồ thu nhỏ, chạm để chọn ô. QUESTION: câu hỏi + nút phương án. PASS: danh sách nhóm hợp lệ.
+- Vào phòng: nhập tên → chọn nhóm (7 nút màu). Dưới ô tên có lời dặn nhóm trưởng nhập tên là số nhóm (mục 2.1).
+- Màn chờ giữa các pha. RULES: cùng bản đồ minh họa và chú giải như màn chiếu (tĩnh, không hoạt ảnh), rồi danh sách luật. SELECT: bản đồ thu nhỏ, chạm để chọn ô. QUESTION: câu hỏi + nút phương án. PASS: danh sách nhóm hợp lệ.
+- Đang chơi thử: dòng pha ghi "Chơi thử", kèm một mẹo ngắn cho từng bước.
 - Luôn hiện phiếu trực tiếp của nhóm mình. Đội trưởng thấy nút CHỐT.
 - Rung nhẹ (`navigator.vibrate`, nếu hỗ trợ) khi câu mới bắt đầu và khi bom chuyền tới nhóm mình.
 
 ### 5.3 `/admin` — người dẫn; bảo vệ bằng mật khẩu từ biến môi trường `ADMIN_PASSWORD`
 - **Nút "Bước tiếp theo"**: một nút lớn luôn ghi rõ việc sẽ xảy ra (Tạo phòng → Hiện luật → Bắt đầu Bàn Cờ → Bắt đầu Quả Bom → Hiện 6 đặc điểm). Trong pha tự chạy, nút hiện "Đang tự chạy" và không làm gì; không có cách bỏ qua REVEAL (lúc học).
-- **Điều khiển ngay trên `/host`**: người dẫn đăng nhập (mật khẩu admin) một lần trên máy chiếu rồi dùng phím: `Space`/`→` = Bước tiếp theo, `T` = chơi thử một câu (ở RULES), `P` = tạm dừng/tiếp tục, `M` = tắt/bật âm thanh, `F` = toàn màn hình. Gợi ý phím hiện mờ ở góc và tự ẩn. Tạo phòng mới khi đang có trận chỉ làm được ở `/admin`.
+- **Điều khiển ngay trên `/host`**: người dẫn đăng nhập (mật khẩu admin) một lần trên máy chiếu rồi dùng phím: `Space`/`→` = Bước tiếp theo, `T` = chơi thử 2 lượt (ở RULES), `P` = tạm dừng/tiếp tục, `M` = tắt/bật âm thanh, `F` = toàn màn hình. Gợi ý phím hiện mờ ở góc và tự ẩn. Tạo phòng mới khi đang có trận chỉ làm được ở `/admin`.
 - Tạo phòng; mở/đóng LOBBY; bắt đầu từng pha; tạm dừng/tiếp tục; bỏ qua câu lỗi; "Kết thúc Bàn Cờ sau lượt này".
-- **Câu thử** (ngoài trận: LOBBY, RULES, SUMMARY): một câu cho cả 7 nhóm, chạy đúng như câu Bàn Cờ (biểu quyết, CHỐT, đồng hồ, đáp án) nhưng không tính điểm, không đổi bàn cờ. Ở RULES có nút "Chơi thử một câu" ngay cạnh "Bắt đầu Bàn Cờ": giải thích luật → chơi thử → bắt đầu. Câu đã dùng để thử được ưu tiên không hỏi lại trong trận. Đang có câu thử thì chưa sang bước tiếp theo được (không bỏ qua phần đáp án); "Hủy câu thử" để dừng ngay.
-- Chỉnh tay: đổi chủ ô, đổi đội trưởng (ô chọn ở từng nhóm, hoặc đặt cả lớp theo danh sách nhóm trưởng thực tế — mục 2.1), chuyển người chơi sang nhóm khác.
+- **Chơi thử** (chỉ ở RULES): nút "Chơi thử 2 lượt" ngay cạnh "Bắt đầu Bàn Cờ": giải thích luật → chơi thử → bắt đầu. Một phiên Bàn Cờ thu nhỏ (mặc định 2 lượt, 1–3 lượt) chạy đúng như trận thật — ô xuất phát của các nhóm có người, SELECT → QUESTION → REVEAL, biểu quyết, CHỐT, tranh chấp, khiên, đồng hồ, tạm dừng, chế độ dự phòng — nhưng không tính điểm:
+  - Màn chiếu, điện thoại, `/admin` ghi rõ "Chơi thử · lượt 1/2"; màn chiếu có thẻ nhắc từng bước (1 Chọn ô → 2 Trả lời → 3 Kết quả), REVEAL hiện thẻ nhắc thay bảng điểm. Thanh tiến trình của `/admin` vẫn ở chặng "Luật chơi".
+  - Hết REVEAL của lượt thử cuối: bỏ bàn cờ chơi thử, quay về RULES (lượt thử cuối nhắc trước điều này). "Bắt đầu Bàn Cờ" sau đó bắt đầu trận thật từ bàn cờ xuất phát, lượt 1.
+  - "Dừng chơi thử" trên `/admin` (cả khi đang tạm dừng): bỏ bàn cờ chơi thử, quay về RULES ngay, bỏ tạm dừng. Đang chơi thử thì chưa bắt đầu trận thật hay mở câu thử được.
+  - Câu đã hỏi lúc chơi thử được ưu tiên không hỏi lại trong trận. Nhật ký ghi lúc bắt đầu/kết thúc chơi thử.
+- **Câu thử** (ngoài trận: LOBBY, RULES, SUMMARY; nút ở mục "Công cụ khác"): một câu cho cả 7 nhóm, chạy đúng như câu Bàn Cờ (biểu quyết, CHỐT, đồng hồ, đáp án) nhưng không tính điểm, không đổi bàn cờ. Câu đã dùng để thử được ưu tiên không hỏi lại trong trận. Đang có câu thử thì chưa sang bước tiếp theo hay chơi thử được (không bỏ qua phần đáp án); "Hủy câu thử" để dừng ngay.
+- Chỉnh tay: đổi chủ ô, đổi đội trưởng (ô chọn ở từng nhóm, hoặc đặt cả lớp theo danh sách nhóm trưởng thực tế — mục 2.1), chuyển người chơi sang nhóm khác. Mỗi nhóm có một dòng tình trạng đội trưởng: có người tên là số nhóm làm đội trưởng / hai người tên như vậy / người tên là số nhóm đang ở nhóm khác (nút "Chuyển về") / theo danh sách / chưa có. Người tên là số nhóm vào nhầm nhóm còn được nhắc ngay dưới nút "Bước tiếp theo" ở phòng chờ và lúc xem luật.
 - **Chế độ dự phòng**: khi mạng sập, các nhóm giơ thẻ màu A/B/C/D; admin nhập ô mục tiêu, đáp án và thứ tự nhanh chậm cho từng nhóm; trò chơi vẫn chạy trên host.
   - Bật chế độ dự phòng: pha SELECT, QUESTION, PASS không tự đóng khi hết giờ và không đóng sớm khi các nhóm chốt bằng điện thoại — admin bấm xác nhận mới đóng (đồng hồ vẫn hiện để các nhóm suy nghĩ). Pha REVEAL/EXPLODE vẫn tự chạy.
   - Mọi nhóm 1–7 coi như "có thành viên" (nhận ô xuất phát, được chuyền bom) dù không ai vào bằng điện thoại.
@@ -196,6 +211,7 @@ Với mỗi ô bị ít nhất một nhóm nhắm tới:
 ## 6. Yêu cầu kỹ thuật
 - Server: Node.js + TypeScript + Express + Socket.IO. Máy trạng thái rõ ràng:
   `LOBBY → RULES → (BOARD_SELECT → BOARD_QUESTION → BOARD_REVEAL) × N → BOMB_INTRO → (BOMB_QUESTION ↔ BOMB_REVEAL → BOMB_PASS … → BOMB_EXPLODE) × số bom → SUMMARY`.
+  Chơi thử dùng lại đúng các pha Bàn Cờ: `RULES → (BOARD_SELECT → BOARD_QUESTION → BOARD_REVEAL) × số lượt thử → RULES` (trận đánh dấu `practice`).
 - Mọi timer chạy trên server. Có tạm dừng/tiếp tục toàn cục.
 - Logic game là hàm thuần trong `shared/`, có unit test (Vitest): ô kề, mục tiêu hợp lệ, biểu quyết nhóm, giải quyết lượt, khiên, bom, xếp hạng.
 - Test bắt buộc: không payload nào gửi tới client chứa ngòi bom hoặc đáp án đúng khi câu còn mở.
@@ -232,3 +248,6 @@ Với mỗi ô bị ít nhất một nhóm nhắm tới:
 - Một nút "Bước tiếp theo" + phím tắt trên `/host`: người dẫn không phải nhớ thứ tự các nút, có thể điều khiển chỉ bằng máy chiếu. Không cho bỏ qua REVEAL để giữ "sau mỗi câu là lúc học".
 - Đội trưởng đặt theo danh sách nhóm trưởng thực tế (thay vì chỉ dựa vào "người vào đầu tiên"): 7 nhóm trùng nhóm của lớp nên đã có nhóm trưởng mà cả nhóm quen nghe theo; người dẫn bấm một nút là xong, sinh viên không phải làm gì thêm. Danh sách chỉ lưu trên trình duyệt của người dẫn để tên thật không nằm trong repo/server; khớp tên chỉ là gợi ý, người dẫn thấy trước và sửa tay được. Giữ "người vào đầu tiên" làm mặc định khi chưa đặt để nhóm luôn có người giữ nút CHỐT. Đã cân nhắc cho nhóm tự bầu trên điện thoại: dân chủ hơn nhưng tốn thời gian phòng chờ và cần cả nhóm thao tác.
 - Bản đồ có ô đặc biệt (mục 3.7) để cạnh tranh và bất ngờ hơn — cảm hứng từ ô "vương miện" của Kingdomino/ô số của Catan (ô tĩnh giá trị cao, lên kế hoạch từ đầu), ngôi sao của Mario Party (mục tiêu mới xuất hiện bất ngờ, cả lớp cùng đua) và rubber-banding của Mario Kart (sao không rơi cho nhóm dẫn đầu). 4 ô Cơ quan đặt sao cho mỗi nhóm cách đúng một ô 2 bước — cách đặt duy nhất công bằng với 7 nhóm trên bàn lục giác. Mô phỏng 3.000 trận (bot): độ lệch điểm theo vị trí xuất phát giảm 0,62 → 0,47, số lần đổi ngôi đầu bảng 4,6 → 5,2/trận, khoảng cách đầu–cuối so với điểm nhóm thắng không đổi (0,80). ★ là giá trị của ô (cướp được) chứ không phải điểm giữ mãi: điểm sao giữ mãi làm nhóm dẫn đầu bỏ xa (mô phỏng). Không dùng ô chướng ngại vì làm lệch cân bằng giữa các vị trí xuất phát; không dùng hộp quà ngẫu nhiên vì thêm luật và may rủi. Bốn cơ quan quây quanh một ô Hiến pháp thể hiện quyền lực nhà nước thống nhất, có phân công — không dùng cách nói "tam quyền phân lập".
+- Nhóm trưởng đặt tên là số nhóm ("1" cho Nhóm 1) → server tự đặt làm đội trưởng: người dẫn chỉ cần dặn một câu, không phải nhập danh sách hay bấm gì; không phụ thuộc cách sinh viên gõ họ tên (có dấu/không dấu, gõ tắt) như khi khớp với danh sách. Chỉ xét lúc người đó vào nhóm (không quét lại cả nhóm mỗi lần có người ra vào), nên người dẫn chọn tay người khác thì giữ nguyên, trừ khi lại có người tên là số nhóm vào sau (vd. nhóm trưởng thật vào muộn). Người đến trước giữ khi hai người cùng tên là số nhóm. Chỉ nhận số đứng một mình (kèm "Nhóm"/"N"/"NT"), không nhận "1 An": thành viên thường hiếm khi tự đặt tên chỉ là một con số, nên khó nhận nhầm. Không tự chuyển người tên "1" đang ở Nhóm 2 về Nhóm 1 (không biết sai ở tên hay ở nút nhóm) — nhắc trên điện thoại và `/admin`, một chạm để sửa. Giữ danh sách nhóm trưởng làm phương án dự phòng cho nhóm trưởng quên đặt tên.
+- Bản đồ minh họa trên màn luật là một ví dụ "giữa trận" cố định (không phải bàn cờ xuất phát): cho thấy trận đấu sẽ trông thế nào — lãnh thổ lan từ viền vào giữa, ô giá trị cao ở trung tâm, chấm nhóm đang nhắm ô. Bàn cờ xuất phát thật cả lớp sẽ thấy ngay khi chơi thử. Điểm của từng loại ô chuyển vào chú giải bản đồ để màn luật vẫn vừa một màn hình (8 thẻ → 6 thẻ, gộp hai loại khiên).
+- Chơi thử là một phiên Bàn Cờ 2 lượt (thay cho "chơi thử một câu" ở RULES): một câu chỉ tập được biểu quyết; chơi thử 2 lượt cho lớp làm quen trọn vòng chọn ô → trả lời → chiếm ô, thấy tranh chấp và chênh lệch mili-giây, khoảng 1,5 phút. Dùng lại nguyên các pha và màn hình Bàn Cờ (trận đánh dấu `practice`) để những gì sinh viên tập giống hệt trận thật và không phải viết/kiểm thử một luồng riêng; xong bỏ bàn cờ, trận thật bắt đầu lại từ đầu cho công bằng. Không làm chơi thử Quả Bom: luật bom đơn giản, đã có màn BOMB_INTRO, và nổ thử phải tách bàn cờ riêng.

@@ -43,14 +43,19 @@ export function PlayBoard({
       <p className="play-phase">
         {phase === 'SUMMARY'
           ? 'Trận đã kết thúc'
-          : `Lượt ${board.turn}/${board.totalTurns}${board.endAfterThisTurn ? ' (lượt cuối)' : ''} · ${PHASE_LABELS[phase] ?? ''}`}
+          : board.practice
+            ? `Chơi thử · lượt ${board.turn}/${board.totalTurns} · ${PHASE_LABELS[phase] ?? ''}`
+            : `Lượt ${board.turn}/${board.totalTurns}${board.endAfterThisTurn ? ' (lượt cuối)' : ''} · ${PHASE_LABELS[phase] ?? ''}`}
       </p>
       <TerritoryBar owners={board.owners} />
+      {board.practice && <PracticeTip game={game} />}
       {phase === 'BOARD_SELECT' && <PlaySelect game={game} teamSelect={teamSelect} playerId={playerId} teamId={teamId} />}
       {(phase === 'BOARD_QUESTION' || phase === 'BOARD_REVEAL') && (
         <>
           <TeamTurnSummary game={game} teamId={teamId} />
-          {question && question.teamIds.includes(teamId) && <PlayQuestion view={question} team={teamVotes} playerId={playerId} />}
+          {question && question.teamIds.includes(teamId) && (
+            <PlayQuestion view={question} team={teamVotes} playerId={playerId} practice={board.practice} />
+          )}
           <HexBoard
             className="hex-board--mini"
             owners={board.owners}
@@ -71,6 +76,28 @@ export function PlayBoard({
         </>
       )}
     </section>
+  );
+}
+
+/** Mẹo ngắn cho từng bước khi chơi thử (GAME_SPEC 5.3). */
+function PracticeTip({ game }: { game: GameView }) {
+  const board = game.board!;
+  const last = board.endAfterThisTurn || board.turn >= board.totalTurns;
+  const tip =
+    game.phase === 'BOARD_SELECT'
+      ? 'Ô sáng là ô kề lãnh thổ nhóm bạn; số vàng trên ô là số phiếu của nhóm.'
+      : game.phase === 'BOARD_QUESTION'
+        ? 'Đúng mới chiếm được ô; nhóm CHỐT sớm hơn thắng khi tranh cùng ô.'
+        : last
+          ? 'Hết chơi thử — trận thật bắt đầu lại từ bàn cờ xuất phát.'
+          : 'Xem nhóm bạn chiếm được ô nào. Lượt thử kế tiếp bắt đầu ngay sau đây.';
+  return (
+    <p className="play-note play-note--practice">
+      <Icon name="target" />
+      <span>
+        <b>Chơi thử</b>, không tính điểm. {tip}
+      </span>
+    </p>
   );
 }
 

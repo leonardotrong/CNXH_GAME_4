@@ -4,6 +4,8 @@ import { c } from './boardFixtures';
 import {
   DEFAULT_BOARD_TURNS,
   MAX_BOARD_TURNS,
+  MAX_PRACTICE_TURNS,
+  PRACTICE_TURNS,
   applyTurn,
   isFinalTurn,
   nextTurn,
@@ -46,6 +48,24 @@ describe('boardMatch', () => {
     expect(startMatch([1], 0).totalTurns).toBe(1);
     expect(startMatch([1], 999).totalTurns).toBe(MAX_BOARD_TURNS);
     expect(startMatch([1], 'x').totalTurns).toBe(DEFAULT_BOARD_TURNS);
+    expect(startMatch([1]).practice).toBe(false);
+  });
+
+  it('chơi thử (GAME_SPEC 5.3): bàn cờ xuất phát như trận thật, mặc định 2 lượt, 1–3 lượt, công khai cờ practice', () => {
+    const m = startMatch([1, 2], undefined, { practice: true });
+    expect(m).toMatchObject({ practice: true, turn: 1, totalTurns: PRACTICE_TURNS });
+    expect(m.board).toEqual(startMatch([1, 2]).board);
+    expect(startMatch([1], 0, { practice: true }).totalTurns).toBe(1);
+    expect(startMatch([1], 14, { practice: true }).totalTurns).toBe(MAX_PRACTICE_TURNS);
+    expect(startMatch([1], 'x', { practice: true }).totalTurns).toBe(PRACTICE_TURNS);
+    expect(publicBoardView(m, null).practice).toBe(true);
+    expect(publicBoardView(startMatch([1]), null).practice).toBe(false);
+  });
+
+  it('chơi thử: admin đổi số lượt không quá 3 lượt, cũng không nhỏ hơn lượt đang chơi', () => {
+    const m = nextTurn(startMatch([1], 2, { practice: true }), turnCtx);
+    expect(setTotalTurns(m, 14).totalTurns).toBe(MAX_PRACTICE_TURNS);
+    expect(setTotalTurns(m, 1).totalTurns).toBe(2);
   });
 
   it('applyTurn: giải quyết theo mục tiêu đã chốt và cộng thống kê', () => {

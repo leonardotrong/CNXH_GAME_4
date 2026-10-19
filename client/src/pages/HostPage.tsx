@@ -100,6 +100,10 @@ export function HostPage() {
           <header className="host-lobby__brand">
             <Logo className="host-lobby__logo" />
             <span>Bàn Cờ Quyền Lực &amp; Quả Bom Tham Nhũng</span>
+            {/* Nhóm trưởng tự nhận đội trưởng bằng tên (GAME_SPEC 2.1) — ở dòng tiêu đề để cột nhóm vẫn đủ chỗ cho 9 người. */}
+            <span className="host-lobby__captain">
+              <span className="captain-star">★</span> Nhóm trưởng: nhập tên là <b>số nhóm</b> (Nhóm 1 → “1”)
+            </span>
           </header>
           <section className="host-join">
             <div className="host-join__qr" dangerouslySetInnerHTML={{ __html: qrSvg }} />

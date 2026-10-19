@@ -89,8 +89,12 @@ export interface ClientToServerEvents {
   'admin:setCaptain': (req: { playerId: string }, ack: (res: Ack) => void) => void;
   /** "Câu thử": hỏi một câu cho cả 7 nhóm. */
   'admin:startQuestion': (req: { pool: QuestionPool }, ack: (res: Ack<{ roundId: number }>) => void) => void;
-  /** Bắt đầu Bàn Cờ Quyền Lực (từ LOBBY hoặc SUMMARY). */
+  /** Bắt đầu Bàn Cờ Quyền Lực (từ LOBBY, RULES hoặc SUMMARY). */
   'admin:startBoard': (req: { totalTurns?: number }, ack: (res: Ack) => void) => void;
+  /** Chơi thử (chỉ ở RULES): vài lượt Bàn Cờ (mặc định 2, 1–3) không tính điểm, xong quay về RULES. */
+  'admin:startPractice': (req: { turns?: number }, ack: (res: Ack) => void) => void;
+  /** Dừng chơi thử ngay: bỏ bàn cờ chơi thử, quay về RULES. */
+  'admin:stopPractice': (ack: (res: Ack) => void) => void;
   /** Chỉnh số lượt N khi đang chơi (không nhỏ hơn lượt hiện tại). */
   'admin:setBoardTurns': (req: { totalTurns: number }, ack: (res: Ack<{ totalTurns: number }>) => void) => void;
   /** "Kết thúc sau lượt này" (bật/tắt). */

@@ -133,6 +133,13 @@ describe('rosterStatus', () => {
     ]);
   });
 
+  it('bỏ qua nhóm đã có người đặt tên là số nhóm (nhóm trưởng tự nhận), kể cả khi danh sách khớp người khác', () => {
+    const teams = [team(1, [['n', '1', true], ['b', 'An']]), team(2, [['c', 'Mai', true], ['x', '1']])];
+    expect(rosterStatus({ 1: 'Nguyễn Văn An', 2: 'Trần Thị Mai' }, { teams })).toEqual([
+      { teamId: 2, rosterName: 'Trần Thị Mai', match: { kind: 'match', playerId: 'c' }, applied: true },
+    ]);
+  });
+
   it('tìm cả người vào nhầm nhóm', () => {
     const teams = [team(1, [['a', 'Bình', true]]), team(2, [['b', 'Nguyễn Văn An', true]])];
     expect(rosterStatus({ 1: 'Nguyễn Văn An' }, { teams })[0]!.match).toEqual({ kind: 'elsewhere', playerId: 'b', teamId: 2 });

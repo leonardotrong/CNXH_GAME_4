@@ -1,13 +1,14 @@
 import { useState } from 'react';
-import { TEAM_IDS, rosterChanges, type CaptainRoster, type RoomState, type RosterTeamStatus } from '@cnxh/shared';
-import { RosterEditor, RosterStatusLine, applyRoster, setCaptain } from './AdminRoster';
+import { TEAM_IDS, namedCaptainInfo, rosterChanges, type CaptainRoster, type RoomState, type RosterTeamStatus } from '@cnxh/shared';
+import { RosterEditor, RosterStatusLine, applyRoster, namedCaptainLine, setCaptain } from './AdminRoster';
 import { socket } from './socket';
 import { teamName, teamStyle } from './teams';
 
 /**
  * Người chơi theo nhóm, dạng gọn: mỗi người một "chip" tên; chạm vào tên mới hiện thao tác
  * (làm đội trưởng, chuyển nhóm — GAME_SPEC 5.3) để 60 người vẫn vừa một màn hình.
- * Mỗi nhóm có ô "★ Đội trưởng" và dòng so với danh sách nhóm trưởng thực tế (GAME_SPEC 2.1).
+ * Mỗi nhóm có ô "★ Đội trưởng" và một dòng tình trạng: nhóm trưởng tự nhận bằng tên là số nhóm (cách chính),
+ * hoặc so với danh sách nhóm trưởng thực tế (dự phòng) — GAME_SPEC 2.1.
  */
 export function AdminPlayers({
   state,
@@ -31,7 +32,10 @@ export function AdminPlayers({
   const selected = all.find((p) => p.id === openId);
   const nameOf = (id: string) => all.find((p) => p.id === id)?.name ?? '?';
   const changes = rosterChanges(statuses);
-  const applied = statuses.filter((s) => s.applied).length;
+  const named = namedCaptainInfo(state);
+  const playing = state.teams.filter((t) => t.players.length > 0);
+  // Nhóm có đội trưởng là người đặt tên là số nhóm.
+  const namedOk = playing.filter((t) => t.players.some((p) => p.isDesignatedCaptain && named.find((x) => x.teamId === t.id)!.inTeam.includes(p.id))).length;
 
   return (
     <section className="admin-card admin-players">
@@ -41,12 +45,11 @@ export function AdminPlayers({
       </h2>
       <div className="roster-bar">
         <b className="roster-bar__title">
-          <span className="captain-star">★</span> Nhóm trưởng thực tế
+          <span className="captain-star">★</span> Đội trưởng
         </b>
         <span className="admin-muted">
-          {statuses.length > 0
-            ? `${applied}/${statuses.length} nhóm có đội trưởng đúng danh sách`
-            : 'Nhập họ tên nhóm trưởng của các nhóm một lần — lần sau mở /admin trên máy này là có sẵn.'}
+          Dặn nhóm trưởng nhập tên là <b>số nhóm</b> (Nhóm 1 → “1”) là tự làm đội trưởng
+          {playing.length > 0 && ` — ${namedOk}/${playing.length} nhóm đã có`}.
         </span>
         <span className="admin-controls__spacer" />
         {statuses.length > 0 && (
@@ -55,7 +58,7 @@ export function AdminPlayers({
           </button>
         )}
         <button className="mini-btn" aria-expanded={editing} onClick={() => setEditing(!editing)}>
-          {editing ? 'Xong' : statuses.length > 0 ? 'Sửa danh sách' : 'Nhập danh sách nhóm trưởng'}
+          {editing ? 'Xong' : Object.values(roster).some((n) => n?.trim()) ? 'Sửa danh sách nhóm trưởng' : 'Danh sách nhóm trưởng (dự phòng)'}
         </button>
       </div>
       {editing && <RosterEditor roster={roster} onChange={onRosterChange} />}
@@ -63,6 +66,7 @@ export function AdminPlayers({
         {state.teams.map((t) => {
           const captain = t.players.find((p) => p.isDesignatedCaptain);
           const status = statuses.find((s) => s.teamId === t.id);
+          const namedLine = namedCaptainLine(named.find((x) => x.teamId === t.id)!, t, nameOf, onNotice);
           return (
             <section key={t.id} className="admin-team" style={teamStyle(t.id)}>
               <h3>
@@ -89,9 +93,14 @@ export function AdminPlayers({
                   </select>
                 </label>
               )}
-              {status && <RosterStatusLine status={status} nameOf={nameOf} onNotice={onNotice} />}
+              {namedLine ??
+                (status ? (
+                  <RosterStatusLine status={status} nameOf={nameOf} onNotice={onNotice} />
+                ) : (
+                  t.players.length > 0 && <p className="roster-line">Chưa ai đặt tên “{t.id}” — tạm: người vào nhóm đầu tiên</p>
+                ))}
               {t.players.length === 0 ? (
-                !status && <p className="admin-muted">Chưa có ai.</p>
+                !status && !namedLine && <p className="admin-muted">Chưa có ai.</p>
               ) : (
                 <ul className="player-chips">
                   {t.players.map((p) => (

@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { MAX_NAME_LENGTH, TEAM_IDS, isRoomCode } from '@cnxh/shared';
+import { MAX_NAME_LENGTH, TEAM_IDS, captainSignal, isRoomCode } from '@cnxh/shared';
 import { ConnectionBadge } from '../ConnectionBadge';
 import { Icon } from '../Icon';
 import { Logo } from '../Logo';
 import { PlayBoard } from '../PlayBoard';
 import { PlayQuestion } from '../PlayQuestion';
 import { BOARD_RULES } from '../rules';
+import { RulesMap } from '../RulesMap';
 import { StatusBanner } from '../StatusBanner';
 import { socket, useGame, useQuestion, useRoomState, useTeamPass, useTeamSelect, useTeamVotes } from '../socket';
 import { teamName, teamStyle } from '../teams';
@@ -60,6 +61,9 @@ export function PlayPage() {
   const [name, setName] = useState(loadName);
   const [teamId, setTeamId] = useState<number | null>(null);
   const [error, setError] = useState('');
+  // Nhóm trưởng nhập tên là số nhóm (GAME_SPEC 2.1): chưa chọn nhóm thì tự chọn đúng nhóm đó.
+  const nameSignal = captainSignal(name);
+  const shownTeam = teamId ?? nameSignal;
 
   const remember = useCallback((s: Saved | null) => {
     setSaved(s);
@@ -91,11 +95,11 @@ export function PlayPage() {
   const submit = (e: FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!isRoomCode(roomCode) || !name.trim() || teamId === null) {
+    if (!isRoomCode(roomCode) || !name.trim() || shownTeam === null) {
       setError('Nhập mã phòng 4 chữ số, tên và chọn nhóm.');
       return;
     }
-    socket.emit('player:join', { roomCode, name, teamId }, (res) => {
+    socket.emit('player:join', { roomCode, name, teamId: shownTeam }, (res) => {
       if (res.ok) {
         remember({ roomCode, playerId: res.playerId });
         try { localStorage.setItem(NAME_KEY, name.trim()); } catch { /* bỏ qua */ }
@@ -113,19 +117,37 @@ export function PlayPage() {
     // Đang có vòng bỏ phiếu/câu hỏi: thu gọn danh sách nhóm để màn hình chỉ còn việc cần làm.
     const busy = inGame || !!question;
     const online = members.filter((p) => p.online).length;
+    // Tên là số nhóm (GAME_SPEC 2.1): đúng nhóm → nhóm trưởng tự nhận; nhóm khác → vào nhầm nhóm.
+    const signal = captainSignal(me.name);
+    const named = signal === me.teamId;
     return (
       <main className={`page page--play ${inGame && game!.phase.startsWith('BOMB_') ? 'page--danger' : ''}`} style={teamStyle(me.teamId)}>
         <header className="play-head">
           <span className="play-head__who">
             <span className="play-head__team">{teamName(me.teamId)}</span>
             <span className="play-head__name">
-              {me.name}
-              {me.isCaptain && ' · ★ Đội trưởng'}
+              {/* Nhóm trưởng đặt tên là số nhóm ("3" ở Nhóm 3): khỏi lặp lại số nhóm. */}
+              {me.isCaptain && named ? '★ Đội trưởng' : me.name}
+              {me.isCaptain && !named && ' · ★ Đội trưởng'}
             </span>
           </span>
           <ConnectionBadge />
         </header>
         <StatusBanner game={game} audience="play" />
+        {signal !== null && !named && !busy && (
+          <section className="play-note play-note--warn" role="alert">
+            <Icon name="users" />
+            <span>
+              Tên “{me.name}” là tên nhóm trưởng <b>{teamName(signal)}</b>, nhưng bạn đang ở {teamName(me.teamId)}.{' '}
+              {inLobby ? 'Chuyển nhóm để làm đội trưởng:' : 'Nhờ người dẫn chuyển bạn về đúng nhóm.'}
+              {inLobby && (
+                <button className="primary-btn play-note__action" style={teamStyle(signal)} onClick={() => socket.emit('player:changeTeam', { teamId: signal }, () => {})}>
+                  Chuyển sang {teamName(signal)}
+                </button>
+              )}
+            </span>
+          </section>
+        )}
         {inGame ? (
           <PlayBoard
             key={game!.phase}
@@ -142,6 +164,7 @@ export function PlayPage() {
         ) : game?.phase === 'RULES' ? (
           <section className="play-rules">
             <h2 className="play-section-title">Luật chơi</h2>
+            <RulesMap />
             <ul>
               {BOARD_RULES.map((r) => (
                 <li key={r.title}>
@@ -251,6 +274,9 @@ export function PlayPage() {
         <label className="field">
           Tên của bạn
           <input maxLength={MAX_NAME_LENGTH} placeholder="Họ và tên" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} />
+          <span className="field__hint">
+            <span className="captain-star">★</span> Nhóm trưởng: nhập tên là <b>số nhóm</b> (Nhóm 1 → “1”) để làm đội trưởng.
+          </span>
         </label>
         <fieldset className="join-teams">
           <legend>Chọn nhóm</legend>
@@ -259,15 +285,20 @@ export function PlayPage() {
               <button
                 type="button"
                 key={id}
-                className={`team-btn ${id === teamId ? 'is-selected' : ''}`}
+                className={`team-btn ${id === shownTeam ? 'is-selected' : ''}`}
                 style={teamStyle(id)}
-                aria-pressed={id === teamId}
+                aria-pressed={id === shownTeam}
                 onClick={() => setTeamId(id)}
               >
                 {teamName(id)}
               </button>
             ))}
           </div>
+          {nameSignal !== null && shownTeam !== nameSignal && (
+            <p className="join-warn" role="alert">
+              Tên “{name.trim()}” dành cho nhóm trưởng {teamName(nameSignal)}, nhưng bạn đang chọn {teamName(shownTeam!)}.
+            </p>
+          )}
         </fieldset>
         {error && (
           <p className="form-error" role="alert">

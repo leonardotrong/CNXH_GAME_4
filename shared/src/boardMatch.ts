@@ -16,6 +16,9 @@ import { answersFromRound, emptyStats, rankTeams, recordAnswers, type MatchStats
 
 export const DEFAULT_BOARD_TURNS = 14;
 export const MAX_BOARD_TURNS = 40;
+/** Chơi thử ở màn luật (GAME_SPEC 5.3): mặc định 2 lượt, tối đa 3. */
+export const PRACTICE_TURNS = 2;
+export const MAX_PRACTICE_TURNS = 3;
 /** Thời lượng pha REVEAL của Bàn Cờ (đáp án + giải thích + đổi chủ ô). */
 export const BOARD_REVEAL_MS = 10_000;
 
@@ -34,23 +37,32 @@ export interface BoardMatch {
   outcome: TurnOutcome | null;
   /** ★ Lòng dân vừa xuất hiện khi bắt đầu lượt hiện tại (null nếu lượt này không có sao mới). */
   newStar: CellId | null;
+  /** Phiên chơi thử (GAME_SPEC 5.3): chạy như trận thật nhưng không tính điểm; hết lượt cuối thì bỏ, quay về màn luật. */
+  practice: boolean;
 }
 
-export function clampTurns(totalTurns: unknown, minimum = 1): number {
-  const n = typeof totalTurns === 'number' && Number.isFinite(totalTurns) ? Math.round(totalTurns) : DEFAULT_BOARD_TURNS;
-  return Math.min(MAX_BOARD_TURNS, Math.max(minimum, n));
+export function clampTurns(totalTurns: unknown, minimum = 1, maximum = MAX_BOARD_TURNS): number {
+  const fallback = maximum === MAX_PRACTICE_TURNS ? PRACTICE_TURNS : DEFAULT_BOARD_TURNS;
+  const n = typeof totalTurns === 'number' && Number.isFinite(totalTurns) ? Math.round(totalTurns) : fallback;
+  return Math.min(maximum, Math.max(minimum, n));
 }
 
-export function startMatch(activeTeamIds: readonly TeamId[], totalTurns: unknown = DEFAULT_BOARD_TURNS): BoardMatch {
+/** Trận mới; `practice` = chơi thử (số lượt 1–3, mặc định 2). */
+export function startMatch(
+  activeTeamIds: readonly TeamId[],
+  totalTurns?: unknown,
+  { practice = false }: { practice?: boolean } = {},
+): BoardMatch {
   return {
     board: initialBoard(activeTeamIds),
     turn: 1,
-    totalTurns: clampTurns(totalTurns),
+    totalTurns: clampTurns(totalTurns, 1, practice ? MAX_PRACTICE_TURNS : MAX_BOARD_TURNS),
     endAfterThisTurn: false,
     stats: emptyStats(),
     targets: null,
     outcome: null,
     newStar: null,
+    practice,
   };
 }
 
@@ -88,9 +100,10 @@ export function nextTurn(match: BoardMatch, ctx: TurnContext): BoardMatch {
   return { ...match, turn, board, targets: null, outcome: null, newStar: star };
 }
 
-/** Admin chỉnh số lượt: không nhỏ hơn lượt đang chơi. */
+/** Admin chỉnh số lượt: không nhỏ hơn lượt đang chơi (chơi thử: không quá 3 lượt). */
 export function setTotalTurns(match: BoardMatch, totalTurns: unknown): BoardMatch {
-  return { ...match, totalTurns: clampTurns(totalTurns, match.turn) };
+  const maximum = match.practice ? Math.max(MAX_PRACTICE_TURNS, match.turn) : MAX_BOARD_TURNS;
+  return { ...match, totalTurns: clampTurns(totalTurns, match.turn, maximum) };
 }
 
 // ─── Dữ liệu gửi xuống client ────────────────────────────────────────────────
@@ -112,6 +125,8 @@ export interface PublicBoardView {
   targets: Record<TeamId, CellId | null> | null;
   /** Kết quả lượt — chỉ trong REVEAL (sau khi câu hỏi đóng). */
   outcome: TurnOutcome | null;
+  /** Đang chơi thử (không tính điểm) — màn hình ghi "Chơi thử". */
+  practice: boolean;
 }
 
 export function publicBoardView(match: BoardMatch, select: PublicSelectView | null): PublicBoardView {
@@ -127,6 +142,7 @@ export function publicBoardView(match: BoardMatch, select: PublicSelectView | nu
     select,
     targets: match.targets && { ...match.targets },
     outcome: match.outcome,
+    practice: match.practice,
   };
 }
 
